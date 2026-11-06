@@ -221,6 +221,10 @@ async function initHome() {
     }
   } catch {}
   const user = getUser();
+  // লগইন করা থাকলে প্রতিবার পেইজ খুললেই Gmail-টা সার্ভারে প্রাপক হিসেবে
+  // আবার নথিভুক্ত হয় — KV চালু হওয়ার আগে লগইন করা ব্যবহারকারীরাও
+  // (যেমন Lina Das) এতে পরেরবার পেইজ খুললেই প্রাপক তালিকায় চলে আসে।
+  if (user && user.email) fetch('api/register-recipient', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email }) }).catch(() => {});
   // হোমে কোনো আলাদা লগইন বাটন নেই — লগইন শুধু পপআপে, আবেদন/বিস্তারিত/
   // শর্টলিস্ট চাপলেই সরাসরি পপআপ আসে। লগইন করা থাকলে প্রোফাইল ছবি+নাম দেখায়।
   const prof = getProfile();

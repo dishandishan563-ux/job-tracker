@@ -8,6 +8,7 @@
 // if it is not set, the admin panel's PIN gate is the only protection (see README).
 const fs = require('fs');
 const { sendMail } = require('./_mail');
+const { kvAvailable, kvSMembers } = require('./_store');
 const circulars = require('../data/circulars.json');
 
 const SENT_FILE = '/tmp/job-tracker-sent.json';
@@ -23,7 +24,13 @@ module.exports = async (req, res) => {
     if (process.env.ADMIN_PIN_HASH && pinHash !== process.env.ADMIN_PIN_HASH) {
       return res.status(401).json({ ok: false, error: 'ভুল PIN।' });
     }
-    const recipients = (process.env.EMAIL_RECIPIENTS || '').split(',').map(s => s.trim()).filter(Boolean);
+    // প্রাপক: EMAIL_RECIPIENTS + সার্ভারে সেভ থাকা লগইন করা ব্যবহারকারীরা (KV)।
+    // আগে শুধু EMAIL_RECIPIENTS দেখা হতো, তাই লগইন করা ব্যবহারকারী থাকলেও
+    // "কোনো প্রাপক নথিভুক্ত নেই" দেখাত — এটাই ছিল বাগ।
+    const recipients = [...new Set([
+      ...(process.env.EMAIL_RECIPIENTS || '').split(',').map(s => s.trim()).filter(Boolean),
+      ...(kvAvailable() ? await kvSMembers('jt:recipients').catch(() => []) : []),
+    ].map(s => String(s).trim().toLowerCase()).filter(Boolean))];
     if (!recipients.length) return res.status(200).json({ ok: true, sent: 0, note: 'কোনো প্রাপক নথিভুক্ত নেই (EMAIL_RECIPIENTS খালি)।' });
     const now = new Date();
     const today = now.toISOString().slice(0, 10);
