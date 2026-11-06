@@ -12,7 +12,7 @@
 </head>
 <body data-page="login">
 <header><div class="hero">
-<div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span><a class="btn ghost" href="settings.html">⚙️ সেটিংস</a><a class="btn ghost" href="admin.html">🔒 অ্যাডমিন</a></div>
+<div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span><button class="btn ghost menu-btn" id="menuBtn" aria-label="মেনু">☰ মেনু</button></div>
 <h1>লগইন করুন</h1><p>Google দিয়ে লগইন করুন, অথবা ম্যানুয়ালভাবে Gmail, নাম আর পাসওয়ার্ড দিন।</p>
 </div></header>
 <main><div class="card">
@@ -43,6 +43,19 @@
 <a class="btn outline" href="index.html" style="width:100%;margin-top:8px;display:block;text-align:center">বন্ধ করুন — হোমে ফিরুন</a>
 </div></main>
 <footer><p>তথ্য দ্বিতীয় সূত্রের — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।</p></footer>
+<!-- স্লাইড মেনু (ড্রয়ার) — লগইন, সেটিংস, অ্যাডমিন, সার্কুলার যোগ -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="drawer" id="drawer" aria-label="মেনু">
+  <div class="drawer-head"><h3>☰ মেনু</h3><button class="btn outline small" id="drawerCloseBtn">✕ বন্ধ</button></div>
+  <div id="drawerUser"></div>
+  <button class="drawer-item" id="drawerLoginBtn">🔑 লগইন</button>
+  <a class="drawer-item" href="index.html">🏠 হোম / সার্কুলার তালিকা</a>
+  <a class="drawer-item" href="settings.html">⚙️ সেটিংস</a>
+  <a class="drawer-item" href="admin.html">🔒 অ্যাডমিন</a>
+  <a class="drawer-item" href="admin.html#circulars">➕ সার্কুলার যোগ করুন</a>
+  <a class="drawer-item" href="privacy.html">📄 গোপনীয়তা নীতি</a>
+</aside>
+
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>

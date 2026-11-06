@@ -15,15 +15,14 @@
 <header>
   <div class="hero">
     <div class="topbar">
+      <button class="btn ghost menu-btn" id="menuBtn" aria-label="মেনু">☰ মেনু</button>
       <span style="flex:1"></span>
       <span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span>
-      <a class="btn ghost" href="settings.html">⚙️ সেটিংস</a>
-      <a class="btn ghost" href="admin.html">🔒 অ্যাডমিন</a>
     </div>
     <h1>সব ধরনের সরকারি চাকরির সার্কুলার</h1>
     <p id="heroStats"></p>
     <div class="topbar">
-      <a class="btn primary" href="login.html">G Google দিয়ে রেজিস্টার / লগইন করুন</a>
+      <button class="btn primary" id="heroLoginBtn">G Google দিয়ে রেজিস্টার / লগইন করুন</button>
       <span id="userChip"></span>
     </div>
     <p id="loginNote" style="font-size:14px;opacity:.85"></p>
@@ -58,6 +57,49 @@
 </footer>
 
 
+
+<!-- স্লাইড মেনু (ড্রয়ার) — লগইন, সেটিংস, অ্যাডমিন, সার্কুলার যোগ -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="drawer" id="drawer" aria-label="মেনু">
+  <div class="drawer-head"><h3>☰ মেনু</h3><button class="btn outline small" id="drawerCloseBtn">✕ বন্ধ</button></div>
+  <div id="drawerUser"></div>
+  <button class="drawer-item" id="drawerLoginBtn">🔑 লগইন</button>
+  <a class="drawer-item" href="index.html">🏠 হোম / সার্কুলার তালিকা</a>
+  <a class="drawer-item" href="settings.html">⚙️ সেটিংস</a>
+  <a class="drawer-item" href="admin.html">🔒 অ্যাডমিন</a>
+  <a class="drawer-item" href="admin.html#circulars">➕ সার্কুলার যোগ করুন</a>
+  <a class="drawer-item" href="privacy.html">📄 গোপনীয়তা নীতি</a>
+</aside>
+
+<!-- লগইন পপআপ — আবেদন বা ভেতরের কিছু করতে গেলে এটাই খুলবে, আলাদা পেইজে যাওয়া লাগে না -->
+<div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-label="লগইন">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h3>লগইন করুন</h3><button class="btn outline small" id="loginModalClose">✕</button></div>
+    <p style="font-size:14px;color:var(--muted)">লগইন না করলে আবেদন, শর্টলিস্ট, বিস্তারিত, সেটিংস বা সার্কুলার যোগ করা যাবে না — শুধু তালিকা দেখা ও খোঁজা যাবে।</p>
+    <button class="btn green" id="googleConnectBtn" style="width:100%;margin:12px 0">G Google কানেক্ট করুন</button>
+    <div id="gisButton" style="margin:6px 0"></div>
+    <p id="gisNote" style="font-size:14px;color:var(--muted)"></p>
+    <hr style="margin:14px 0">
+    <h4>অথবা ম্যানুয়ালভাবে লগইন / রেজিস্টার</h4>
+    <div class="field"><label>নাম</label><input id="manualName" type="text" placeholder="আপনার নাম"></div>
+    <div class="field"><label>Gmail</label><input id="manualEmail" type="email" placeholder="you@gmail.com"></div>
+    <div class="field"><label>পাসওয়ার্ড</label><input id="manualPass" type="password" placeholder="পাসওয়ার্ড সেট করুন"></div>
+    <button class="btn green" id="manualLoginBtn" style="width:100%">লগইন / রেজিস্টার করুন</button>
+    <p style="text-align:center;margin-top:10px"><a href="#" id="forgotLink" style="color:var(--green);font-weight:600">পাসওয়ার্ড ভুলে গেছি?</a></p>
+    <div id="forgotPanel" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:12px">
+      <p style="font-size:14px;color:var(--muted)">আপনার Gmail-এ ৬ অঙ্কের রিসেট কোড যাবে — সেই কোড দিয়ে নতুন পাসওয়ার্ড সেট করুন। পুরনো পাসওয়ার্ড ফেরত দেওয়া যায় না (শুধু হ্যাশ আকারে থাকে)। এই রিসেট একই ব্রাউজার/ডিভাইসে কাজ করবে যেখানে অ্যাকাউন্টটি বানানো হয়েছিল।</p>
+      <div class="field"><label>Gmail</label><input id="fpEmail" type="email" placeholder="you@gmail.com"></div>
+      <button class="btn outline" id="fpSendBtn" style="width:100%">রিসেট কোড পাঠান</button>
+      <p id="fpStatus" style="font-size:14px;margin-top:8px"></p>
+      <div id="fpStep2" style="display:none">
+        <div class="field"><label>নাম (অ্যাকাউন্টে নাম না থাকলে দিন)</label><input id="fpName" type="text" placeholder="আপনার নাম"></div>
+        <div class="field"><label>৬ অঙ্কের কোড</label><input id="fpCode" type="text" inputmode="numeric" placeholder="কোড দিন"></div>
+        <div class="field"><label>নতুন পাসওয়ার্ড (কমপক্ষে ৪ অক্ষর)</label><input id="fpNewPass" type="password" placeholder="নতুন পাসওয়ার্ড"></div>
+        <button class="btn green" id="fpResetBtn" style="width:100%">নতুন পাসওয়ার্ড সেট করুন</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="data.js"></script>
 <script src="app.js"></script>

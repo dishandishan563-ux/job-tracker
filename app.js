@@ -1,6 +1,8 @@
 // Job Tracker — shared client logic. Separate pages, shared state in localStorage.
 // Pages: index.html (home), login.html, settings.html, admin.html — each is its own
-// route; going into one page does not show the others.
+// route; going into one page does not show the others. Login is a POPUP
+// (#loginModal) on home/settings/admin — it never navigates away; login.html
+// remains only as a standalone fallback page.
 const BN = '০১২৩৪৫৬৭৮৯';
 function bn(n) { return String(n).replace(/\d/g, d => BN[+d]); }
 function bnNum(n) { return String(n).replace(/\d/g, d => BN[+d]); }
@@ -13,15 +15,30 @@ function store(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 function read(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v === null || v === undefined ? d : v; } catch { return d; } }
 function getUser() { return read('jt_user', null); }
 function isLoggedIn() { return !!getUser(); }
-// Login gate: any gated action redirects to the separate login page (popup equivalent
-// on this static build is the dedicated /login.html route with the real Google popup).
-// Login lives on its OWN separate page (login.html) — nothing is mixed into the
-// home page. The Google sign-in itself happens in Google's real popup, opened
-// from the login page; the manual option (Gmail + name + password) is on that
-// same login page. Gated actions send the user to login.html and back.
+// Login gate: any gated action opens the LOGIN POPUP (#loginModal) on the
+// current page — the user never leaves the page. Google sign-in itself happens
+// in Google's real popup. Only on a page with no modal (login.html itself)
+// does it fall back to the standalone login page.
+// লগইন শুধু পপআপে আসে — হোম/সেটিংস/অ্যাডমিন পেইজে থাকা #loginModal
+// মডালটাই পপআপ; আলাদা লগইন পেইজে যাওয়া লাগে না।
 function openLoginPopup() {
-  const next = encodeURIComponent(location.pathname + location.search);
-  location.href = 'login.html?next=' + next;
+  const modal = document.getElementById('loginModal');
+  if (!modal) { location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search); return; }
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  initLoginPopup();
+  // Google-এর স্ক্রিপ্ট async-এ লোড হয় — প্রথমবার না থাকলে, এলে আবার init।
+  if (!window.google) {
+    let tries = 0;
+    const t = setInterval(() => {
+      if (window.google || ++tries > 10) { clearInterval(t); if (window.google) { loginPopupInit = false; initLoginPopup(); } }
+    }, 500);
+  }
+}
+function closeLoginPopup() {
+  const modal = document.getElementById('loginModal');
+  if (modal) modal.classList.remove('open');
+  document.body.style.overflow = '';
 }
 function requireLogin() {
   if (isLoggedIn()) return true;
@@ -29,9 +46,20 @@ function requireLogin() {
   return false;
 }
 // অ্যাডমিন PIN — শুধু SHA-256 হ্যাশ আকারে রাখা আছে (প্লেইন PIN কোডে কোথাও লেখা নেই)।
-// বদলানো PIN localStorage-এ হ্যাশ আকারে সেভ হয়; সেটা মুছলে আবার এই ডিফল্ট হ্যাশের PIN-ই চলবে।
+// মালিকের জন্য কোডে বসানো ডিফল্ট হ্যাশের PIN সবসময় চলবে — এমনকি এই ব্রাউজারে
+// আগে অন্য কোনো PIN সেভ হয়ে থাকলেও। আগে jt_admin_pin_hash-এ পুরনো/ভুল হ্যাশ
+// থাকলে সেটাই ডিফল্ট PIN-কে আটকে দিত — এটাই লাইভ সাইটে PIN না-চলার কারণ ছিল।
+// PIN বদলালে নতুন হ্যাশও চলবে; ডিফল্ট PIN দিয়ে ঢুকলে পুরনো হ্যাশ মুছে যায়।
 const ADMIN_PIN_HASH = '218abd57777a2be3aae18b1bf564193338fe30d96b5c105a0960c0a2b611287e';
-function activePinHash() { return localStorage.getItem('jt_admin_pin_hash') || ADMIN_PIN_HASH; }
+async function pinMatches(pin) {
+  const hash = await sha256(pin);
+  const stored = localStorage.getItem('jt_admin_pin_hash');
+  if (hash === ADMIN_PIN_HASH || (stored && hash === stored)) {
+    if (hash === ADMIN_PIN_HASH && stored && stored !== ADMIN_PIN_HASH) localStorage.removeItem('jt_admin_pin_hash');
+    return hash;
+  }
+  return null;
+}
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -121,6 +149,8 @@ async function initHome() {
   };
   const user = getUser();
   document.getElementById('userChip').innerHTML = user ? `<span class="pill" style="background:rgba(255,255,255,.2);color:#fff">${user.name} • ${user.email}</span> <button class="btn ghost small" id="logoutBtn">লগআউট</button>` : '';
+  const hb = document.getElementById('heroLoginBtn');
+  if (hb) { if (user) hb.style.display = 'none'; else hb.onclick = () => openLoginPopup(); }
   const lb = document.getElementById('logoutBtn'); if (lb) lb.onclick = () => { localStorage.removeItem('jt_user'); location.reload(); };
   document.getElementById('loginNote').textContent = user ? '' : 'লগইন না করলে আবেদন বা ভেতরের কিছু করা যাবে না — শুধু তালিকা দেখা ও খোঁজা যাবে।';
   const open = circulars.filter(c => daysLeft(c.deadline) >= 0);
@@ -195,8 +225,13 @@ async function initHome() {
 
 // ---------- LOGIN (popup only) ----------
 let loginPopupInit = false;
+let gisDone = false;
 async function initLoginPopup() {
   if (loginPopupInit) return; loginPopupInit = true;
+  const lm = document.getElementById('loginModal');
+  if (lm) lm.onclick = e => { if (e.target === lm) closeLoginPopup(); };
+  const lc = document.getElementById('loginModalClose');
+  if (lc) lc.onclick = closeLoginPopup;
   const cfg = await fetch('api/config').then(r => r.json()).catch(() => ({ googleClientId: '' }));
   const note = document.getElementById('gisNote');
   const finishLogin = (name, email) => {
@@ -206,7 +241,8 @@ async function initLoginPopup() {
   };
   if (!cfg.googleClientId) {
     if (note) note.textContent = 'Google OAuth এখনো সেট করা হয়নি — Vercel-এ GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET সেট করুন (README দেখুন)। ততক্ষণ নিচের ম্যানুয়াল লগইন ব্যবহার করুন।';
-  } else if (window.google) {
+  } else if (window.google && !gisDone) {
+    gisDone = true;
     google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: async (resp) => {
       const r = await fetch('api/auth-google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: resp.credential }) });
       const data = await r.json().catch(() => ({}));
@@ -305,8 +341,8 @@ async function initAdmin() {
   document.getElementById('adminLoginBtn').onclick = async () => {
     const pin = document.getElementById('adminPin').value;
     if (pin.length < 4) { alert('কমপক্ষে ৪ অঙ্কের PIN দিন।'); return; }
-    const hash = await sha256(pin);
-    if (hash !== activePinHash()) { alert('ভুল PIN।'); return; }
+    const hash = await pinMatches(pin);
+    if (!hash) { alert('ভুল PIN।'); return; }
     sessionStorage.setItem('jt_admin_ok', '1');
     sessionStorage.setItem('jt_admin_hash', hash);
     document.getElementById('adminLogin').style.display = 'none';
@@ -356,6 +392,12 @@ async function initAdmin() {
     b.classList.add('active');
     ['dash', 'circulars', 'email', 'pin', 'creator'].forEach(t => document.getElementById('tab-' + t).style.display = t === b.dataset.tab ? 'block' : 'none');
   });
+  // মেনু থেকে "সার্কুলার যোগ করুন" চাপলে admin.html#circulars নিয়ে আসে —
+  // PIN দেওয়ার পর সরাসরি সার্কুলার ট্যাবটাই খুলবে।
+  if (location.hash === '#circulars') {
+    const tabBtn = document.querySelector('#adminPanel .tabs button[data-tab="circulars"]');
+    if (tabBtn) tabBtn.click();
+  }
   document.getElementById('adminCloseBtn').onclick = () => location.href = 'index.html';
   const sendNowBtn = document.getElementById('sendNowBtn');
   if (sendNowBtn) sendNowBtn.onclick = async () => {
@@ -370,8 +412,8 @@ async function initAdmin() {
     sendNowBtn.disabled = false;
   };
   document.getElementById('changePinBtn').onclick = async () => {
-    const oldHash = await sha256(document.getElementById('oldPin').value);
-    if (oldHash !== activePinHash()) { alert('বর্তমান PIN ভুল।'); return; }
+    const oldHash = await pinMatches(document.getElementById('oldPin').value);
+    if (!oldHash) { alert('বর্তমান PIN ভুল।'); return; }
     const np = document.getElementById('newPin').value;
     if (np.length < 4) { alert('নতুন PIN কমপক্ষে ৪ অঙ্কের হতে হবে।'); return; }
     localStorage.setItem('jt_admin_pin_hash', await sha256(np));
@@ -436,8 +478,38 @@ function bindFontSize() {
   document.querySelectorAll('.fontsize-ctl button').forEach(b => b.onclick = () => { localStorage.setItem('jt_font_size', b.dataset.fs); applyFontSize(); });
 }
 
+// ---------- স্লাইড মেনু (ড্রয়ার) — লগইন, সেটিংস, অ্যাডমিন, সার্কুলার যোগ ----------
+function openDrawer() {
+  const d = document.getElementById('drawer'); const o = document.getElementById('drawerOverlay');
+  if (!d) return;
+  renderDrawerUser();
+  d.classList.add('open'); if (o) o.classList.add('open');
+}
+function closeDrawer() {
+  const d = document.getElementById('drawer'); const o = document.getElementById('drawerOverlay');
+  if (d) d.classList.remove('open'); if (o) o.classList.remove('open');
+}
+function renderDrawerUser() {
+  const box = document.getElementById('drawerUser'); if (!box) return;
+  const user = getUser();
+  const li = document.getElementById('drawerLoginBtn');
+  if (li) li.style.display = user ? 'none' : 'block';
+  box.innerHTML = user
+    ? `<p style="font-size:14px"><b>${user.name}</b><br>${user.email}</p><button class="drawer-item" id="drawerLogoutBtn">🚪 লগআউট</button>`
+    : '';
+  const lo = document.getElementById('drawerLogoutBtn');
+  if (lo) lo.onclick = () => { localStorage.removeItem('jt_user'); location.reload(); };
+}
+function bindDrawer() {
+  const burger = document.getElementById('menuBtn'); if (burger) burger.onclick = openDrawer;
+  const ov = document.getElementById('drawerOverlay'); if (ov) ov.onclick = closeDrawer;
+  const x = document.getElementById('drawerCloseBtn'); if (x) x.onclick = closeDrawer;
+  const li = document.getElementById('drawerLoginBtn'); if (li) li.onclick = () => { closeDrawer(); openLoginPopup(); };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeLoginPopup(); } });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  applyFontSize(); bindFontSize();
+  applyFontSize(); bindFontSize(); bindDrawer();
   const page = document.body.dataset.page;
   if (page === 'home') initHome();
   if (page === 'login') initLogin();
