@@ -28,6 +28,10 @@ function requireLogin() {
   openLoginPopup();
   return false;
 }
+// অ্যাডমিন PIN — শুধু SHA-256 হ্যাশ আকারে রাখা আছে (প্লেইন PIN কোডে কোথাও লেখা নেই)।
+// বদলানো PIN localStorage-এ হ্যাশ আকারে সেভ হয়; সেটা মুছলে আবার এই ডিফল্ট হ্যাশের PIN-ই চলবে।
+const ADMIN_PIN_HASH = '218abd57777a2be3aae18b1bf564193338fe30d96b5c105a0960c0a2b611287e';
+function activePinHash() { return localStorage.getItem('jt_admin_pin_hash') || ADMIN_PIN_HASH; }
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -43,8 +47,9 @@ function matchBadge(c) {
 
 // ---------- HOME ----------
 async function initHome() {
-  const circulars = await loadCirculars();
   const jobsEl = document.getElementById('jobs');
+  jobsEl.innerHTML = Array.from({ length: 3 }, () => '<div class="skeleton"><div class="bar" style="width:55%"></div><div class="bar" style="width:90%"></div><div class="bar" style="width:70%"></div></div>').join('');
+  const circulars = await loadCirculars();
   const state = { q: '', type: '', time: '', qual: '', grade: '', sort: 'deadline', shortlistOnly: false };
   const types = [...new Map(circulars.map(c => [c.type, c.typeBn])).entries()];
   const typeChips = document.getElementById('typeChips');
@@ -68,9 +73,10 @@ async function initHome() {
   document.getElementById('sortSel').onchange = e => { state.sort = e.target.value; render(); };
   document.getElementById('shortlistOnlyBtn').onclick = () => { state.shortlistOnly = !state.shortlistOnly; render(); };
   document.getElementById('clearFiltersBtn').onclick = () => location.reload();
-  document.getElementById('refreshBtn').onclick = () => {
-    document.getElementById('lastCheck').textContent = 'খোঁজা হচ্ছে…';
-    setTimeout(() => { document.getElementById('lastCheck').textContent = 'সর্বশেষ যাচাই: ' + new Date().toLocaleString('bn-BD'); render(); }, 800);
+  document.getElementById('refreshBtn').onclick = (e) => {
+    const b = e.currentTarget; b.disabled = true; b.innerHTML = '<span class="spin">⟳</span> খোঁজা হচ্ছে…';
+    document.getElementById('lastCheck').textContent = '';
+    setTimeout(() => location.reload(), 500); // পেইজ আবার লোড হলে সার্ভার থেকে নতুন সার্কুলার আসে
   };
   const user = getUser();
   document.getElementById('userChip').innerHTML = user ? `<span class="pill" style="background:rgba(255,255,255,.2);color:#fff">${user.name} • ${user.email}</span> <button class="btn ghost small" id="logoutBtn">লগআউট</button>` : '';
@@ -111,7 +117,7 @@ async function initHome() {
     else list.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
     document.getElementById('resultCount').innerHTML = `পাওয়া গেছে <span class="num">${bn(list.length)}</span>টি`;
     jobsEl.innerHTML = '';
-    list.forEach(c => {
+    list.forEach((c, i) => {
       const dl = daysLeft(c.deadline);
       const card = el(`<article class="card job ${dl < 0 ? 'closed' : ''}">
         <span class="pill grey">${c.source === 'secondary' ? 'দ্বিতীয় সূত্র' : 'অফিসিয়াল'}</span> ${matchBadge(c)}
@@ -137,6 +143,7 @@ async function initHome() {
       if (shortlist.includes(c.id)) card.querySelector('[data-act=shortlist]').textContent = '★ শর্টলিস্টে আছে';
       if (status[c.id] === 'applied') card.querySelector('[data-act=status]').textContent = '✓ আবেদন করেছি';
       if (!isLoggedIn()) card.querySelectorAll('[data-act]').forEach(b => b.classList.add('locked'));
+      card.style.animationDelay = Math.min(i * 60, 480) + 'ms';
       jobsEl.appendChild(card);
     });
     if (!list.length) jobsEl.innerHTML = '<div class="card"><p>কোনো সার্কুলার পাওয়া যায়নি। ফিল্টার বদলে দেখুন।</p></div>';
@@ -189,11 +196,12 @@ async function initLogin() { initLoginPopup(); }
 function initSettings() {
   if (!requireLogin()) return;
   const p = read('jt_profile', {});
-  ['pDistrict', 'pDob', 'pEdu', 'pTypeBn', 'pTypeEn'].forEach(id => { const f = document.getElementById(id); if (f && p[id]) f.value = p[id]; });
+  const map = { pDistrict: 'district', pDob: 'dob', pEdu: 'edu', pTypeBn: 'typeBn', pTypeEn: 'typeEn' };
+  Object.entries(map).forEach(([id, key]) => { const f = document.getElementById(id); if (f && p[key] !== undefined && p[key] !== '') f.value = p[key]; });
   document.getElementById('cvFile').onchange = e => {
     const f = e.target.files[0]; if (!f) return;
     const r = new FileReader();
-    r.onload = () => { try { const t = String(r.result); const m = t.match(/(ঢাকা|চট্টগ্রাম|খুলনা|রাজশাহী|বরিশাল|সিলেট|রংপুর|ময়মনসিংহ|কুমিল্লা|নারায়ণগঞ্জ|পটুয়াখালী)/); if (m) document.getElementById('pDistrict').value = m[1]; } catch {} alert('CV আপলোড হয়েছে: ' + f.name); };
+    r.onload = () => { let found = false; try { const t = String(r.result); const m = t.match(/(ঢাকা|চট্টগ্রাম|খুলনা|রাজশাহী|বরিশাল|সিলেট|রংপুর|ময়মনসিংহ|কুমিল্লা|নারায়ণগঞ্জ|পটুয়াখালী)/); if (m) { document.getElementById('pDistrict').value = m[1]; found = true; } } catch {} alert(found ? 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া গেছে।' : 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া যায়নি, নিজে বসান।'); };
     r.readAsText(f);
   };
   document.getElementById('saveProfileBtn').onclick = () => {
@@ -207,15 +215,12 @@ function initSettings() {
 // ---------- ADMIN ----------
 async function initAdmin() {
   const setupNote = document.getElementById('adminSetupNote');
-  const hasPin = !!localStorage.getItem('jt_admin_pin_hash');
-  setupNote.textContent = hasPin ? '' : 'প্রথমবার: যেকোনো ৪–১২ অঙ্কের PIN দিয়ে ঢুকুন — সেটাই আপনার অ্যাডমিন PIN হবে। (সার্ভারে ADMIN_PIN_HASH সেট থাকলে সেটাই চলবে — README দেখুন।)';
+  setupNote.textContent = '';
   document.getElementById('adminLoginBtn').onclick = async () => {
     const pin = document.getElementById('adminPin').value;
     if (pin.length < 4) { alert('কমপক্ষে ৪ অঙ্কের PIN দিন।'); return; }
     const hash = await sha256(pin);
-    const stored = localStorage.getItem('jt_admin_pin_hash');
-    if (!stored) { localStorage.setItem('jt_admin_pin_hash', hash); }
-    else if (stored !== hash) { alert('ভুল PIN।'); return; }
+    if (hash !== activePinHash()) { alert('ভুল PIN।'); return; }
     sessionStorage.setItem('jt_admin_ok', '1');
     document.getElementById('adminLogin').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
@@ -230,16 +235,22 @@ async function initAdmin() {
   document.getElementById('adminCloseBtn').onclick = () => location.href = 'index.html';
   document.getElementById('changePinBtn').onclick = async () => {
     const oldHash = await sha256(document.getElementById('oldPin').value);
-    if (oldHash !== localStorage.getItem('jt_admin_pin_hash')) { alert('বর্তমান PIN ভুল।'); return; }
-    localStorage.setItem('jt_admin_pin_hash', await sha256(document.getElementById('newPin').value));
+    if (oldHash !== activePinHash()) { alert('বর্তমান PIN ভুল।'); return; }
+    const np = document.getElementById('newPin').value;
+    if (np.length < 4) { alert('নতুন PIN কমপক্ষে ৪ অঙ্কের হতে হবে।'); return; }
+    localStorage.setItem('jt_admin_pin_hash', await sha256(np));
     alert('PIN বদলে গেছে।');
   };
   async function renderAdmin() {
     const cs = await loadCirculars();
     document.getElementById('tab-dash').innerHTML = `<p>মোট সার্কুলার: <span class="num">${bn(cs.length)}</span>টি • চলমান: <span class="num">${bn(cs.filter(c => daysLeft(c.deadline) >= 0).length)}</span>টি</p><p>অফিসিয়াল সেন্ডার Gmail: <span class="num">jobtrackerbd@gmail.com</span></p><p>ডেইলি ক্রন: প্রতিদিন সকাল ৮টা (ঢাকা) — /api/daily-check</p>`;
-    document.getElementById('tab-circulars').innerHTML = cs.map(c => `<p>${c.org} — মোট <span class="num">${bn(c.totalPosts)}</span>টি • শেষ <span class="num">${fmtDate(c.deadline)}</span> <button class="btn outline small" onclick="if(confirm('মুছবেন?')){const d=JSON.parse(localStorage.getItem('jt_deleted_circulars')||'[]');d.push('${c.id}');localStorage.setItem('jt_deleted_circulars',JSON.stringify(d));location.reload();}">মুছুন</button></p>`).join('') +
-      `<div class="field"><label>নতুন সার্কুলার যোগ করুন (প্রতিষ্ঠান)</label><input id="newOrg" placeholder="প্রতিষ্ঠানের নাম"></div><div class="field"><label>মোট পদ</label><input id="newPosts" type="number"></div><div class="field"><label>শেষ তারিখ</label><input id="newDeadline" type="date"></div><button class="btn green" id="addCircularBtn">যোগ করুন</button>`;
+    document.getElementById('tab-circulars').innerHTML = '<h4 style="margin-bottom:8px">সার্কুলার তালিকা</h4>' + cs.map(c => {
+      const dl = daysLeft(c.deadline);
+      return `<div class="admin-row"><div class="info"><h4>${c.org}</h4><p>মোট পদ: <span class="num">${bn(c.totalPosts)}</span>টি • শেষ: <span class="num">${fmtDate(c.deadline)}</span> • <span class="pill ${dl < 0 ? 'grey' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : 'চলমান'}</span></p></div><button class="btn outline small" onclick="if(confirm('মুছবেন?')){const d=JSON.parse(localStorage.getItem('jt_deleted_circulars')||'[]');d.push('${c.id}');localStorage.setItem('jt_deleted_circulars',JSON.stringify(d));location.reload();}">মুছুন</button></div>`;
+    }).join('') +
+      `<h4 style="margin:14px 0 4px">নতুন সার্কুলার যোগ করুন</h4><div class="field"><label>প্রতিষ্ঠান</label><input id="newOrg" placeholder="প্রতিষ্ঠানের নাম"></div><div class="field"><label>মোট পদ</label><input id="newPosts" type="number"></div><div class="field"><label>শেষ তারিখ</label><input id="newDeadline" type="date"></div><button class="btn green" id="addCircularBtn">যোগ করুন</button>`;
     document.getElementById('addCircularBtn').onclick = () => {
+      if (!document.getElementById('newOrg').value.trim() || !document.getElementById('newDeadline').value) { alert('প্রতিষ্ঠানের নাম ও শেষ তারিখ — দুটোই দিন।'); return; }
       const extra = JSON.parse(localStorage.getItem('jt_admin_circulars') || '[]');
       extra.push({ id: 'custom-' + Date.now(), org: document.getElementById('newOrg').value, totalPosts: +document.getElementById('newPosts').value || 0, hscPosts: 0, grade: 16, fee: null, deadline: document.getElementById('newDeadline').value + 'T17:00:00+06:00', posts: [], salary: '', age: '', districts: '', source: 'secondary', sourceNote: 'অ্যাডমিন যোগ করেছেন — অফিসিয়াল সার্কুলার যাচাই করুন।', type: 'ministry', typeBn: 'মন্ত্রণালয় / অধিদপ্তর', applyUrl: '#' });
       localStorage.setItem('jt_admin_circulars', JSON.stringify(extra));
