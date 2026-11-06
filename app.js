@@ -142,11 +142,25 @@ async function initHome() {
   document.getElementById('sortSel').onchange = e => { state.sort = e.target.value; render(); };
   document.getElementById('shortlistOnlyBtn').onclick = () => { state.shortlistOnly = !state.shortlistOnly; render(); };
   document.getElementById('clearFiltersBtn').onclick = () => location.reload();
-  document.getElementById('refreshBtn').onclick = (e) => {
-    const b = e.currentTarget; b.disabled = true; b.innerHTML = '<span class="spin">⟳</span> খোঁজা হচ্ছে…';
-    document.getElementById('lastCheck').textContent = '';
-    setTimeout(() => location.reload(), 500); // পেইজ আবার লোড হলে সার্ভার থেকে নতুন সার্কুলার আসে
+  document.getElementById('refreshBtn').onclick = async (e) => {
+    const b = e.currentTarget; b.disabled = true; b.innerHTML = '<span class="spin">⟳</span> অনলাইনে যাচাই হচ্ছে…';
+    // সার্ভার থেকে প্রতিটি আবেদন পোর্টাল লাইভ যাচাই করে, তারপর তালিকা আবার টানে।
+    try {
+      const r = await fetch('api/online-check', { cache: 'no-store' });
+      const data = await r.json().catch(() => ({}));
+      if (data.ok) sessionStorage.setItem('jt_online_check', JSON.stringify({ live: data.live, unknown: data.unknown || 0, portals: data.portals, at: data.checkedAt }));
+    } catch {}
+    location.reload(); // পেইজ আবার লোড হলে সার্ভার থেকে নতুন সার্কুলার আসে
   };
+  // আগের অনলাইন যাচাইয়ের ফল দেখান (থাকলে)।
+  try {
+    const oc = JSON.parse(sessionStorage.getItem('jt_online_check') || 'null');
+    if (oc) {
+      const t = new Date(oc.at).toLocaleTimeString('bn-BD', { hour: 'numeric', minute: '2-digit' });
+      const unk = oc.unknown ? `, ${bn(oc.unknown)}টির অবস্থা যাচাই হয়নি` : '';
+      document.getElementById('lastCheck').textContent = `অনলাইনে যাচাই: ${bn(oc.live)}/${bn(oc.portals)}টি পোর্টাল চালু${unk} • ${t}`;
+    }
+  } catch {}
   const user = getUser();
   document.getElementById('userChip').innerHTML = user ? `<span class="pill" style="background:rgba(255,255,255,.2);color:#fff">${user.name} • ${user.email}</span> <button class="btn ghost small" id="logoutBtn">লগআউট</button>` : '';
   const hb = document.getElementById('heroLoginBtn');
@@ -244,7 +258,7 @@ async function initLoginPopup() {
   } else if (window.google && !gisDone) {
     gisDone = true;
     google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: async (resp) => {
-      const r = await fetch('api/auth-google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: resp.credential }) });
+      const r = await fetch('api/auth-google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: resp.credential }) });
       const data = await r.json().catch(() => ({}));
       if (data.ok || data.email) finishLogin(data.name || 'Google ব্যবহারকারী', data.email);
       else if (note) note.textContent = 'Google যাচাই ব্যর্থ হয়েছে: ' + (data.error || 'আবার চেষ্টা করুন।');
@@ -399,6 +413,13 @@ async function initAdmin() {
     if (tabBtn) tabBtn.click();
   }
   document.getElementById('adminCloseBtn').onclick = () => location.href = 'index.html';
+  // অ্যাডমিন লগআউট — সেশন মুছে পোর্টাল আবার লক করে হোমে ফেরত যায়।
+  const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+  if (adminLogoutBtn) adminLogoutBtn.onclick = () => {
+    sessionStorage.removeItem('jt_admin_ok');
+    sessionStorage.removeItem('jt_admin_hash');
+    location.href = 'index.html';
+  };
   const sendNowBtn = document.getElementById('sendNowBtn');
   if (sendNowBtn) sendNowBtn.onclick = async () => {
     const st = document.getElementById('manualSendStatus');
