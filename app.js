@@ -10,11 +10,70 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
 }
-function daysLeft(iso) { return Math.ceil((new Date(iso) - new Date()) / 86400000); }
+// দিন বাকি — Math.floor, যাতে মেয়াদ পার হওয়ার সঙ্গে সঙ্গেই -১ হয়।
+// আগে Math.ceil ছিল: মেয়াদ ১০ মিনিট আগে পার হলেও ০ দিন দেখাত আর সার্কুলার
+// "চলমান" থাকত, আর ২ ঘণ্টা বাকি থাকলেও "আর ১ দিন" দেখাত — এটাই টাইমের গলদ ছিল।
+function daysLeft(iso) { return Math.floor((new Date(iso) - Date.now()) / 86400000); }
+// বাকি সময় ভেঙে দিন/ঘণ্টা/মিনিট/সেকেন্ডে — লাইভ কাউন্টডাউনের জন্য।
+function remainParts(iso) {
+  let s = Math.floor((new Date(iso) - Date.now()) / 1000);
+  if (s <= 0) return null;
+  const d = Math.floor(s / 86400); s %= 86400;
+  const h = Math.floor(s / 3600); s %= 3600;
+  const m = Math.floor(s / 60); const sec = s % 60;
+  return { d, h, m, sec };
+}
 function store(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 function read(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v === null || v === undefined ? d : v; } catch { return d; } }
 function getUser() { return read('jt_user', null); }
 function isLoggedIn() { return !!getUser(); }
+
+// ---------- সার্ভারে সেভ থাকা ব্যবহারকারীর ডেটা (Vercel KV) ----------
+// একবার Gmail দিয়ে লগইন করলে প্রোফাইল, শর্টলিস্ট, আবেদন অবস্থা ও সেটিংস
+// সার্ভারে সেভ থাকে — পরে অন্য ডিভাইস/ব্রাউজারে একই Gmail দিয়ে লগইন
+// করলেই আগের সবকিছু ফিরে আসে, কিছুই ভোলা হয় না। localStorage শুধু
+// দ্রুত ক্যাশ হিসেবে থাকে; সার্ভারের কপিই ডিভাইসের মধ্যে সত্য।
+// সার্ভার স্টোরেজ (Vercel KV) চালু না থাকলে সিঙ্ক চুপচাপ বন্ধ থাকে আর
+// আগের মতো শুধু এই ব্রাউজারের localStorage-ই চলে — কিছু ভাঙে না।
+function getSessionToken() { return localStorage.getItem('jt_session') || ''; }
+function collectUserData() {
+  return { profile: read('jt_profile', {}), shortlist: read('jt_shortlist', []), status: read('jt_status', {}), fontSize: localStorage.getItem('jt_font_size') || 'medium' };
+}
+function applyUserData(d) {
+  if (!d || typeof d !== 'object') return;
+  if (d.profile && typeof d.profile === 'object') store('jt_profile', d.profile);
+  if (Array.isArray(d.shortlist)) store('jt_shortlist', d.shortlist);
+  if (d.status && typeof d.status === 'object') store('jt_status', d.status);
+  if (typeof d.fontSize === 'string') localStorage.setItem('jt_font_size', d.fontSize);
+  applyFontSize();
+}
+let syncTimer = null;
+function syncToServer(now) {
+  const token = getSessionToken();
+  if (!token || !isLoggedIn()) return;
+  clearTimeout(syncTimer);
+  const run = () => {
+    fetch('api/user-data', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ action: 'save', data: collectUserData() }) }).catch(() => {});
+  };
+  // now=true হলে সঙ্গে সঙ্গে পাঠান (যেমন প্রোফাইল সেভ করে হোমে ফেরার আগে)।
+  if (now) run(); else syncTimer = setTimeout(run, 800);
+}
+// লগইনের পর: সার্ভারে সেভ থাকা ডেটা থাকলে তা নামিয়ে নিন (অন্য ডিভাইসের
+// কাজ ফিরে আসবে); না থাকলে এই ব্রাউজারে যা আছে তা সার্ভারে তুলে দিন।
+async function syncFromServer() {
+  const token = getSessionToken();
+  if (!token || !isLoggedIn()) return false;
+  try {
+    const r = await fetch('api/user-data', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ action: 'load' }) });
+    const data = await r.json().catch(() => ({}));
+    if (data.ok && data.exists && data.data) { applyUserData(data.data); return true; }
+    if (data.ok && !data.exists) {
+      await fetch('api/user-data', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ action: 'save', data: collectUserData() }) }).catch(() => {});
+      return true;
+    }
+    return false;
+  } catch { return false; }
+}
 // Login gate: any gated action opens the LOGIN POPUP (#loginModal) on the
 // current page — the user never leaves the page. Google sign-in itself happens
 // in Google's real popup. Only on a page with no modal (login.html itself)
@@ -162,22 +221,31 @@ async function initHome() {
     }
   } catch {}
   const user = getUser();
-  document.getElementById('userChip').innerHTML = user ? `<span class="pill" style="background:rgba(255,255,255,.2);color:#fff">${user.name} • ${user.email}</span> <button class="btn ghost small" id="logoutBtn">লগআউট</button>` : '';
-  const hb = document.getElementById('heroLoginBtn');
-  if (hb) { if (user) hb.style.display = 'none'; else hb.onclick = () => openLoginPopup(); }
-  const lb = document.getElementById('logoutBtn'); if (lb) lb.onclick = () => { localStorage.removeItem('jt_user'); location.reload(); };
+  // হোমে কোনো আলাদা লগইন বাটন নেই — লগইন শুধু পপআপে, আবেদন/বিস্তারিত/
+  // শর্টলিস্ট চাপলেই সরাসরি পপআপ আসে। লগইন করা থাকলে প্রোফাইল ছবি+নাম দেখায়।
+  const prof = getProfile();
+  const chipName = (prof.name || (user && user.name) || '');
+  const chipPhoto = prof.photo || '';
+  document.getElementById('userChip').innerHTML = user ? `${chipPhoto ? `<img class="chip-photo" src="${chipPhoto}" alt="" onerror="this.style.display='none'">` : ''}<span class="pill" style="background:rgba(255,255,255,.2);color:#fff">${chipName} • ${user.email}</span> <button class="btn ghost small" id="logoutBtn">লগআউট</button>` : '';
+  const lb = document.getElementById('logoutBtn'); if (lb) lb.onclick = () => { localStorage.removeItem('jt_user'); localStorage.removeItem('jt_session'); location.reload(); };
   document.getElementById('loginNote').textContent = user ? '' : 'লগইন না করলে আবেদন বা ভেতরের কিছু করা যাবে না — শুধু তালিকা দেখা ও খোঁজা যাবে।';
   const open = circulars.filter(c => daysLeft(c.deadline) >= 0);
   document.getElementById('heroStats').innerHTML = `সবার জন্য উন্মুক্ত • চলমান <span class="num">${bn(open.length)}</span>টি • মোট <span class="num">${bn(circulars.length)}</span>টি`;
-  const nearest = [...open].sort((a, b) => new Date(a.deadline) - new Date(b.deadline))[0];
-  if (nearest) {
-    const cd = document.getElementById('countdown');
-    const tick = () => {
-      let s = Math.max(0, Math.floor((new Date(nearest.deadline) - new Date()) / 1000));
-      const d = Math.floor(s / 86400); s %= 86400; const h = Math.floor(s / 3600); s %= 3600; const m = Math.floor(s / 60); const sec = s % 60;
-      cd.innerHTML = `<div><b class="num">${bn(d)}</b>দিন</div><div><b class="num">${bn(h)}</b>ঘণ্টা</div><div><b class="num">${bn(m)}</b>মিনিট</div><div><b class="num">${bn(sec)}</b>সেকেন্ড</div>`;
+  // লাইভ কাউন্টডাউন — প্রতি সেকেন্ডে সবচেয়ে কাছের চলমান ডেডলাইন আবার
+  // বের করা হয়, তাই ডেডলাইন পার হলে পরেরটায় চলে যায়, ০-তে আটকে থাকে না।
+  const cd = document.getElementById('countdown');
+  if (cd) {
+    const heroTick = () => {
+      const openNow = circulars.filter(c => daysLeft(c.deadline) >= 0)
+        .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))[0];
+      if (!openNow) { cd.innerHTML = '<div>কোনো চলমান সার্কুলার নেই</div>'; return; }
+      const r = remainParts(openNow.deadline);
+      if (!r) { cd.innerHTML = '<div>ডেডলাইন শেষ হয়েছে</div>'; return; }
+      cd.innerHTML = `<div><b class="num">${bn(r.d)}</b>দিন</div><div><b class="num">${bn(r.h)}</b>ঘণ্টা</div><div><b class="num">${bn(r.m)}</b>মিনিট</div><div><b class="num">${bn(r.sec)}</b>সেকেন্ড</div><div style="min-width:0">⏰ ${openNow.org}</div>`;
     };
-    tick(); setInterval(tick, 1000);
+    heroTick(); setInterval(heroTick, 1000);
+  }
+  if (open.length) {
     document.getElementById('deadlineList').innerHTML = open.filter(c => daysLeft(c.deadline) <= 3)
       .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
       .map(c => `<p><b>${daysLeft(c.deadline) === 0 ? 'আজই শেষ' : daysLeft(c.deadline) === 1 ? 'আগামীকাল শেষ' : 'আর ' + bn(daysLeft(c.deadline)) + ' দিন বাকি'}</b> — ${c.org} (<span class="num">${fmtDate(c.deadline)}</span>) • <span style="color:var(--red);font-weight:700">এখনো আবেদন করেননি</span></p>`).join('') || '<p>শেষ ৩ দিনের মধ্যে কোনো ডেডলাইন নেই।</p>';
@@ -208,7 +276,7 @@ async function initHome() {
         <span class="pill grey">${c.source === 'secondary' ? 'দ্বিতীয় সূত্র' : 'অফিসিয়াল'}</span> ${matchBadge(c)}
         <h2>${c.org}</h2>
         <div class="meta"><span>HSC পদ: <b class="num">${bn(c.hscPosts)}টি</b></span><span>মোট পদ: <span class="num">${bn(c.totalPosts)}টি</span></span><span>ফি: ${c.fee ? '<span class="num">' + bn(c.fee) + '</span> টাকা' : 'উল্লেখ নেই'}</span><span>গ্রেড: <span class="num">${bn(c.grade)}</span></span></div>
-        <p><span class="pill ${dl < 0 ? 'grey' : dl <= 3 ? 'red' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : dl === 0 ? 'আজই শেষ' : 'আর ' + bn(dl) + ' দিন'}</span> শেষ: <span class="num">${fmtDate(c.deadline)}</span></p>
+        <p><span class="pill ${dl < 0 ? 'grey' : dl <= 3 ? 'red' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : dl === 0 ? 'আজই শেষ' : 'আর ' + bn(dl) + ' দিন'}</span> শেষ: <span class="num">${fmtDate(c.deadline)}</span><br><span class="live-cd" data-dl="${c.deadline}"></span></p>
         <div class="actions">
           <button class="btn outline small" data-act="shortlist">☆ শর্টলিস্ট</button>
           <button class="btn green small" data-act="apply">আবেদন করুন ↗</button>
@@ -221,9 +289,9 @@ async function initHome() {
           <div class="warn">⚠️ ${c.sourceNote}</div>
         </div>
       </article>`);
-      card.querySelector('[data-act=shortlist]').onclick = () => { if (!requireLogin()) return; const s = read('jt_shortlist', []); const i = s.indexOf(c.id); i >= 0 ? s.splice(i, 1) : s.push(c.id); store('jt_shortlist', s); render(); };
+      card.querySelector('[data-act=shortlist]').onclick = () => { if (!requireLogin()) return; const s = read('jt_shortlist', []); const i = s.indexOf(c.id); i >= 0 ? s.splice(i, 1) : s.push(c.id); store('jt_shortlist', s); syncToServer(); render(); };
       card.querySelector('[data-act=apply]').onclick = () => { if (!requireLogin()) return; window.open(c.applyUrl, '_blank'); };
-      card.querySelector('[data-act=status]').onclick = () => { if (!requireLogin()) return; const s = read('jt_status', {}); s[c.id] = 'applied'; store('jt_status', s); render(); };
+      card.querySelector('[data-act=status]').onclick = () => { if (!requireLogin()) return; const s = read('jt_status', {}); s[c.id] = 'applied'; store('jt_status', s); syncToServer(); render(); };
       card.querySelector('[data-act=details]').onclick = (e) => { if (!requireLogin()) return; const d = card.querySelector('.details'); d.style.display = d.style.display === 'none' ? 'block' : 'none'; };
       if (shortlist.includes(c.id)) card.querySelector('[data-act=shortlist]').textContent = '★ শর্টলিস্টে আছে';
       if (status[c.id] === 'applied') card.querySelector('[data-act=status]').textContent = '✓ আবেদন করেছি';
@@ -232,12 +300,50 @@ async function initHome() {
       jobsEl.appendChild(card);
     });
     if (!list.length) jobsEl.innerHTML = '<div class="card"><p>কোনো সার্কুলার পাওয়া যায়নি। ফিল্টার বদলে দেখুন।</p></div>';
+    updateLiveCds();
   }
+  // প্রতিটি কার্ডের লাইভ কাউন্টডাউন — প্রতি সেকেন্ডে একবার সব কার্ড আপডেট হয়।
+  // ইন্টারভাল একবারই বসে (render বারবার চললেও ডুপ্লিকেট হয় না)।
+  function updateLiveCds() {
+    document.querySelectorAll('.live-cd').forEach(el => {
+      const r = remainParts(el.dataset.dl);
+      el.textContent = r ? `⏱ ${bn(r.d)} দিন ${bn(r.h)} ঘণ্টা ${bn(r.m)} মিনিট ${bn(r.sec)} সেকেন্ড বাকি` : '⏱ মেয়াদ শেষ';
+    });
+  }
+  if (!window.__jtCdTimer) window.__jtCdTimer = setInterval(updateLiveCds, 1000);
   render();
   renderMadeBy();
+  showProfileGuide();
 }
 
-// ---------- LOGIN (popup only) ----------
+// ---------- লগইনের পর প্রোফাইল সেট করার নির্দেশনা ----------
+// সাইডবারের (☰ মেনু) দিকে তির (➡️) দিয়ে দেখায় — "প্রোফাইল সেট করুন"।
+// শুধু তখনই আসে যখন লগইনের পর প্রোফাইল অসম্পূর্ণ (নাম/ঠিকানা/ছবি নেই)।
+// একবার দেখানোর পর ফ্ল্যাগ মুছে যায়; প্রোফাইল সম্পূর্ণ হলে আর আসে না।
+function showProfileGuide() {
+  let flag = false;
+  try { flag = sessionStorage.getItem('jt_profile_guide') === '1'; sessionStorage.removeItem('jt_profile_guide'); } catch {}
+  if (!flag || !isLoggedIn()) return;
+  const p = read('jt_profile', {});
+  if (p.name && p.address && p.photo) return;
+  if (document.getElementById('profileGuide')) return;
+  const g = el(`<div class="profile-guide" id="profileGuide">
+    <div class="guide-arrow">➡️</div>
+    <div class="guide-text"><b>👤 প্রোফাইল সেট করুন</b><br>নাম, ঠিকানা ও ছবি দিন — আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।<br><span style="font-size:13px;opacity:.85">☰ মেনু চাপুন → সেটিংস → প্রোফাইল</span></div>
+    <button class="btn green small" id="profileGuideGo">এখনই সেট করুন</button>
+    <button class="btn outline small" id="profileGuideLater">পরে করব</button>
+  </div>`);
+  document.body.appendChild(g);
+  document.getElementById('profileGuideGo').onclick = () => { location.href = 'settings.html'; };
+  document.getElementById('profileGuideLater').onclick = () => g.remove();
+}
+
+// ---------- USER PROFILE (নাম, ঠিকানা, ছবি) ----------
+// jt_profile-এ থাকে: নাম, ঠিকানা, মোবাইল, ছবি (আপলোড/data URL বা লিংক),
+// জেলা, জন্ম তারিখ, শিক্ষা, টাইপিং, অন্যান্য তথ্য। সেটিংসে বদলানো যায়;
+// ড্রয়ার মেনুতে ছবি+নাম দেখায়।
+function getProfile() { return read('jt_profile', {}); }
+function profileComplete() { const p = getProfile(); return !!(p.name && p.address && p.photo); }
 // Google লগইন: কোনো অ্যাকাউন্ট আগে থেকে ভরা থাকবে না। লগইন বাটন চাপলে
 // Google-এর অ্যাকাউন্ট বাছাই (chooser) খুলবে — প্রত্যেকে নিজের Gmail
 // বেছে নেবে। আগে google.accounts.id-এর personalized "Sign in as …"
@@ -255,9 +361,16 @@ async function initLoginPopup() {
   if (lc) lc.onclick = closeLoginPopup;
   const cfg = await fetch('api/config').then(r => r.json()).catch(() => ({ googleClientId: '' }));
   const note = document.getElementById('gisNote');
-  const finishLogin = (name, email) => {
+  const finishLogin = async (name, email, token) => {
     store('jt_user', { name, email });
+    if (token) localStorage.setItem('jt_session', token);
     fetch('api/register-recipient', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }).catch(() => {});
+    // লগইন/রেজিস্টারের পরেই প্রোফাইল সেট করার নির্দেশনা দেখাতে ফ্ল্যাগ —
+    // হোমে গিয়ে প্রোফাইল অসম্পূর্ণ থাকলে সাইডবারের দিকে তিরসহ গাইড আসবে।
+    try { sessionStorage.setItem('jt_profile_guide', '1'); } catch {}
+    // সার্ভারে সেভ থাকা ডেটা থাকলে তা নামিয়ে নিন (অন্য ডিভাইসে করা কাজ
+    // ফিরে আসবে); না থাকলে এই ব্রাউজারের ডেটা সার্ভারে তুলে দিন।
+    try { await Promise.race([syncFromServer(), new Promise(r => setTimeout(r, 6000))]); } catch {}
     location.reload();
   };
   if (!cfg.googleClientId) {
@@ -281,7 +394,7 @@ async function initLoginPopup() {
         if (note) note.textContent = 'Google যাচাই করা হচ্ছে…';
         const r = await fetch('api/auth-google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: resp.code, redirectUri: window.location.origin }) });
         const data = await r.json().catch(() => ({}));
-        if (data.ok || data.email) finishLogin(data.name || 'Google ব্যবহারকারী', data.email);
+        if (data.ok || data.email) finishLogin(data.name || 'Google ব্যবহারকারী', data.email, data.token);
         else if (note) note.textContent = 'Google যাচাই ব্যর্থ হয়েছে: ' + (data.error || 'আবার চেষ্টা করুন।');
       }
     });
@@ -291,12 +404,30 @@ async function initLoginPopup() {
   const ml = document.getElementById('manualLoginBtn');
   if (ml) ml.onclick = async () => {
     const name = document.getElementById('manualName').value.trim();
-    const email = document.getElementById('manualEmail').value.trim();
+    const emailRaw = document.getElementById('manualEmail').value.trim();
+    const email = emailRaw.toLowerCase();
     const pass = document.getElementById('manualPass').value;
     if (!name || !email || !pass) { alert('নাম, Gmail ও পাসওয়ার্ড — তিনটাই দিন।'); return; }
     const hash = await sha256(email + ':' + pass);
     const accounts = read('jt_accounts', {});
-    if (accounts[email] && accounts[email].hash !== hash) { alert('ভুল পাসওয়ার্ড।'); return; }
+    const localAcc = accounts[emailRaw] || accounts[email];
+    // আগের লোকাল অ্যাকাউন্ট থাকলে তার হ্যাশও মেনে নিন (আগে বড় হাতের
+    // অক্ষরে টাইপ করে বানানো অ্যাকাউন্টের হ্যাশ আলাদা হতে পারে)।
+    if (localAcc && localAcc.hash !== hash && localAcc.hash !== await sha256(emailRaw + ':' + pass)) { alert('ভুল পাসওয়ার্ড।'); return; }
+    // সার্ভারে অ্যাকাউন্ট থাকলে (Vercel KV) সেখানেই যাচাই হবে — তাহলে একই
+    // Gmail + পাসওয়ার্ড অন্য ডিভাইসেও চলবে। KV না থাকলে আগের মতো এই
+    // ব্রাউজারের লোকাল অ্যাকাউন্টেই লগইন হবে।
+    try {
+      const r = await fetch('api/auth-manual', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, name, hash }) });
+      const data = await r.json().catch(() => ({}));
+      if (data.ok && data.token) {
+        accounts[email] = { name: data.name || name, hash };
+        store('jt_accounts', accounts);
+        finishLogin(data.name || name, email, data.token);
+        return;
+      }
+      if (data.error === 'wrong_password') { alert('ভুল পাসওয়ার্ড।'); return; }
+    } catch {}
     if (!accounts[email]) accounts[email] = { name, hash };
     store('jt_accounts', accounts);
     finishLogin(accounts[email].name, email);
@@ -331,7 +462,11 @@ async function initLoginPopup() {
     if (!code || !newPass) { st.textContent = 'কোড ও নতুন পাসওয়ার্ড — দুটোই দিন।'; return; }
     st.textContent = 'যাচাই করা হচ্ছে…';
     try {
-      const r = await fetch('api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'verify', email, code, newPassword: newPass }) });
+      // সার্ভারের অ্যাকাউন্টের হ্যাশও বদলে দিন (KV চালু থাকলে) — তাহলে
+      // নতুন পাসওয়ার্ড অন্য ডিভাইসেও চলবে। newHash = SHA-256("email:pass"),
+      // প্লেইন পাসওয়ার্ড সার্ভারে যায় না।
+      const newHash = await sha256(email + ':' + newPass);
+      const r = await fetch('api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'verify', email, code, newPassword: newPass, newHash, name }) });
       const data = await r.json().catch(() => ({}));
       if (!data.ok) { st.textContent = '✗ ' + (data.error || 'যাচাই হয়নি।'); return; }
       // কোড মিলেছে — এই ব্রাউজারে অ্যাকাউন্টের পাসওয়ার্ড-হ্যাশ বদলে দিন।
@@ -348,12 +483,29 @@ async function initLoginPopup() {
 }
 async function initLogin() { initLoginPopup(); }
 
-// ---------- SETTINGS ----------
+// ---------- SETTINGS — ব্যবহারকারীর প্রোফাইল ----------
+// নাম, ঠিকানা, মোবাইল, ছবি (আপলোড ≤৫০০ KB বা লিংক), জেলা, জন্ম তারিখ,
+// শিক্ষা, টাইপিং, অন্যান্য তথ্য — সব jt_profile-এ সেভ থাকে।
 function initSettings() {
   if (!requireLogin()) return;
   const p = read('jt_profile', {});
-  const map = { pDistrict: 'district', pDob: 'dob', pEdu: 'edu', pTypeBn: 'typeBn', pTypeEn: 'typeEn' };
+  const map = { pName: 'name', pAddress: 'address', pPhone: 'phone', pPhotoUrl: 'photo', pDistrict: 'district', pDob: 'dob', pEdu: 'edu', pTypeBn: 'typeBn', pTypeEn: 'typeEn', pNotes: 'notes' };
   Object.entries(map).forEach(([id, key]) => { const f = document.getElementById(id); if (f && p[key] !== undefined && p[key] !== '') f.value = p[key]; });
+  const prev = document.getElementById('pPhotoPreview');
+  if (prev) { prev.src = p.photo || ''; prev.style.display = p.photo ? 'block' : 'none'; }
+  const photoFile = document.getElementById('pPhotoFile');
+  if (photoFile) photoFile.onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 500 * 1024) { alert('ছবি ৫০০ KB-এর মধ্যে রাখুন।'); return; }
+    const r = new FileReader();
+    r.onload = () => {
+      document.getElementById('pPhotoUrl').value = String(r.result);
+      const pv = document.getElementById('pPhotoPreview'); pv.src = String(r.result); pv.style.display = 'block';
+    };
+    r.readAsDataURL(f);
+  };
+  const photoUrl = document.getElementById('pPhotoUrl');
+  if (photoUrl) photoUrl.oninput = () => { const pv = document.getElementById('pPhotoPreview'); if (pv) { pv.src = photoUrl.value.trim(); pv.style.display = photoUrl.value.trim() ? 'block' : 'none'; } };
   document.getElementById('cvFile').onchange = e => {
     const f = e.target.files[0]; if (!f) return;
     const r = new FileReader();
@@ -361,7 +513,19 @@ function initSettings() {
     r.readAsText(f);
   };
   document.getElementById('saveProfileBtn').onclick = () => {
-    store('jt_profile', { district: document.getElementById('pDistrict').value, dob: document.getElementById('pDob').value, edu: document.getElementById('pEdu').value, typeBn: +document.getElementById('pTypeBn').value, typeEn: +document.getElementById('pTypeEn').value });
+    store('jt_profile', {
+      name: document.getElementById('pName').value.trim(),
+      address: document.getElementById('pAddress').value.trim(),
+      phone: document.getElementById('pPhone').value.trim(),
+      photo: document.getElementById('pPhotoUrl').value.trim(),
+      district: document.getElementById('pDistrict').value,
+      dob: document.getElementById('pDob').value,
+      edu: document.getElementById('pEdu').value,
+      typeBn: +document.getElementById('pTypeBn').value,
+      typeEn: +document.getElementById('pTypeEn').value,
+      notes: document.getElementById('pNotes').value.trim(),
+    });
+    syncToServer(true);
     alert('প্রোফাইল সেভ হয়েছে। এখন হোম পেইজে মিলে যাওয়া সার্কুলারে “✓ CV অনুযায়ী মিলেছে” ব্যাজ দেখাবে।');
     location.href = 'index.html';
   };
@@ -516,7 +680,7 @@ function applyFontSize() {
   document.querySelectorAll('.fontsize-ctl button').forEach(b => b.classList.toggle('active', b.dataset.fs === s));
 }
 function bindFontSize() {
-  document.querySelectorAll('.fontsize-ctl button').forEach(b => b.onclick = () => { localStorage.setItem('jt_font_size', b.dataset.fs); applyFontSize(); });
+  document.querySelectorAll('.fontsize-ctl button').forEach(b => b.onclick = () => { localStorage.setItem('jt_font_size', b.dataset.fs); applyFontSize(); syncToServer(); });
 }
 
 // ---------- স্লাইড মেনু (ড্রয়ার) — লগইন, সেটিংস, অ্যাডমিন, সার্কুলার যোগ ----------
@@ -533,13 +697,22 @@ function closeDrawer() {
 function renderDrawerUser() {
   const box = document.getElementById('drawerUser'); if (!box) return;
   const user = getUser();
-  const li = document.getElementById('drawerLoginBtn');
-  if (li) li.style.display = user ? 'none' : 'block';
-  box.innerHTML = user
-    ? `<p style="font-size:14px"><b>${user.name}</b><br>${user.email}</p><button class="drawer-item" id="drawerLogoutBtn">🚪 লগআউট</button>`
-    : '';
+  const prof = getProfile();
+  if (user) {
+    const name = prof.name || user.name;
+    const photo = prof.photo || '';
+    box.innerHTML = `<div class="drawer-profile">
+      ${photo ? `<img class="drawer-photo" src="${photo}" alt="" onerror="this.style.display='none'">` : '<span class="drawer-photo-fallback">👤</span>'}
+      <div><b>${name}</b><br><span style="font-size:13px;color:var(--muted)">${user.email}</span>${prof.address ? `<br><span style="font-size:13px;color:var(--muted)">${prof.address}</span>` : ''}</div>
+    </div>
+    <a class="drawer-item" href="settings.html">👤 আমার প্রোফাইল</a>
+    <button class="drawer-item" id="drawerLogoutBtn">🚪 লগআউট</button>`;
+  } else {
+    // লগইন বাটন নেই — লগইন শুধু পপআপে আসে, আবেদন/বিস্তারিত/শর্টলিস্ট চাপলে।
+    box.innerHTML = `<p style="font-size:13px;color:var(--muted);margin:4px 2px">লগইন করতে যেকোনো সার্কুলারের <b>আবেদন করুন</b> / <b>বিস্তারিত</b> চাপুন — লগইন পপআপ সরাসরি আসবে।</p>`;
+  }
   const lo = document.getElementById('drawerLogoutBtn');
-  if (lo) lo.onclick = () => { localStorage.removeItem('jt_user'); location.reload(); };
+  if (lo) lo.onclick = () => { localStorage.removeItem('jt_user'); localStorage.removeItem('jt_session'); location.reload(); };
 }
 function bindDrawer() {
   const burger = document.getElementById('menuBtn'); if (burger) burger.onclick = openDrawer;

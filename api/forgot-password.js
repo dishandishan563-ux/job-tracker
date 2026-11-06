@@ -21,6 +21,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const { sendMail } = require('./_mail');
+const { keyFor, kvAvailable, kvGet, kvSet } = require('./_store');
 
 const STORE_FILE = '/tmp/jt-reset-codes.json';
 const CODE_TTL_MS = 15 * 60 * 1000; // 15 minutes
@@ -83,6 +84,16 @@ module.exports = async (req, res) => {
     // Success: the code is verified. The client now overwrites the local
     // password hash in this browser (jt_accounts). The server never sees
     // the new password and never sends back the old one.
+    // Vercel KV চালু থাকলে সার্ভারের অ্যাকাউন্ট রেকর্ডের হ্যাশও বদলে দিন —
+    // তাহলে নতুন পাসওয়ার্ড অন্য ডিভাইস/ব্রাউজারেও চলবে। ক্লায়েন্ট
+    // newHash হিসেবে SHA-256("email:newPassword") পাঠায়, প্লেইন পাসওয়ার্ড নয়।
+    if (typeof body.newHash === 'string' && /^[0-9a-f]{64}$/.test(body.newHash) && kvAvailable()) {
+      try {
+        const key = keyFor('jt:account', email);
+        const acc = (await kvGet(key)) || {};
+        await kvSet(key, { hash: body.newHash, name: acc.name || String(body.name || '').trim() });
+      } catch {}
+    }
     return res.status(200).json({ ok: true, note: 'কোড মিলেছে — এখন নতুন পাসওয়ার্ড সেট করা যাবে।' });
   }
 

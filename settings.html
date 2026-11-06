@@ -16,7 +16,16 @@
 <h1>সেটিংস</h1><p>CV আপলোড ও প্রোফাইল — আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।</p>
 </div></header>
 <main><div class="card">
-<h3>⚙️ সেটিংস — CV ও প্রোফাইল</h3>
+<h3>👤 আমার প্রোফাইল</h3>
+<p>নাম, ঠিকানা ও ছবি দিন — প্রোফাইল ড্রয়ার মেনুতে দেখাবে, আর আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।</p>
+<div class="field"><label>নাম</label><input id="pName" type="text" placeholder="আপনার নাম"></div>
+<div class="field"><label>ঠিকানা</label><input id="pAddress" type="text" placeholder="যেমন: গ্রাম/মহল্লা, থানা, জেলা"></div>
+<div class="field"><label>মোবাইল নম্বর</label><input id="pPhone" type="tel" placeholder="01XXXXXXXXX"></div>
+<div class="field"><label>ছবি (আপলোড করুন, ৫০০ KB-এর মধ্যে)</label><input id="pPhotoFile" type="file" accept=".png,.jpg,.jpeg"></div>
+<div class="field"><label>অথবা ছবির লিংক</label><input id="pPhotoUrl" type="text" placeholder="https://…"></div>
+<img id="pPhotoPreview" class="profile-photo-preview" alt="প্রোফাইল ছবি" style="display:none">
+<div class="field"><label>অন্যান্য তথ্য</label><input id="pNotes" type="text" placeholder="যেমন: পেশা, অভিজ্ঞতা — যা জানাতে চান"></div>
+<h3 style="margin-top:16px">⚙️ CV ও যোগ্যতা</h3>
 <p>CV আপলোড করলে মিলে যাওয়া সার্কুলারে “✓ CV অনুযায়ী মিলেছে” ব্যাজ দেখাবে।</p>
 <div class="field"><label>CV আপলোড (PDF / ছবি / টেক্সট)</label><input id="cvFile" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg"></div>
 <div class="field"><label>জেলা</label><input id="pDistrict" placeholder="যেমন: ঢাকা"></div>
@@ -33,7 +42,6 @@
 <aside class="drawer" id="drawer" aria-label="মেনু">
   <div class="drawer-head"><h3>☰ মেনু</h3><button class="btn outline small" id="drawerCloseBtn">✕ বন্ধ</button></div>
   <div id="drawerUser"></div>
-  <button class="drawer-item" id="drawerLoginBtn">🔑 লগইন</button>
   <a class="drawer-item" href="index.html">🏠 হোম / সার্কুলার তালিকা</a>
   <a class="drawer-item" href="settings.html">⚙️ সেটিংস</a>
   <a class="drawer-item" href="admin.html">🔒 অ্যাডমিন</a>

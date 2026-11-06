@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const { sendMail } = require('./_mail');
+const { kvAvailable, kvSMembers } = require('./_store');
 const circulars = require('../data/circulars.json');
 
 const SENT_FILE = '/tmp/job-tracker-sent.json';
@@ -36,7 +37,11 @@ module.exports = async (req, res) => {
     const auth = req.headers.authorization || '';
     if (auth !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ ok: false, error: 'Unauthorized' });
   }
-  const recipients = (process.env.EMAIL_RECIPIENTS || '').split(',').map(s => s.trim()).filter(Boolean);
+  const recipients = [...new Set([
+    ...(process.env.EMAIL_RECIPIENTS || '').split(',').map(s => s.trim()).filter(Boolean),
+    // সার্ভারে সেভ থাকা প্রাপকরা (লগইন করা ব্যবহারকারীরা) — KV চালু থাকলে।
+    ...(kvAvailable() ? await kvSMembers('jt:recipients').catch(() => []) : []),
+  ].map(s => String(s).trim().toLowerCase()).filter(Boolean))];
   const portals = await checkPortals();
   const portalsLive = portals.filter(p => p.live).length;
   const portalsUnknown = portals.filter(p => p.unknown).length;

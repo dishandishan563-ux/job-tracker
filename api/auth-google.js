@@ -12,6 +12,11 @@
 //      tokeninfo endpoint (aud must equal GOOGLE_CLIENT_ID, token must
 //      not be expired). Kept as a fallback. No client secret needed.
 // Env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET (only for the code path).
+// On success the response also carries a session `token` (api/_session.js) —
+// the browser sends it to /api/user-data so the user's saved data follows
+// them across devices. The token proves only this Gmail, nothing else.
+const { mint } = require('./_session');
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Method not allowed' });
   const { code, credential, redirectUri } = req.body || {};
@@ -26,7 +31,7 @@ module.exports = async (req, res) => {
       if (profile.error || !profile.email) return res.status(401).json({ error: 'Google token verification failed', ok: false });
       if (profile.aud !== process.env.GOOGLE_CLIENT_ID) return res.status(401).json({ error: 'Invalid token audience', ok: false });
       if (profile.exp && Number(profile.exp) * 1000 < Date.now()) return res.status(401).json({ error: 'Google token expired', ok: false });
-      return res.status(200).json({ email: profile.email, name: profile.name, ok: true, picture: profile.picture });
+      return res.status(200).json({ email: profile.email, name: profile.name, ok: true, picture: profile.picture, token: mint(profile.email) });
     }
     // ---- Path 2: authorization code exchange (legacy/compat) ----
     if (!code) return res.status(400).json({ ok: false, error: 'credential or code is required' });
@@ -48,7 +53,7 @@ module.exports = async (req, res) => {
     const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${tokens.id_token}`);
     const profile = await verifyRes.json();
     if (profile.aud !== process.env.GOOGLE_CLIENT_ID) return res.status(401).json({ error: 'Invalid token audience', ok: false });
-    return res.status(200).json({ email: profile.email, name: profile.name, ok: true, picture: profile.picture });
+    return res.status(200).json({ email: profile.email, name: profile.name, ok: true, picture: profile.picture, token: mint(profile.email) });
   } catch (e) {
     return res.status(500).json({ error: e.message, ok: false });
   }
