@@ -222,6 +222,7 @@ async function initAdmin() {
     const hash = await sha256(pin);
     if (hash !== activePinHash()) { alert('ভুল PIN।'); return; }
     sessionStorage.setItem('jt_admin_ok', '1');
+    sessionStorage.setItem('jt_admin_hash', hash);
     document.getElementById('adminLogin').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
     renderAdmin();
@@ -233,6 +234,18 @@ async function initAdmin() {
     ['dash', 'circulars', 'email', 'pin'].forEach(t => document.getElementById('tab-' + t).style.display = t === b.dataset.tab ? 'block' : 'none');
   });
   document.getElementById('adminCloseBtn').onclick = () => location.href = 'index.html';
+  const sendNowBtn = document.getElementById('sendNowBtn');
+  if (sendNowBtn) sendNowBtn.onclick = async () => {
+    const st = document.getElementById('manualSendStatus');
+    sendNowBtn.disabled = true; st.textContent = 'পাঠানো হচ্ছে…';
+    try {
+      const r = await fetch('api/send-now', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pinHash: sessionStorage.getItem('jt_admin_hash') || '' }) });
+      const data = await r.json().catch(() => ({}));
+      if (data.ok) st.textContent = data.sent > 0 ? `✓ ${bn(data.sent)}টি ইমেইল পাঠানো হয়েছে।` : '✓ ' + (data.note || 'আজকের রিমাইন্ডার আগেই পাঠানো হয়েছে।');
+      else st.textContent = '✗ পাঠানো যায়নি: ' + (data.error || 'আবার চেষ্টা করুন।');
+    } catch { st.textContent = '✗ পাঠানো যায়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
+    sendNowBtn.disabled = false;
+  };
   document.getElementById('changePinBtn').onclick = async () => {
     const oldHash = await sha256(document.getElementById('oldPin').value);
     if (oldHash !== activePinHash()) { alert('বর্তমান PIN ভুল।'); return; }
@@ -259,7 +272,19 @@ async function initAdmin() {
   }
 }
 
+// ---------- লেখার সাইজ (বড়-ছোট) — সব পেইজে, পছন্দ সেভ থাকে ----------
+function applyFontSize() {
+  const s = localStorage.getItem('jt_font_size') || 'medium';
+  document.body.classList.remove('fs-small', 'fs-large', 'fs-xl');
+  if (s !== 'medium') document.body.classList.add('fs-' + s);
+  document.querySelectorAll('.fontsize-ctl button').forEach(b => b.classList.toggle('active', b.dataset.fs === s));
+}
+function bindFontSize() {
+  document.querySelectorAll('.fontsize-ctl button').forEach(b => b.onclick = () => { localStorage.setItem('jt_font_size', b.dataset.fs); applyFontSize(); });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  applyFontSize(); bindFontSize();
   const page = document.body.dataset.page;
   if (page === 'home') initHome();
   if (page === 'login') initLogin();

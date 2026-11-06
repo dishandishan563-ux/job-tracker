@@ -12,7 +12,7 @@
 </head>
 <body data-page="admin">
 <header><div class="hero">
-<div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><a class="btn ghost" href="settings.html">⚙️ সেটিংস</a><a class="btn ghost" href="admin.html">🔒 অ্যাডমিন</a></div>
+<div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span><a class="btn ghost" href="settings.html">⚙️ সেটিংস</a><a class="btn ghost" href="admin.html">🔒 অ্যাডমিন</a></div>
 <h1>অ্যাডমিন পোর্টাল</h1><p>শুধু মালিকের জন্য — PIN দিয়ে ঢুকুন।</p>
 </div></header>
 <main><div class="card">
@@ -34,6 +34,9 @@
 <div id="tab-email" style="display:none">
 <p><b>অফিসিয়াল সেন্ডার Gmail:</b> <span class="num">jobtrackerbd@gmail.com</span> (শুধু এখান থেকে বদলানো যায়; অ্যাডমিন যে Google দিয়ে লগইন করুক, তাতে এর কোনো এফেক্ট পড়ে না)</p>
 <p><b>অটো-ইমেইল:</b> চালু — প্রতিদিন সকাল ৮টায় (ঢাকা) যাচাইয়ের পর ডেডলাইন, অ্যাডমিট ও রেজাল্টের আপডেট নিজে থেকে পাঠানো হয়। একই ইমেইল দুবার যায় না।</p>
+<p><b>ম্যানুয়াল পাঠানো:</b> অটো-ইমেইলের পাশাপাশি এখনই পাঠাতে চাইলে নিচের বাটন চাপুন — আজকের রিমাইন্ডার (০–৩ দিনের মধ্যে শেষ) এখনই যাবে। আগেই পাঠানো থাকলে দুবার যাবে না।</p>
+<button class="btn green" id="sendNowBtn">✉️ এখনই ইমেইল পাঠান</button>
+<p id="manualSendStatus" style="font-size:14px;margin-top:8px"></p>
 <p><b>প্রাপক:</b> প্রতিটি ব্যবহারকারীর লগইন Gmail।</p>
 <p style="font-size:14px;color:var(--muted)">সার্ভারে পাঠাতে Vercel-এ <span class="num">GMAIL_USER</span> ও <span class="num">GMAIL_APP_PASSWORD</span> সেট করতে হবে (README দেখুন)।</p>
 </div>
