@@ -40,6 +40,7 @@
 <button data-tab="circulars">সার্কুলার</button>
 <button data-tab="email">📧 ইমেইল</button>
 <button data-tab="pin">PIN বদলান</button>
+<button data-tab="creator">👤 তৈরি করেছেন</button>
 </div>
 <div id="tab-dash"></div>
 <div id="tab-circulars" style="display:none"></div>
@@ -56,6 +57,17 @@
 <div class="field"><label>বর্তমান PIN</label><input id="oldPin" type="password"></div>
 <div class="field"><label>নতুন PIN</label><input id="newPin" type="password"></div>
 <button class="btn green" id="changePinBtn">PIN বদলান</button>
+</div>
+<div id="tab-creator" style="display:none">
+<p style="font-size:14px;color:var(--muted)">এখানে যিনি এই জব ট্র্যাকার বানিয়েছেন তার ছবি ও যোগাযোগের লিংক বসান — হোম পেইজের নিচে “তৈরি করেছেন” সেকশনে দেখাবে। কিছু না বসালে সেকশনটি দেখাবে না।</p>
+<div class="field"><label>নাম</label><input id="crName" placeholder="যেমন: ASHISH"></div>
+<div class="field"><label>ছবির লিংক (URL)</label><input id="crPhotoUrl" placeholder="https://.../photo.jpg"></div>
+<div class="field"><label>অথবা ছবি আপলোড করুন (৫০০ KB-এর মধ্যে)</label><input id="crPhotoFile" type="file" accept="image/*"></div>
+<img id="crPhotoPreview" alt="" style="display:none;max-width:120px;border-radius:50%;margin:6px 0">
+<div class="field"><label>WhatsApp লিংক বা নম্বর</label><input id="crWhatsapp" placeholder="https://wa.me/8801XXXXXXXXX অথবা শুধু নম্বর"></div>
+<div class="field"><label>Facebook লিংক</label><input id="crFacebook" placeholder="https://www.facebook.com/..."></div>
+<button class="btn green" id="crSaveBtn">সেভ করুন</button>
+<p id="crStatus" style="font-size:14px;margin-top:8px"></p>
 </div>
 <button class="btn outline" id="adminCloseBtn" style="width:100%;margin-top:12px">বন্ধ করুন</button>
 </div>

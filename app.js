@@ -45,6 +45,47 @@ function matchBadge(c) {
   return (eduOk && typeOk) ? '<span class="badge">✓ CV অনুযায়ী মিলেছে</span>' : '';
 }
 
+// ---------- "তৈরি করেছেন" (Made by) ----------
+// অ্যাডমিনে বসানো তথ্য localStorage-এ সেভ থাকে (jt_creator) — ছবি বা লিংক
+// কিছুই কোডে হার্ডকোড করা নেই; কিছু না বসালে এই সেকশন দেখায় না।
+function getCreator() {
+  const c = read('jt_creator', {});
+  return {
+    name: (c.name || '').trim(),
+    photo: (c.photo || '').trim(),
+    whatsapp: (c.whatsapp || '').trim(),
+    facebook: (c.facebook || '').trim(),
+  };
+}
+function normWhatsApp(v) {
+  v = (v || '').trim();
+  if (!v) return '';
+  if (/^https?:\/\//i.test(v)) return v;
+  const digits = v.replace(/\D/g, '');
+  if (digits.length >= 10) return 'https://wa.me/' + digits;
+  return v;
+}
+function renderMadeBy() {
+  const box = document.getElementById('madeBy');
+  if (!box) return;
+  const c = getCreator();
+  c.whatsapp = normWhatsApp(c.whatsapp);
+  if (!c.name && !c.photo && !c.whatsapp && !c.facebook) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  box.innerHTML = `<h3>👤 তৈরি করেছেন</h3>
+    <div class="made-by">
+      ${c.photo ? `<img class="made-by-photo" src="${c.photo}" alt="তৈরি করেছেন" onerror="this.style.display='none'">` : ''}
+      <div class="made-by-info">
+        ${c.name ? `<p class="made-by-name">${c.name}</p>` : ''}
+        <div class="made-by-links">
+          ${c.whatsapp ? `<a class="btn green small" href="${c.whatsapp}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+          ${c.facebook ? `<a class="btn outline small" href="${c.facebook}" target="_blank" rel="noopener">📘 Facebook</a>` : ''}
+        </div>
+        ${!c.whatsapp && !c.facebook ? '<p style="font-size:14px;color:var(--muted)">যোগাযোগের লিংক এখনো দেওয়া হয়নি।</p>' : ''}
+      </div>
+    </div>`;
+}
+
 // ---------- HOME ----------
 async function initHome() {
   const jobsEl = document.getElementById('jobs');
@@ -149,6 +190,7 @@ async function initHome() {
     if (!list.length) jobsEl.innerHTML = '<div class="card"><p>কোনো সার্কুলার পাওয়া যায়নি। ফিল্টার বদলে দেখুন।</p></div>';
   }
   render();
+  renderMadeBy();
 }
 
 // ---------- LOGIN (popup only) ----------
@@ -312,7 +354,7 @@ async function initAdmin() {
   document.querySelectorAll('#adminPanel .tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('#adminPanel .tabs button').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
-    ['dash', 'circulars', 'email', 'pin'].forEach(t => document.getElementById('tab-' + t).style.display = t === b.dataset.tab ? 'block' : 'none');
+    ['dash', 'circulars', 'email', 'pin', 'creator'].forEach(t => document.getElementById('tab-' + t).style.display = t === b.dataset.tab ? 'block' : 'none');
   });
   document.getElementById('adminCloseBtn').onclick = () => location.href = 'index.html';
   const sendNowBtn = document.getElementById('sendNowBtn');
@@ -334,6 +376,36 @@ async function initAdmin() {
     if (np.length < 4) { alert('নতুন PIN কমপক্ষে ৪ অঙ্কের হতে হবে।'); return; }
     localStorage.setItem('jt_admin_pin_hash', await sha256(np));
     alert('PIN বদলে গেছে।');
+  };
+  // ---------- "তৈরি করেছেন" ট্যাব — নাম, ছবি, WhatsApp / Facebook লিংক ----------
+  const creatorForm = () => {
+    const c = getCreator();
+    const set = (id, v) => { const f = document.getElementById(id); if (f) f.value = v; };
+    set('crName', c.name); set('crPhotoUrl', c.photo); set('crWhatsapp', c.whatsapp); set('crFacebook', c.facebook);
+    const prev = document.getElementById('crPhotoPreview');
+    if (prev) { prev.src = c.photo || ''; prev.style.display = c.photo ? 'block' : 'none'; }
+  };
+  creatorForm();
+  const crPhotoFile = document.getElementById('crPhotoFile');
+  if (crPhotoFile) crPhotoFile.onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 500 * 1024) { alert('ছবি ৫০০ KB-এর মধ্যে রাখুন।'); return; }
+    const r = new FileReader();
+    r.onload = () => {
+      document.getElementById('crPhotoUrl').value = String(r.result);
+      const p = document.getElementById('crPhotoPreview'); p.src = String(r.result); p.style.display = 'block';
+    };
+    r.readAsDataURL(f);
+  };
+  const crSave = document.getElementById('crSaveBtn');
+  if (crSave) crSave.onclick = () => {
+    store('jt_creator', {
+      name: document.getElementById('crName').value.trim(),
+      photo: document.getElementById('crPhotoUrl').value.trim(),
+      whatsapp: normWhatsApp(document.getElementById('crWhatsapp').value),
+      facebook: document.getElementById('crFacebook').value.trim(),
+    });
+    document.getElementById('crStatus').textContent = '✓ সেভ হয়েছে — হোম পেইজে “তৈরি করেছেন” সেকশনে দেখাবে।';
   };
   async function renderAdmin() {
     const cs = await loadCirculars();
