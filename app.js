@@ -589,10 +589,28 @@ async function initAdmin() {
     } catch { st.textContent = '✗ যাচাই হয়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
   };
   if (sessionStorage.getItem('jt_admin_ok') === '1') { document.getElementById('adminLogin').style.display = 'none'; document.getElementById('adminPanel').style.display = 'block'; renderAdmin(); }
+  // ---------- নথিভুক্ত প্রাপক তালিকা (শুধু অ্যাডমিন দেখবে) ----------
+  // ইমেইল ট্যাব খুললে PIN দিয়ে সার্ভার থেকে প্রাপকদের Gmail আনে।
+  async function loadRecipients() {
+    const list = document.getElementById('recipientsList');
+    const countEl = document.getElementById('recipientsCount');
+    if (!list) return;
+    list.textContent = 'লোড হচ্ছে…';
+    try {
+      const r = await fetch('api/admin-recipients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pinHash: sessionStorage.getItem('jt_admin_hash') || '' }) });
+      const data = await r.json().catch(() => ({}));
+      if (!data.ok) { list.textContent = '✗ দেখা যায়নি: ' + (data.error || 'আবার চেষ্টা করুন।'); return; }
+      if (countEl) countEl.textContent = bn(data.count || 0);
+      if (!data.recipients || !data.recipients.length) { list.textContent = 'এখনো কেউ লগইন করেনি — কেউ লগইন করলেই এখানে তার Gmail আসবে।'; return; }
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      list.innerHTML = data.recipients.map(e => `<div class="num" style="padding:4px 0;border-bottom:1px solid var(--border)">${esc(e)}</div>`).join('');
+    } catch { list.textContent = '✗ দেখা যায়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
+  }
   document.querySelectorAll('#adminPanel .tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('#adminPanel .tabs button').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     ['dash', 'circulars', 'email', 'pin', 'creator'].forEach(t => document.getElementById('tab-' + t).style.display = t === b.dataset.tab ? 'block' : 'none');
+    if (b.dataset.tab === 'email') loadRecipients();
   });
   // মেনু থেকে "সার্কুলার যোগ করুন" চাপলে admin.html#circulars নিয়ে আসে —
   // PIN দেওয়ার পর সরাসরি সার্কুলার ট্যাবটাই খুলবে।
@@ -619,6 +637,7 @@ async function initAdmin() {
       else st.textContent = '✗ পাঠানো যায়নি: ' + (data.error || 'আবার চেষ্টা করুন।');
     } catch { st.textContent = '✗ পাঠানো যায়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
     sendNowBtn.disabled = false;
+    loadRecipients();
   };
   document.getElementById('changePinBtn').onclick = async () => {
     const oldHash = await pinMatches(document.getElementById('oldPin').value);
