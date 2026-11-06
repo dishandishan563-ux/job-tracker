@@ -1,9 +1,13 @@
 // POST /api/admin-pin-reset — owner forgot the admin PIN.
 // Two steps:
-//   1. { step: 'request' } — sends a 6-digit reset code to the OFFICIAL
-//      SENDER Gmail (GMAIL_USER, default jobtrackerbd@gmail.com) — the
-//      mailbox only the owner controls. No other user can receive this code,
-//      because the destination address is never taken from the request.
+//   1. { step: 'request' } — sends a 6-digit reset code to the OWNER'S OWN
+//      Gmail (OWNER_EMAIL, default dishandishan563@gmail.com) — the mailbox
+//      the owner actually reads. It is NOT sent to the sender Gmail
+//      (jobtrackerbd@gmail.com): that address is only for SENDING, and the
+//      owner cannot receive a code there, so the old behaviour meant the
+//      code never arrived. The sender stays jobtrackerbd@gmail.com
+//      (via _mail.js / GMAIL_USER). The destination is fixed in code/env,
+//      never taken from the request, so no other user can receive this code.
 //   2. { step: 'verify', code, newPin } — checks the code; on success the
 //      CLIENT sets the new PIN locally (SHA-256 hash only, stored in
 //      localStorage jt_admin_pin_hash, exactly like the normal PIN change).
@@ -14,7 +18,9 @@
 // the sent-fingerprint file in api/send-now.js. If a verify request lands
 // on a different instance the code may not be found — just request a new
 // code. A production setup should use Vercel KV.
-// Env: GMAIL_USER (default jobtrackerbd@gmail.com), GMAIL_APP_PASSWORD.
+// Env: OWNER_EMAIL (default dishandishan563@gmail.com — reset-code
+// recipient), GMAIL_USER (sender, default jobtrackerbd@gmail.com),
+// GMAIL_APP_PASSWORD.
 const crypto = require('crypto');
 const fs = require('fs');
 const { sendMail } = require('./_mail');
@@ -33,7 +39,7 @@ function newCode() { return String(crypto.randomInt(100000, 1000000)); }
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Method not allowed' });
   const body = req.body || {};
-  const ownerEmail = process.env.GMAIL_USER || 'jobtrackerbd@gmail.com';
+  const ownerEmail = process.env.OWNER_EMAIL || 'dishandishan563@gmail.com';
 
   if (body.step === 'request') {
     const store = loadStore();
@@ -58,7 +64,7 @@ module.exports = async (req, res) => {
     } catch (e) {
       return res.status(500).json({ ok: false, error: 'ইমেইল পাঠানো যায়নি: ' + e.message });
     }
-    return res.status(200).json({ ok: true, note: 'কোড পাঠানো হয়েছে — অফিসিয়াল সেন্ডার Gmail-এর ইনবক্স দেখুন। কোড ১৫ মিনিট কার্যকর থাকবে।' });
+    return res.status(200).json({ ok: true, note: 'কোড পাঠানো হয়েছে — আপনার নিজের Gmail dishandishan563@gmail.com-এর ইনবক্স (প্রয়োজনে স্প্যাম) দেখুন। কোড ১৫ মিনিট কার্যকর থাকবে।' });
   }
 
   if (body.step === 'verify') {
