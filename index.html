@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>জব ট্র্যাকার — সব ধরনের সরকারি চাকরির সার্কুলার</title>
+<meta name="description" content="বাংলাদেশের সব ধরনের সরকারি চাকরির সার্কুলার এক জায়গায় — ডেডলাইন, ফিল্টার, আবেদন ট্র্যাকিং ও অটো ইমেইল রিমাইন্ডার।">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="home">
+<header>
+  <div class="hero">
+    <div class="topbar">
+      <span class="pill" style="background:rgba(255,255,255,.2);color:#fff">● প্রতিদিন সকালে অটো-আপডেট হয়</span>
+      <span style="flex:1"></span>
+      <a class="btn ghost" href="settings.html">⚙️ সেটিংস</a>
+      <a class="btn ghost" href="admin.html">🔒 অ্যাডমিন</a>
+    </div>
+    <h1>সব ধরনের সরকারি চাকরির সার্কুলার</h1>
+    <p>মন্ত্রণালয় • ব্যাংক • পুলিশ • শিক্ষক • স্বাস্থ্য • রেল • জেলা প্রশাসন • কর • আদালত — সব এক জায়গায়</p>
+    <p id="heroStats"></p>
+    <div class="topbar">
+      <a class="btn primary" href="login.html">G Google দিয়ে রেজিস্টার / লগইন করুন</a>
+      <span id="userChip"></span>
+    </div>
+    <p id="loginNote" style="font-size:14px;opacity:.85"></p>
+    <div class="countdown" id="countdown"></div>
+    <div class="topbar"><button class="btn" id="refreshBtn">⟳ এখনই নতুন সার্কুলার খুঁজুন</button><span id="lastCheck" style="font-size:14px;opacity:.85"></span></div>
+  </div>
+</header>
+<main>
+  <div class="card notice" id="deadlineBox"><h3>⏰ ডেডলাইন রিমাইন্ডার — শেষ ৩ দিনের মধ্যে</h3><div id="deadlineList"></div></div>
+
+  <div class="card filters">
+    <h3>🔍 খুঁজুন ও ফিল্টার করুন</h3>
+    <input type="search" id="q" placeholder="প্রতিষ্ঠান বা পদের নাম লিখে খুঁজুন…">
+    <div><label>চাকরির ধরন</label><div class="chips" id="typeChips"></div></div>
+    <div><label>সময় অনুযায়ী</label><div class="chips" id="timeChips"></div></div>
+    <div><label>যোগ্যতা</label><div class="chips" id="qualChips"></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="gradeSel"><option value="">সব গ্রেড</option><option>১৩</option><option>১৬</option><option>২০</option></select>
+      <select id="sortSel"><option value="deadline">ডেডলাইন অনুযায়ী</option><option value="posts">পদ বেশি → কম</option><option value="name">নাম অনুযায়ী</option></select>
+      <button class="btn outline small" id="shortlistOnlyBtn">★ আমার তালিকা</button>
+      <button class="btn outline small" id="clearFiltersBtn">ফিল্টার পরিষ্কার করুন</button>
+    </div>
+    <p id="resultCount"></p>
+  </div>
+
+  <div id="jobs"></div>
+</main>
+<footer>
+  <p>⚠️ সব তথ্য দ্বিতীয় সূত্রের — আবেদন বা টাকা দেওয়ার আগে অফিসিয়াল সার্কুলার / টেলিটক পোর্টাল যাচাই করুন। অফিসিয়াল সেন্ডার Gmail: <span class="num">jobtrackerbd@gmail.com</span> — শুধু অ্যাডমিন পোর্টাল থেকে সেট করা যায়।</p>
+</footer>
+
+
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

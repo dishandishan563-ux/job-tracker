@@ -1,0 +1,60 @@
+:root{--green:#0b7a3e;--green2:#0e9f52;--dark:#0b3d24;--red:#c62828;--amber:#b45309;--bg:#f2f7f3;--card:#fff;--muted:#5b6b60;--line:#dfe9e1}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hind Siliguri','Noto Sans Bengali',system-ui,sans-serif;background:var(--bg);color:#12261a;line-height:1.6}
+.num{direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-variant-numeric:tabular-nums}
+header{background:linear-gradient(135deg,var(--dark),var(--green) 55%,var(--green2));color:#fff;padding:28px 16px 20px;position:relative;overflow:hidden}
+header::after{content:"";position:absolute;inset:0;background:radial-gradient(600px 200px at 80% -40px,rgba(255,255,255,.25),transparent);animation:shine 6s ease-in-out infinite alternate}
+@keyframes shine{from{opacity:.4}to{opacity:1}}
+.hero{max-width:1020px;margin:0 auto;position:relative;z-index:1}
+.hero h1{font-size:clamp(28px,6vw,44px);line-height:1.25;animation:fadeUp .6s ease both}
+.hero p{opacity:.92;margin-top:8px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.topbar{max-width:1020px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 0 0;position:relative;z-index:1}
+.btn{border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer;background:#fff;color:var(--dark);transition:.15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.btn.primary{background:#ffd54a;color:#3a2b00}
+.btn.ghost{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.5)}
+.btn.green{background:var(--green);color:#fff}
+.btn.outline{background:#fff;color:var(--green);border:1.5px solid var(--green)}
+.btn.small{padding:6px 12px;font-size:14px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+main{max-width:1020px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(11,61,36,.06);animation:fadeUp .4s ease both}
+.notice{border-left:5px solid var(--red);background:#fff5f5}
+.notice h3{color:var(--red)}
+.filters{display:flex;flex-direction:column;gap:10px}
+.filters input[type=search],.filters select,.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;font:inherit;background:#fff}
+.chips{display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;padding-bottom:4px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer;white-space:nowrap}
+.chip.active{background:var(--green);color:#fff;border-color:var(--green)}
+.job{border-top:4px solid var(--green)}
+.job.closed{border-top-color:#9aa5a0;opacity:.85}
+.job h2{font-size:20px;line-height:1.4}
+.meta{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;color:#1d3a28}
+.meta b{color:var(--green)}
+.pill{display:inline-block;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:600}
+.pill.red{background:#fde8e8;color:var(--red)}
+.pill.green{background:#e3f5e9;color:var(--green)}
+.pill.grey{background:#eef1ee;color:var(--muted)}
+.pill.gold{background:#fff3c4;color:#7a5b00}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.locked{opacity:.6}
+.details{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+.details table{width:100%;border-collapse:collapse;font-size:15px}
+.details td,.details th{border-bottom:1px solid var(--line);padding:7px 4px;text-align:left;vertical-align:top}
+.badge{display:inline-block;background:#e3f5e9;color:var(--green);border-radius:8px;padding:2px 8px;font-size:13px;font-weight:700}
+.warn{background:#fff8e1;border:1px solid #ffe082;border-radius:12px;padding:10px 12px;font-size:14px;margin-top:10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.open{display:flex}
+.modal .box{background:#fff;border-radius:18px;max-width:440px;width:100%;padding:22px;animation:fadeUp .25s ease both}
+.modal h3{margin-bottom:8px}
+.field{margin:10px 0}
+.field label{display:block;font-weight:600;margin-bottom:4px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer}
+.tabs button.active{background:var(--dark);color:#fff}
+footer{max-width:1020px;margin:0 auto;padding:8px 16px 32px;color:var(--muted);font-size:14px}
+.countdown{display:flex;gap:8px;margin-top:10px}
+.countdown div{background:rgba(255,255,255,.16);border-radius:12px;padding:8px 14px;text-align:center;min-width:70px}
+.countdown b{font-size:22px;display:block}
+@media (max-width:600px){.meta{gap:8px}.btn{padding:9px 14px}}

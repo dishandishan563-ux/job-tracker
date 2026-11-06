@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>অ্যাডমিন — জব ট্র্যাকার</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="admin">
+<header><div class="hero">
+<div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><a class="btn ghost" href="settings.html">⚙️ সেটিংস</a><a class="btn ghost" href="admin.html">🔒 অ্যাডমিন</a></div>
+<h1>অ্যাডমিন পোর্টাল</h1><p>শুধু মালিকের জন্য — PIN দিয়ে ঢুকুন।</p>
+</div></header>
+<main><div class="card">
+<h3>🔒 অ্যাডমিন পোর্টাল — শুধু মালিকের জন্য</h3>
+<div id="adminLogin">
+<div class="field"><label>অ্যাডমিন PIN</label><input id="adminPin" type="password" inputmode="numeric" placeholder="PIN দিন"></div>
+<button class="btn green" id="adminLoginBtn" style="width:100%">ঢুকুন</button>
+<p id="adminSetupNote" style="font-size:14px;color:var(--muted);margin-top:8px"></p>
+</div>
+<div id="adminPanel" style="display:none">
+<div class="tabs">
+<button class="active" data-tab="dash">ড্যাশবোর্ড</button>
+<button data-tab="circulars">সার্কুলার</button>
+<button data-tab="email">📧 ইমেইল</button>
+<button data-tab="pin">PIN বদলান</button>
+</div>
+<div id="tab-dash"></div>
+<div id="tab-circulars" style="display:none"></div>
+<div id="tab-email" style="display:none">
+<p><b>অফিসিয়াল সেন্ডার Gmail:</b> <span class="num">jobtrackerbd@gmail.com</span> (শুধু এখান থেকে বদলানো যায়; অ্যাডমিন যে Google দিয়ে লগইন করুক, তাতে এর কোনো এফেক্ট পড়ে না)</p>
+<p><b>অটো-ইমেইল:</b> চালু — প্রতিদিন সকাল ৮টায় (ঢাকা) যাচাইয়ের পর ডেডলাইন, অ্যাডমিট ও রেজাল্টের আপডেট নিজে থেকে পাঠানো হয়। একই ইমেইল দুবার যায় না।</p>
+<p><b>প্রাপক:</b> প্রতিটি ব্যবহারকারী যে Google দিয়ে সাইন-ইন করবে, রিমাইন্ডার সেই Gmail-এই যাবে।</p>
+<p style="font-size:14px;color:var(--muted)">সার্ভারে পাঠাতে Vercel-এ <span class="num">GMAIL_USER</span> ও <span class="num">GMAIL_APP_PASSWORD</span> সেট করতে হবে (README দেখুন)।</p>
+</div>
+<div id="tab-pin" style="display:none">
+<div class="field"><label>বর্তমান PIN</label><input id="oldPin" type="password"></div>
+<div class="field"><label>নতুন PIN</label><input id="newPin" type="password"></div>
+<button class="btn green" id="changePinBtn">PIN বদলান</button>
+</div>
+<button class="btn outline" id="adminCloseBtn" style="width:100%;margin-top:12px">বন্ধ করুন</button>
+</div>
+</div></main>
+<footer><p>⚠️ সব তথ্য দ্বিতীয় সূত্রের — আবেদন বা টাকা দেওয়ার আগে অফিসিয়াল সার্কুলার / টেলিটক পোর্টাল যাচাই করুন।</p></footer>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

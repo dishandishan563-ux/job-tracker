@@ -1,0 +1,1 @@
+{"dependencies":{"nodemailer":"^6.9.14"},"description":"Bangladesh government job circular tracker — Bengali UI, Google login, PIN-locked admin, automatic Gmail reminders. Deployable on Vercel.","name":"job-tracker-vercel","private":true,"scripts":{"dev":"vercel dev"},"type":"commonjs","version":"1.0.0"}
