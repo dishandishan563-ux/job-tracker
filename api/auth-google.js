@@ -1,13 +1,16 @@
 // POST /api/auth/google — verify a Google sign-in and return the user's profile.
 //
-// The frontend uses Google Identity Services (google.accounts.id), whose callback
-// delivers resp.credential — a Google ID token (JWT), NOT an authorization code.
-// So this endpoint accepts EITHER:
-//   1. { credential } — an ID token, verified directly with Google's tokeninfo
-//      endpoint (aud must equal GOOGLE_CLIENT_ID, token must not be expired).
-//      This is the path the live site actually uses. No client secret needed.
-//   2. { code } — a real authorization code, exchanged at oauth2.googleapis.com/token
-//      (kept for compatibility). Requires GOOGLE_CLIENT_SECRET.
+// The frontend now uses Google Identity Services' OAuth2 code client
+// (google.accounts.oauth2.initCodeClient, popup, prompt: 'select_account'),
+// so the user always picks their own account in Google's chooser — no
+// account is ever pre-filled. The callback delivers a real authorization
+// code, exchanged here (Path 2). Popup mode's redirect_uri is the page
+// origin (per Google's docs), so the frontend sends window.location.origin
+// and this endpoint uses exactly that value for the exchange.
+// This endpoint also still accepts:
+//   1. { credential } — an ID token, verified directly with Google's
+//      tokeninfo endpoint (aud must equal GOOGLE_CLIENT_ID, token must
+//      not be expired). Kept as a fallback. No client secret needed.
 // Env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET (only for the code path).
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Method not allowed' });
@@ -35,7 +38,9 @@ module.exports = async (req, res) => {
       client_secret: process.env.GOOGLE_CLIENT_SECRET,
       code,
       grant_type: 'authorization_code',
-      redirect_uri: redirectUri || `${req.headers.origin || ''}/api/auth/google`,
+      // Popup code flow: redirect_uri is the page origin — the frontend sends
+      // window.location.origin; fall back to the request origin, never a path.
+      redirect_uri: redirectUri || req.headers.origin || '',
     });
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', { body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, method: 'POST' });
     const tokens = await tokenRes.json();

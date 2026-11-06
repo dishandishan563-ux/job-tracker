@@ -13,6 +13,21 @@ const SENT_FILE = '/tmp/job-tracker-sent.json';
 function loadSent() { try { return JSON.parse(fs.readFileSync(SENT_FILE, 'utf8')); } catch { return {}; } }
 function saveSent(s) { try { fs.writeFileSync(SENT_FILE, JSON.stringify(s)); } catch {} }
 
+// প্রতিদিন সকালে প্রতিটি আবেদন পোর্টাল অনলাইনে চালু আছে কি না লাইভ যাচাই করা
+// হয় — তালিকাটা শুধু সিড করা ডেটা নয়, পোর্টালের অবস্থা প্রতিদিন যাচাই হয়।
+// (পোর্টালের HTML পার্স করে সার্কুলার বানানো হয় না; নতুন সার্কুলার যোগ হয়
+// যাচাই করা অনলাইন সূত্র থেকে data/circulars.json-এ।)
+async function checkPortals() {
+  const urls = [...new Set(circulars.map(c => c.applyUrl).filter(Boolean))];
+  const results = await Promise.all(urls.map(async (url) => {
+    try {
+      const r = await fetch(url, { method: 'GET', redirect: 'follow', headers: { 'User-Agent': 'JobTracker-DailyCheck/1.0' }, signal: AbortSignal.timeout(4000) });
+      return { portal: url, live: r.status < 500, unknown: false, status: r.status };
+    } catch { return { portal: url, live: false, unknown: true, status: 0 }; }
+  }));
+  return results;
+}
+
 function bn(n) { return String(n).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[+d]); }
 
 module.exports = async (req, res) => {
@@ -22,7 +37,11 @@ module.exports = async (req, res) => {
     if (auth !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ ok: false, error: 'Unauthorized' });
   }
   const recipients = (process.env.EMAIL_RECIPIENTS || '').split(',').map(s => s.trim()).filter(Boolean);
-  if (!recipients.length) return res.status(200).json({ ok: true, sent: 0, note: 'No recipients registered (EMAIL_RECIPIENTS is empty). Users who sign in are added via /api/register-recipient when a database is wired up.' });
+  const portals = await checkPortals();
+  const portalsLive = portals.filter(p => p.live).length;
+  const portalsUnknown = portals.filter(p => p.unknown).length;
+  const portalSummary = { checked: portals.length, live: portalsLive, unknown: portalsUnknown, results: portals };
+  if (!recipients.length) return res.status(200).json({ ok: true, sent: 0, portals: portalSummary, note: 'No recipients registered (EMAIL_RECIPIENTS is empty). Users who sign in are added via /api/register-recipient when a database is wired up.' });
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const sent = loadSent();
@@ -41,5 +60,5 @@ module.exports = async (req, res) => {
     }
   }
   saveSent(sent);
-  return res.status(200).json({ errors, ok: true, sent: sentCount });
+  return res.status(200).json({ errors, ok: true, sent: sentCount, portals: portalSummary });
 };

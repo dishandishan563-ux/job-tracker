@@ -28,7 +28,7 @@
 <button class="btn outline" id="settingsCloseBtn" style="width:100%;margin-top:8px">বন্ধ করুন</button>
 </div></main>
 <footer><p>তথ্য দ্বিতীয় সূত্রের — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।</p></footer>
-<!-- স্লাইড মেনু (ড্রয়ার) — লগইন, সেটিংস, অ্যাডমিন, সার্কুলার যোগ -->
+<!-- স্লাইড মেনু (ড্রয়ার) — লগইন, সেটিংস, অ্যাডমিন (সার্কুলার যোগ শুধু অ্যাডমিনে) -->
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" aria-label="মেনু">
   <div class="drawer-head"><h3>☰ মেনু</h3><button class="btn outline small" id="drawerCloseBtn">✕ বন্ধ</button></div>
@@ -37,7 +37,6 @@
   <a class="drawer-item" href="index.html">🏠 হোম / সার্কুলার তালিকা</a>
   <a class="drawer-item" href="settings.html">⚙️ সেটিংস</a>
   <a class="drawer-item" href="admin.html">🔒 অ্যাডমিন</a>
-  <a class="drawer-item" href="admin.html#circulars">➕ সার্কুলার যোগ করুন</a>
   <a class="drawer-item" href="privacy.html">📄 গোপনীয়তা নীতি</a>
 </aside>
 
@@ -45,9 +44,8 @@
 <div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-label="লগইন">
   <div class="box">
     <div style="display:flex;justify-content:space-between;align-items:center"><h3>লগইন করুন</h3><button class="btn outline small" id="loginModalClose">✕</button></div>
-    <p style="font-size:14px;color:var(--muted)">লগইন না করলে আবেদন, শর্টলিস্ট, বিস্তারিত, সেটিংস বা সার্কুলার যোগ করা যাবে না — শুধু তালিকা দেখা ও খোঁজা যাবে।</p>
+    <p style="font-size:14px;color:var(--muted)">লগইন না করলে আবেদন, শর্টলিস্ট, বিস্তারিত বা সেটিংস করা যাবে না — শুধু তালিকা দেখা ও খোঁজা যাবে। সার্কুলার যোগ করেন শুধু অ্যাডমিন।</p>
     <button class="btn green" id="googleConnectBtn" style="width:100%;margin:12px 0">G Google কানেক্ট করুন</button>
-    <div id="gisButton" style="margin:6px 0"></div>
     <p id="gisNote" style="font-size:14px;color:var(--muted)"></p>
     <hr style="margin:14px 0">
     <h4>অথবা ম্যানুয়ালভাবে লগইন / রেজিস্টার</h4>

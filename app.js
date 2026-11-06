@@ -238,8 +238,15 @@ async function initHome() {
 }
 
 // ---------- LOGIN (popup only) ----------
+// Google লগইন: কোনো অ্যাকাউন্ট আগে থেকে ভরা থাকবে না। লগইন বাটন চাপলে
+// Google-এর অ্যাকাউন্ট বাছাই (chooser) খুলবে — প্রত্যেকে নিজের Gmail
+// বেছে নেবে। আগে google.accounts.id-এর personalized "Sign in as …"
+// বাটন + One Tap prompt ব্যবহার হতো, তাই ব্রাউজারে লগইন করা অ্যাকাউন্ট
+// (যেমন মালিকের Gmail) আগে থেকে দেখাত। এখন OAuth2 code client
+// (popup, prompt: 'select_account') ব্যবহার হয় — কোডটা সার্ভারের
+// api/auth-google-এ গিয়ে যাচাই হয় (আগের ID-token পথটাও fallback হিসেবে আছে)।
 let loginPopupInit = false;
-let gisDone = false;
+let googleCodeClient = null;
 async function initLoginPopup() {
   if (loginPopupInit) return; loginPopupInit = true;
   const lm = document.getElementById('loginModal');
@@ -255,19 +262,32 @@ async function initLoginPopup() {
   };
   if (!cfg.googleClientId) {
     if (note) note.textContent = 'Google OAuth এখনো সেট করা হয়নি — Vercel-এ GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET সেট করুন (README দেখুন)। ততক্ষণ নিচের ম্যানুয়াল লগইন ব্যবহার করুন।';
-  } else if (window.google && !gisDone) {
-    gisDone = true;
-    google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: async (resp) => {
-      const r = await fetch('api/auth-google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: resp.credential }) });
-      const data = await r.json().catch(() => ({}));
-      if (data.ok || data.email) finishLogin(data.name || 'Google ব্যবহারকারী', data.email);
-      else if (note) note.textContent = 'Google যাচাই ব্যর্থ হয়েছে: ' + (data.error || 'আবার চেষ্টা করুন।');
-    }});
-    const gb = document.getElementById('gisButton');
-    if (gb) google.accounts.id.renderButton(gb, { theme: 'outline', size: 'large', text: 'signin_with', width: 360 });
+  } else if (window.google && !googleCodeClient) {
+    // Popup মোডে redirect_uri ডিফল্টভাবে পেইজের origin হয় — Google-এর
+    // ডক অনুযায়ী exchange-এর সময়ও একই origin পাঠাতে হয়, তাই কোডের
+    // সঙ্গে window.location.origin পাঠানো হয়।
+    googleCodeClient = google.accounts.oauth2.initCodeClient({
+      client_id: cfg.googleClientId,
+      scope: 'openid email profile',
+      ux_mode: 'popup',
+      prompt: 'select_account',
+      callback: async (resp) => {
+        if (resp.error) {
+          if (resp.error === 'popup_closed_by_user') return;
+          if (note) note.textContent = 'Google লগইন হয়নি: ' + resp.error;
+          return;
+        }
+        if (!resp.code) return;
+        if (note) note.textContent = 'Google যাচাই করা হচ্ছে…';
+        const r = await fetch('api/auth-google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: resp.code, redirectUri: window.location.origin }) });
+        const data = await r.json().catch(() => ({}));
+        if (data.ok || data.email) finishLogin(data.name || 'Google ব্যবহারকারী', data.email);
+        else if (note) note.textContent = 'Google যাচাই ব্যর্থ হয়েছে: ' + (data.error || 'আবার চেষ্টা করুন।');
+      }
+    });
   }
   const gc = document.getElementById('googleConnectBtn');
-  if (gc) gc.onclick = () => { if (window.google && cfg.googleClientId) google.accounts.id.prompt(); else if (note) note.textContent = 'Google OAuth সেট করা নেই — Vercel-এ GOOGLE_CLIENT_ID সেট করুন, অথবা ম্যানুয়াল লগইন ব্যবহার করুন।'; };
+  if (gc) gc.onclick = () => { if (googleCodeClient) googleCodeClient.requestCode(); else if (note) note.textContent = 'Google OAuth সেট করা নেই — Vercel-এ GOOGLE_CLIENT_ID সেট করুন, অথবা ম্যানুয়াল লগইন ব্যবহার করুন।'; };
   const ml = document.getElementById('manualLoginBtn');
   if (ml) ml.onclick = async () => {
     const name = document.getElementById('manualName').value.trim();
