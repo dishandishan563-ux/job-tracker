@@ -27,6 +27,19 @@
 <div class="field"><label>Gmail</label><input id="manualEmail" type="email" placeholder="you@gmail.com"></div>
 <div class="field"><label>পাসওয়ার্ড</label><input id="manualPass" type="password" placeholder="পাসওয়ার্ড সেট করুন"></div>
 <button class="btn green" id="manualLoginBtn" style="width:100%">লগইন / রেজিস্টার করুন</button>
+<p style="text-align:center;margin-top:10px"><a href="#" id="forgotLink" style="color:var(--green);font-weight:600">পাসওয়ার্ড ভুলে গেছি?</a></p>
+<div id="forgotPanel" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:12px">
+<p style="font-size:14px;color:var(--muted)">আপনার Gmail-এ ৬ অঙ্কের রিসেট কোড যাবে — সেই কোড দিয়ে নতুন পাসওয়ার্ড সেট করুন। পুরনো পাসওয়ার্ড ফেরত দেওয়া যায় না (শুধু হ্যাশ আকারে থাকে)। এই রিসেট একই ব্রাউজার/ডিভাইসে কাজ করবে যেখানে অ্যাকাউন্টটি বানানো হয়েছিল।</p>
+<div class="field"><label>Gmail</label><input id="fpEmail" type="email" placeholder="you@gmail.com"></div>
+<button class="btn outline" id="fpSendBtn" style="width:100%">রিসেট কোড পাঠান</button>
+<p id="fpStatus" style="font-size:14px;margin-top:8px"></p>
+<div id="fpStep2" style="display:none">
+<div class="field"><label>নাম (অ্যাকাউন্টে নাম না থাকলে দিন)</label><input id="fpName" type="text" placeholder="আপনার নাম"></div>
+<div class="field"><label>৬ অঙ্কের কোড</label><input id="fpCode" type="text" inputmode="numeric" placeholder="কোড দিন"></div>
+<div class="field"><label>নতুন পাসওয়ার্ড (কমপক্ষে ৪ অক্ষর)</label><input id="fpNewPass" type="password" placeholder="নতুন পাসওয়ার্ড"></div>
+<button class="btn green" id="fpResetBtn" style="width:100%">নতুন পাসওয়ার্ড সেট করুন</button>
+</div>
+</div>
 <a class="btn outline" href="index.html" style="width:100%;margin-top:8px;display:block;text-align:center">বন্ধ করুন — হোমে ফিরুন</a>
 </div></main>
 <footer><p>তথ্য দ্বিতীয় সূত্রের — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।</p></footer>

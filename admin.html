@@ -20,6 +20,18 @@
 <div id="adminLogin">
 <div class="field"><label>অ্যাডমিন PIN</label><input id="adminPin" type="password" inputmode="numeric" placeholder="PIN দিন"></div>
 <button class="btn green" id="adminLoginBtn" style="width:100%">ঢুকুন</button>
+<p style="text-align:center;margin-top:10px"><a href="#" id="adminForgotLink" style="color:var(--green);font-weight:600">PIN ভুলে গেছেন?</a></p>
+<div id="adminResetPanel" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:12px">
+<p style="font-size:14px;color:var(--muted)">অফিসিয়াল সেন্ডার Gmail-এ (jobtrackerbd@gmail.com) ৬ অঙ্কের রিসেট কোড যাবে — শুধু মালিকই সেই কোড পাবেন। কোড দিয়ে নতুন PIN সেট করুন। পুরনো PIN ফেরত দেওয়া যায় না।</p>
+<button class="btn outline" id="aprSendBtn" style="width:100%">রিসেট কোড পাঠান</button>
+<p id="aprStatus" style="font-size:14px;margin-top:8px"></p>
+<div id="aprStep2" style="display:none">
+<div class="field"><label>৬ অঙ্কের কোড</label><input id="aprCode" type="text" inputmode="numeric" placeholder="কোড দিন"></div>
+<div class="field"><label>নতুন PIN (কমপক্ষে ৪ অঙ্ক)</label><input id="aprNewPin" type="password" inputmode="numeric" placeholder="নতুন PIN"></div>
+<button class="btn green" id="aprResetBtn" style="width:100%">যাচাই করে নতুন PIN সেট করুন</button>
+<p id="aprHashNote" style="font-size:13px;color:var(--muted);margin-top:8px"></p>
+</div>
+</div>
 <p id="adminSetupNote" style="font-size:14px;color:var(--muted);margin-top:8px"></p>
 </div>
 <div id="adminPanel" style="display:none">

@@ -189,6 +189,50 @@ async function initLoginPopup() {
     store('jt_accounts', accounts);
     finishLogin(accounts[email].name, email);
   };
+  // ---------- পাসওয়ার্ড ভুলে গেছেন? (Gmail-এ কোড → নতুন পাসওয়ার্ড) ----------
+  const fl = document.getElementById('forgotLink');
+  if (fl) fl.onclick = (e) => { e.preventDefault(); const p = document.getElementById('forgotPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; };
+  const fpSend = document.getElementById('fpSendBtn');
+  if (fpSend) fpSend.onclick = async () => {
+    const email = document.getElementById('fpEmail').value.trim().toLowerCase();
+    const st = document.getElementById('fpStatus');
+    if (!email) { st.textContent = 'Gmail ঠিকানাটা দিন।'; return; }
+    st.textContent = 'কোড পাঠানো হচ্ছে…';
+    try {
+      const r = await fetch('api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'request', email }) });
+      const data = await r.json().catch(() => ({}));
+      st.textContent = data.ok ? (data.note || 'কোড পাঠানো হয়েছে।') : '✗ ' + (data.error || 'পাঠানো যায়নি।');
+      if (data.ok) {
+        document.getElementById('fpStep2').style.display = 'block';
+        const acc = read('jt_accounts', {})[email];
+        if (acc) document.getElementById('fpName').value = acc.name;
+      }
+    } catch { st.textContent = '✗ পাঠানো যায়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
+  };
+  const fpReset = document.getElementById('fpResetBtn');
+  if (fpReset) fpReset.onclick = async () => {
+    const email = document.getElementById('fpEmail').value.trim().toLowerCase();
+    const code = document.getElementById('fpCode').value.trim();
+    const newPass = document.getElementById('fpNewPass').value;
+    const name = document.getElementById('fpName').value.trim();
+    const st = document.getElementById('fpStatus');
+    if (!code || !newPass) { st.textContent = 'কোড ও নতুন পাসওয়ার্ড — দুটোই দিন।'; return; }
+    st.textContent = 'যাচাই করা হচ্ছে…';
+    try {
+      const r = await fetch('api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'verify', email, code, newPassword: newPass }) });
+      const data = await r.json().catch(() => ({}));
+      if (!data.ok) { st.textContent = '✗ ' + (data.error || 'যাচাই হয়নি।'); return; }
+      // কোড মিলেছে — এই ব্রাউজারে অ্যাকাউন্টের পাসওয়ার্ড-হ্যাশ বদলে দিন।
+      // পুরনো পাসওয়ার্ড কোথাও পাঠানো হয় না, নতুন পাসওয়ার্ডও সার্ভারে যায় না।
+      const accounts = read('jt_accounts', {});
+      const accName = (accounts[email] && accounts[email].name) || name;
+      if (!accName) { st.textContent = 'নামটা দিন — এই ব্রাউজারে এই Gmail-এর কোনো অ্যাকাউন্ট পাওয়া যায়নি।'; return; }
+      accounts[email] = { name: accName, hash: await sha256(email + ':' + newPass) };
+      store('jt_accounts', accounts);
+      st.textContent = '✓ নতুন পাসওয়ার্ড সেট হয়েছে — লগইন হচ্ছে…';
+      finishLogin(accName, email);
+    } catch { st.textContent = '✗ যাচাই হয়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
+  };
 }
 async function initLogin() { initLoginPopup(); }
 
@@ -226,6 +270,43 @@ async function initAdmin() {
     document.getElementById('adminLogin').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
     renderAdmin();
+  };
+  // ---------- অ্যাডমিন PIN ভুলে গেছেন? (সেন্ডার Gmail-এ কোড → নতুন PIN) ----------
+  const afl = document.getElementById('adminForgotLink');
+  if (afl) afl.onclick = (e) => { e.preventDefault(); const p = document.getElementById('adminResetPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; };
+  const aprSend = document.getElementById('aprSendBtn');
+  if (aprSend) aprSend.onclick = async () => {
+    const st = document.getElementById('aprStatus');
+    st.textContent = 'কোড পাঠানো হচ্ছে…';
+    try {
+      const r = await fetch('api/admin-pin-reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'request' }) });
+      const data = await r.json().catch(() => ({}));
+      st.textContent = data.ok ? (data.note || 'কোড পাঠানো হয়েছে।') : '✗ ' + (data.error || 'পাঠানো যায়নি।');
+      if (data.ok) document.getElementById('aprStep2').style.display = 'block';
+    } catch { st.textContent = '✗ পাঠানো যায়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
+  };
+  const aprReset = document.getElementById('aprResetBtn');
+  if (aprReset) aprReset.onclick = async () => {
+    const code = document.getElementById('aprCode').value.trim();
+    const newPin = document.getElementById('aprNewPin').value;
+    const st = document.getElementById('aprStatus');
+    if (!code || !newPin) { st.textContent = 'কোড ও নতুন PIN — দুটোই দিন।'; return; }
+    st.textContent = 'যাচাই করা হচ্ছে…';
+    try {
+      const r = await fetch('api/admin-pin-reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'verify', code, newPin }) });
+      const data = await r.json().catch(() => ({}));
+      if (!data.ok) { st.textContent = '✗ ' + (data.error || 'যাচাই হয়নি।'); return; }
+      // কোড মিলেছে — নতুন PIN শুধু হ্যাশ আকারে এই ব্রাউজারে সেভ হবে।
+      const hash = await sha256(newPin);
+      localStorage.setItem('jt_admin_pin_hash', hash);
+      sessionStorage.setItem('jt_admin_ok', '1');
+      sessionStorage.setItem('jt_admin_hash', hash);
+      document.getElementById('aprHashNote').textContent = 'নতুন PIN-এর হ্যাশ: ' + hash + ' — Vercel-এ ADMIN_PIN_HASH সেট করা থাকলে সেখানে এই হ্যাশটি বসাতে হবে।';
+      st.textContent = '✓ নতুন PIN সেট হয়েছে — অ্যাডমিন পোর্টাল খুলছে…';
+      document.getElementById('adminLogin').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      renderAdmin();
+    } catch { st.textContent = '✗ যাচাই হয়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
   };
   if (sessionStorage.getItem('jt_admin_ok') === '1') { document.getElementById('adminLogin').style.display = 'none'; document.getElementById('adminPanel').style.display = 'block'; renderAdmin(); }
   document.querySelectorAll('#adminPanel .tabs button').forEach(b => b.onclick = () => {
