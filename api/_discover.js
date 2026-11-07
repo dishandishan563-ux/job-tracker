@@ -13,7 +13,8 @@
 // Qualification (HSC / SSC / ...) is NOT in this API, so hscPosts is left
 // null (shown as "উল্লেখ নেই") — never guessed. Grade and fee are likewise
 // unknown from this source. Everything added is marked source:"secondary"
-// with an auto-added note.
+// and autoAdded:true; auto-added entries carry no sourceNote, so their cards
+// show no warning box (owner request).
 //
 // Failure-proof by design: any fetch / parse / KV error returns
 // { ok:false, ... } and never throws — the daily reminders and the site
@@ -95,7 +96,6 @@ function buildCandidate(jobs) {
     districts: 'অফিসিয়াল সার্কুলারে দেখুন',
     applyUrl,
     source: 'secondary',
-    sourceNote: 'অটো যোগ হয়েছে — Teletalk-এর সরকারি চাকরির তালিকা থেকে। দ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।',
     posts,
     addedAt: new Date().toISOString(),
     autoAdded: true,

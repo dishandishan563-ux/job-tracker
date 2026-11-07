@@ -298,7 +298,7 @@ async function initHome() {
         <div class="details" style="display:none">
           <table>${c.posts.map(p => `<tr><td>${p.title}</td><td>${p.count == null ? '—' : '<span class="num">' + bn(p.count) + '</span>টি'}</td><td>${p.grade == null ? '—' : 'গ্রেড <span class="num">' + bn(p.grade) + '</span>'}</td><td>${p.qualification || '—'}</td><td>${p.typingBn || p.typingEn ? 'টাইপিং: বাংলা <span class="num">' + bn(p.typingBn || 0) + '</span> / ইংরেজি <span class="num">' + bn(p.typingEn || 0) + '</span>' : ''}</td></tr>`).join('')}</table>
           <p>বেতন: ${c.salary} • বয়স: ${c.age} • জেলা: ${c.districts}</p>
-          <div class="warn">⚠️ ${c.sourceNote}</div>
+          ${c.autoAdded ? '' : `<div class="warn">⚠️ ${c.sourceNote}</div>`}
         </div>
       </article>`);
       card.querySelector('[data-act=shortlist]').onclick = () => { if (!requireLogin()) return; const s = read('jt_shortlist', []); const i = s.indexOf(c.id); i >= 0 ? s.splice(i, 1) : s.push(c.id); store('jt_shortlist', s); syncToServer(); render(); };
