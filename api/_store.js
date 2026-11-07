@@ -71,4 +71,45 @@ async function kvSMembers(key) {
   return Array.isArray(data.result) ? data.result : [];
 }
 
-module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers };
+// Sent-email log — a KV LIST, newest first (LPUSH), capped at the latest 50.
+// Only recipient + subject + time + source are stored: never the email body,
+// never a password or secret. Used by /api/daily-check and /api/send-now so
+// the admin "See Email" view can show what was actually sent.
+const SENT_LOG_KEY = 'jt:sent-emails';
+const SENT_LOG_MAX = 50;
+
+async function kvLPush(key, value) {
+  await kvFetch(`/lpush/${encodeURIComponent(key)}/${encodeURIComponent(typeof value === 'string' ? value : JSON.stringify(value))}`, { method: 'POST' });
+}
+
+async function kvLRange(key, start, stop) {
+  const data = await kvFetch(`/lrange/${encodeURIComponent(key)}/${start}/${stop}`);
+  return Array.isArray(data.result) ? data.result : [];
+}
+
+async function kvLTrim(key, start, stop) {
+  await kvFetch(`/ltrim/${encodeURIComponent(key)}/${start}/${stop}`, { method: 'POST' });
+}
+
+// Record one successfully sent email. Never throws: logging must not break
+// the send itself, and silently no-ops when KV is not configured.
+async function logSentEmail(to, subject, source) {
+  if (!kvAvailable()) return;
+  try {
+    await kvLPush(SENT_LOG_KEY, { to: String(to).trim().toLowerCase(), subject: String(subject), sentAt: new Date().toISOString(), source: source || 'manual' });
+    await kvLTrim(SENT_LOG_KEY, 0, SENT_LOG_MAX - 1);
+  } catch {}
+}
+
+// Read the sent-email log, newest first. Entries are JSON strings in the list.
+async function getSentEmails() {
+  if (!kvAvailable()) return [];
+  try {
+    const raw = await kvLRange(SENT_LOG_KEY, 0, SENT_LOG_MAX - 1);
+    return raw.map(s => { try { return JSON.parse(s); } catch { return null; } })
+      .filter(e => e && e.to && e.subject && e.sentAt)
+      .sort((a, b) => String(b.sentAt).localeCompare(String(a.sentAt)));
+  } catch { return []; }
+}
+
+module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails };

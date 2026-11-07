@@ -8,7 +8,7 @@
 // if it is not set, the admin panel's PIN gate is the only protection (see README).
 const fs = require('fs');
 const { sendMail } = require('./_mail');
-const { kvAvailable, kvSMembers } = require('./_store');
+const { kvAvailable, kvSMembers, logSentEmail } = require('./_store');
 const circulars = require('../data/circulars.json');
 
 const SENT_FILE = '/tmp/job-tracker-sent.json';
@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
         const when = daysLeft === 0 ? 'আজই শেষ' : daysLeft === 1 ? 'আগামীকাল শেষ' : `আর ${bn(daysLeft)} দিন বাকি`;
         const subject = `Job Tracker — ${c.org}: ${when}`;
         const text = `আসসালামু আলাইকুম,\n\n${c.org} — মোট ${bn(c.totalPosts)}টি পদ, HSC পদ ${bn(c.hscPosts)}টি।\nশেষ তারিখ: ${new Date(c.deadline).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}। ${when}।\nআবেদন: ${c.applyUrl}\n\nদ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।\n— Job Tracker (jobtrackerbd@gmail.com)`;
-        try { await sendMail({ subject, text, to }); sent[key] = today; sentCount++; }
+        try { await sendMail({ subject, text, to }); sent[key] = today; sentCount++; await logSentEmail(to, subject, 'manual'); }
         catch (e) { errors.push(`${to}: ${e.message}`); }
       }
     }

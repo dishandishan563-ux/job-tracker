@@ -7,7 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const { sendMail } = require('./_mail');
-const { kvAvailable, kvSMembers } = require('./_store');
+const { kvAvailable, kvSMembers, logSentEmail } = require('./_store');
 const circulars = require('../data/circulars.json');
 
 const SENT_FILE = '/tmp/job-tracker-sent.json';
@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
       if (sent[key]) continue; // dedupe: never send the same email twice
       const subject = `Job Tracker — ${c.org}: ${daysLeft === 1 ? 'আগামীকাল শেষ' : 'আর ৩ দিন বাকি'}`;
       const text = `আসসালামু আলাইকুম,\n\n${c.org} — মোট ${bn(c.totalPosts)}টি পদ, HSC পদ ${bn(c.hscPosts)}টি।\nশেষ তারিখ: ${new Date(c.deadline).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}। ${daysLeft === 1 ? 'আগামীকাল শেষ!' : 'আর ৩ দিন বাকি।'}\nআবেদন: ${c.applyUrl}\n\nদ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।\n— Job Tracker (jobtrackerbd@gmail.com)`;
-      try { await sendMail({ subject, text, to }); sent[key] = today; sentCount++; }
+      try { await sendMail({ subject, text, to }); sent[key] = today; sentCount++; await logSentEmail(to, subject, 'daily'); }
       catch (e) { errors.push(`${to}: ${e.message}`); }
     }
   }

@@ -606,6 +606,26 @@ async function initAdmin() {
       list.innerHTML = data.recipients.map(e => `<div class="num" style="padding:4px 0;border-bottom:1px solid var(--border)">${esc(e)}</div>`).join('');
     } catch { list.textContent = '✗ দেখা যায়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
   }
+  // ---------- পাঠানো ইমেইল (See Email — শুধু অ্যাডমিন দেখবে) ----------
+  // বাটন চাপলে PIN দিয়ে সার্ভার থেকে পাঠানো ইমেইলের লগ আনে: কাকে, কোন বিষয়ে, কখন।
+  let sentListShown = false;
+  async function loadSentEmails() {
+    const box = document.getElementById('sentList');
+    if (!box) return;
+    sentListShown = true;
+    box.textContent = 'লোড হচ্ছে…';
+    try {
+      const r = await fetch('api/admin-recipients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pinHash: sessionStorage.getItem('jt_admin_hash') || '', action: 'sent' }) });
+      const data = await r.json().catch(() => ({}));
+      if (!data.ok) { box.textContent = '✗ দেখা যায়নি: ' + (data.error || 'আবার চেষ্টা করুন।'); return; }
+      if (!data.sent || !data.sent.length) { box.textContent = 'এখনো কোনো ইমেইল পাঠানো হয়নি।'; return; }
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const fmt = iso => { try { return new Date(iso).toLocaleString('bn-BD', { timeZone: 'Asia/Dhaka', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch { return iso; } };
+      box.innerHTML = data.sent.map(e => `<div style="padding:6px 0;border-bottom:1px solid var(--border)"><div class="num">${esc(e.to)}</div><div>${esc(e.subject)}</div><div style="color:var(--muted);font-size:13px"><span class="num">${esc(fmt(e.sentAt))}</span> • ${e.source === 'daily' ? 'অটো' : 'ম্যানুয়াল'}</div></div>`).join('');
+    } catch { box.textContent = '✗ দেখা যায়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
+  }
+  const seeSentBtn = document.getElementById('seeSentBtn');
+  if (seeSentBtn) seeSentBtn.onclick = () => { loadSentEmails(); };
   document.querySelectorAll('#adminPanel .tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('#adminPanel .tabs button').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
@@ -638,6 +658,7 @@ async function initAdmin() {
     } catch { st.textContent = '✗ পাঠানো যায়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
     sendNowBtn.disabled = false;
     loadRecipients();
+    if (sentListShown) loadSentEmails();
   };
   document.getElementById('changePinBtn').onclick = async () => {
     const oldHash = await pinMatches(document.getElementById('oldPin').value);
