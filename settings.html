@@ -33,6 +33,10 @@
 <div class="field"><label>শিক্ষা</label><select id="pEdu"><option>HSC</option><option>SSC</option><option>স্নাতক</option><option>JSC</option></select></div>
 <div class="field"><label>টাইপিং — বাংলা (শব্দ/মিনিট)</label><input id="pTypeBn" type="number" value="20"></div>
 <div class="field"><label>টাইপিং — ইংরেজি (শব্দ/মিনিট)</label><input id="pTypeEn" type="number" value="20"></div>
+<h3 style="margin-top:16px">🔔 রিমাইন্ডার পছন্দ</h3>
+<p>আপনি কোন ধরণের সার্কুলারের রিমাইন্ডার পেতে চান? নিচে বেছে নিন — কিছু না বাছলে সব ধরণের সার্কুলারের রিমাইন্ডার আপনার Gmail-এ যাবে।</p>
+<div class="field"><label>সার্কুলারের ধরণ</label><div id="prefTypes" class="chips"></div></div>
+<div class="field"><label>যোগ্যতা / পদের ধরণ</label><div id="prefQuals" class="chips"></div></div>
 <button class="btn green" id="saveProfileBtn" style="width:100%">প্রোফাইল সেভ করুন</button>
 <button class="btn outline" id="settingsCloseBtn" style="width:100%;margin-top:8px">বন্ধ করুন</button>
 </div></main>
@@ -46,6 +50,8 @@
   <a class="drawer-item" href="settings.html">⚙️ সেটিংস</a>
   <a class="drawer-item" href="admin.html">🔒 অ্যাডমিন</a>
   <a class="drawer-item" href="privacy.html">📄 গোপনীয়তা নীতি</a>
+  <a class="drawer-item" href="#" id="drawerContactBtn" style="display:none">📞 আবেদন করতে চাইলে যোগাযোগ করুন</a>
+  <div id="drawerContactBox" style="display:none;padding:4px 12px 10px"></div>
 </aside>
 
 <!-- লগইন পপআপ — আবেদন বা ভেতরের কিছু করতে গেলে এটাই খুলবে, আলাদা পেইজে যাওয়া লাগে না -->

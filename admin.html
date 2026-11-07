@@ -41,6 +41,7 @@
 <button data-tab="email">📧 ইমেইল</button>
 <button data-tab="pin">PIN বদলান</button>
 <button data-tab="creator">👤 তৈরি করেছেন</button>
+<button data-tab="contact">📞 যোগাযোগ</button>
 </div>
 <div id="tab-dash"></div>
 <div id="tab-circulars" style="display:none"></div>
@@ -77,6 +78,13 @@
 <button class="btn green" id="crSaveBtn">সেভ করুন</button>
 <p id="crStatus" style="font-size:14px;margin-top:8px"></p>
 </div>
+<div id="tab-contact" style="display:none">
+<p style="font-size:14px;color:var(--muted)">এখানে WhatsApp নম্বর/লিংক ও Telegram লিংক বসান — মেনুতে “📞 আবেদন করতে চাইলে যোগাযোগ করুন” দেখাবে, সবাই দেখতে পাবে। কিছু না বসালে মেনুতে ওই লেখাটা দেখাবে না।</p>
+<div class="field"><label>WhatsApp নম্বর বা লিংক</label><input id="ctWhatsapp" placeholder="01XXXXXXXXX অথবা https://wa.me/8801XXXXXXXXX"></div>
+<div class="field"><label>Telegram লিংক বা @ইউজারনেম</label><input id="ctTelegram" placeholder="https://t.me/username অথবা @username"></div>
+<button class="btn green" id="ctSaveBtn">সেভ করুন</button>
+<p id="ctStatus" style="font-size:14px;margin-top:8px"></p>
+</div>
 <button class="btn outline" id="adminCloseBtn" style="width:100%;margin-top:12px">বন্ধ করুন</button>
 <button class="btn outline" id="adminLogoutBtn" style="width:100%;margin-top:8px">🚪 অ্যাডমিন লগআউট</button>
 </div>
@@ -92,6 +100,8 @@
   <a class="drawer-item" href="admin.html">🔒 অ্যাডমিন</a>
   <a class="drawer-item" href="admin.html#circulars">➕ সার্কুলার যোগ করুন</a>
   <a class="drawer-item" href="privacy.html">📄 গোপনীয়তা নীতি</a>
+  <a class="drawer-item" href="#" id="drawerContactBtn" style="display:none">📞 আবেদন করতে চাইলে যোগাযোগ করুন</a>
+  <div id="drawerContactBox" style="display:none;padding:4px 12px 10px"></div>
 </aside>
 
 <!-- লগইন পপআপ — আবেদন বা ভেতরের কিছু করতে গেলে এটাই খুলবে, আলাদা পেইজে যাওয়া লাগে না -->

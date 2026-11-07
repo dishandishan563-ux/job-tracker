@@ -498,11 +498,60 @@ async function initLogin() { initLoginPopup(); }
 // ---------- SETTINGS — ব্যবহারকারীর প্রোফাইল ----------
 // নাম, ঠিকানা, মোবাইল, ছবি (আপলোড ≤৫০০ KB বা লিংক), জেলা, জন্ম তারিখ,
 // শিক্ষা, টাইপিং, অন্যান্য তথ্য — সব jt_profile-এ সেভ থাকে।
+// রিমাইন্ডার পছন্দ (সার্কুলারের ধরণ + যোগ্যতা/পদ) — অপশনগুলো সার্ভারের
+// /api/config থেকে আসে; ফেচ না হলে নিচের কপিটা ব্যবহার হয়। কিছু না বাছলে
+// সব ধরণের রিমাইন্ডার যাবে (সার্ভারেও একই নিয়ম)।
+const REMINDER_OPTIONS_FALLBACK = {
+  types: [
+    { key: 'govt', label: 'সরকারি' }, { key: 'ministry', label: 'মন্ত্রণালয় / অধিদপ্তর' },
+    { key: 'bank', label: 'ব্যাংক' }, { key: 'police', label: 'পুলিশ / সেনা / প্রতিরক্ষা' },
+    { key: 'teacher', label: 'শিক্ষক / শিক্ষা' }, { key: 'health', label: 'স্বাস্থ্য' },
+    { key: 'railway', label: 'রেলওয়ে' }, { key: 'district', label: 'জেলা প্রশাসন' },
+    { key: 'tax', label: 'কর / রাজস্ব / অডিট' }, { key: 'court', label: 'আদালত' },
+    { key: 'private', label: 'বেসরকারি' }, { key: 'ngo', label: 'এনজিও' },
+    { key: 'other', label: 'অন্যান্য' },
+  ],
+  quals: [
+    { key: 'HSC', label: 'HSC' }, { key: 'SSC', label: 'SSC' }, { key: 'GRAD', label: 'স্নাতক' },
+    { key: 'COMPUTER_TYPIST', label: 'কম্পিউটার টাইপিস্ট' }, { key: 'COMPUTER_OPERATOR', label: 'কম্পিউটার অপারেটর' },
+  ],
+};
+async function renderPrefChips() {
+  const boxT = document.getElementById('prefTypes'); const boxQ = document.getElementById('prefQuals');
+  if (!boxT || !boxQ) return;
+  let opts = REMINDER_OPTIONS_FALLBACK;
+  try {
+    const r = await fetch('api/config', { cache: 'no-store' });
+    const d = await r.json();
+    if (d.reminderOptions && Array.isArray(d.reminderOptions.types) && Array.isArray(d.reminderOptions.quals)) opts = d.reminderOptions;
+  } catch {}
+  const p = read('jt_profile', {});
+  const rem = (p.reminders && typeof p.reminders === 'object') ? p.reminders : { types: [], quals: [] };
+  const mk = (box, list, sel) => {
+    box.innerHTML = '';
+    list.forEach(o => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + ((sel || []).includes(o.key) ? ' active' : '');
+      b.textContent = o.label;
+      b.dataset.key = o.key;
+      b.onclick = () => b.classList.toggle('active');
+      box.appendChild(b);
+    });
+  };
+  mk(boxT, opts.types, rem.types);
+  mk(boxQ, opts.quals, rem.quals);
+}
+function collectPrefs() {
+  const sel = id => [...document.querySelectorAll('#' + id + ' .chip.active')].map(b => b.dataset.key);
+  return { types: sel('prefTypes'), quals: sel('prefQuals') };
+}
 function initSettings() {
   if (!requireLogin()) return;
   const p = read('jt_profile', {});
   const map = { pName: 'name', pAddress: 'address', pPhone: 'phone', pPhotoUrl: 'photo', pDistrict: 'district', pDob: 'dob', pEdu: 'edu', pTypeBn: 'typeBn', pTypeEn: 'typeEn', pNotes: 'notes' };
   Object.entries(map).forEach(([id, key]) => { const f = document.getElementById(id); if (f && p[key] !== undefined && p[key] !== '') f.value = p[key]; });
+  renderPrefChips();
   const prev = document.getElementById('pPhotoPreview');
   if (prev) { prev.src = p.photo || ''; prev.style.display = p.photo ? 'block' : 'none'; }
   const photoFile = document.getElementById('pPhotoFile');
@@ -536,6 +585,7 @@ function initSettings() {
       typeBn: +document.getElementById('pTypeBn').value,
       typeEn: +document.getElementById('pTypeEn').value,
       notes: document.getElementById('pNotes').value.trim(),
+      reminders: collectPrefs(),
     });
     syncToServer(true);
     alert('প্রোফাইল সেভ হয়েছে। এখন হোম পেইজে মিলে যাওয়া সার্কুলারে “✓ CV অনুযায়ী মিলেছে” ব্যাজ দেখাবে।');
@@ -637,9 +687,37 @@ async function initAdmin() {
   document.querySelectorAll('#adminPanel .tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('#adminPanel .tabs button').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
-    ['dash', 'circulars', 'email', 'pin', 'creator'].forEach(t => document.getElementById('tab-' + t).style.display = t === b.dataset.tab ? 'block' : 'none');
+    ['dash', 'circulars', 'email', 'pin', 'creator', 'contact'].forEach(t => document.getElementById('tab-' + t).style.display = t === b.dataset.tab ? 'block' : 'none');
     if (b.dataset.tab === 'email') loadRecipients();
+    if (b.dataset.tab === 'contact') loadContactForm();
   });
+  // ---------- "যোগাযোগ" ট্যাব — মেনুতে দেখানো WhatsApp / Telegram ----------
+  // সার্ভারে (KV) সেভ হয়, তাই সব ভিজিটর দেখতে পায়; PIN ছাড়া বদলানো যায় না।
+  async function loadContactForm() {
+    try {
+      const r = await fetch('api/config', { cache: 'no-store' });
+      const d = await r.json();
+      if (d.contact) {
+        document.getElementById('ctWhatsapp').value = d.contact.whatsapp || '';
+        document.getElementById('ctTelegram').value = d.contact.telegram || '';
+      }
+    } catch {}
+  }
+  const ctSave = document.getElementById('ctSaveBtn');
+  if (ctSave) ctSave.onclick = async () => {
+    const st = document.getElementById('ctStatus');
+    st.textContent = 'সেভ হচ্ছে…';
+    try {
+      const r = await fetch('api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pinHash: sessionStorage.getItem('jt_admin_hash') || '', contact: { whatsapp: document.getElementById('ctWhatsapp').value, telegram: document.getElementById('ctTelegram').value } }) });
+      const data = await r.json().catch(() => ({}));
+      if (!data.ok) { st.textContent = '✗ ' + (data.error || 'সেভ হয়নি।'); return; }
+      if (data.contact) {
+        document.getElementById('ctWhatsapp').value = data.contact.whatsapp || '';
+        document.getElementById('ctTelegram').value = data.contact.telegram || '';
+      }
+      st.textContent = '✓ সেভ হয়েছে — মেনুতে “আবেদন করতে চাইলে যোগাযোগ করুন” দেখাবে।';
+    } catch { st.textContent = '✗ সেভ হয়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
+  };
   // মেনু থেকে "সার্কুলার যোগ করুন" চাপলে admin.html#circulars নিয়ে আসে —
   // PIN দেওয়ার পর সরাসরি সার্কুলার ট্যাবটাই খুলবে।
   if (location.hash === '#circulars') {
@@ -774,8 +852,27 @@ function bindDrawer() {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeLoginPopup(); } });
 }
 
+// ---------- মেনুতে "আবেদন করতে চাইলে যোগাযোগ করুন" ----------
+// অ্যাডমিন যা সেভ করেছেন (সার্ভার, KV) তা সব পেইজের ড্রয়ারে দেখায়।
+// কিছু সেভ না থাকলে লেখাটা লুকানোই থাকে — ভিজিটর কিছু দেখবে না।
+async function loadContact() {
+  const btn = document.getElementById('drawerContactBtn'); const box = document.getElementById('drawerContactBox');
+  if (!btn || !box) return;
+  let contact = null;
+  try {
+    const r = await fetch('api/config', { cache: 'no-store' });
+    const d = await r.json();
+    contact = d.contact || null;
+  } catch {}
+  if (!contact || (!contact.whatsapp && !contact.telegram)) { btn.style.display = 'none'; return; }
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  box.innerHTML = `<p style="font-size:13px;color:var(--muted);margin:2px 0 8px">আবেদন করতে চাইলে যোগাযোগ করুন:</p><div style="display:flex;gap:8px;flex-wrap:wrap">${contact.whatsapp ? `<a class="btn green small" href="${esc(contact.whatsapp)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}${contact.telegram ? `<a class="btn outline small" href="${esc(contact.telegram)}" target="_blank" rel="noopener">✈️ Telegram</a>` : ''}</div>`;
+  btn.style.display = '';
+  btn.onclick = e => { e.preventDefault(); box.style.display = box.style.display === 'none' ? 'block' : 'none'; };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  applyFontSize(); bindFontSize(); bindDrawer();
+  applyFontSize(); bindFontSize(); bindDrawer(); loadContact();
   const page = document.body.dataset.page;
   if (page === 'home') initHome();
   if (page === 'login') initLogin();

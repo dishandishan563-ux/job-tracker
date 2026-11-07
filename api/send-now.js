@@ -9,6 +9,7 @@
 const fs = require('fs');
 const { sendMail } = require('./_mail');
 const { kvAvailable, kvSMembers, logSentEmail, getCirculars } = require('./_store');
+const { getUserPrefs, circularMatchesPrefs } = require('./_prefs');
 const seedCirculars = require('../data/circulars.json');
 
 const SENT_FILE = '/tmp/job-tracker-sent.json';
@@ -40,12 +41,19 @@ module.exports = async (req, res) => {
     const now = new Date();
     const today = now.toISOString().slice(0, 10);
     const sent = loadSent();
+    // প্রতিটি প্রাপকের রিমাইন্ডার পছন্দ — পছন্দ না থাকলে বা লোড না হলে সব
+    // রিমাইন্ডার যাবে (পছন্দের ভুলে কখনো মেইল বাদ পড়বে না)।
+    const prefsByEmail = new Map();
+    for (const to of recipients) {
+      try { prefsByEmail.set(to, await getUserPrefs(to)); } catch { prefsByEmail.set(to, null); }
+    }
     let sentCount = 0; const errors = [];
     for (const c of circulars) {
       const deadline = new Date(c.deadline);
       const daysLeft = Math.ceil((deadline - now) / 86400000);
       if (daysLeft < 0 || daysLeft > 3) continue;
       for (const to of recipients) {
+        if (!circularMatchesPrefs(c, prefsByEmail.get(to))) continue;
         const key = `${to}|${c.id}|deadline-${daysLeft}|${today}`;
         if (sent[key]) continue; // dedupe: আজকের রিমাইন্ডার আগেই পাঠানো হয়েছে
         const when = daysLeft === 0 ? 'আজই শেষ' : daysLeft === 1 ? 'আগামীকাল শেষ' : `আর ${bn(daysLeft)} দিন বাকি`;

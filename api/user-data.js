@@ -29,6 +29,7 @@
 // A profile photo stored as a data URL is capped at ~200 KB — bigger photos
 // stay in the browser only, so one huge image cannot blow the KV value limit.
 const { keyFor, kvAvailable, kvGet, kvSet, kvSAdd } = require('./_store');
+const { sanitizePrefs } = require('./_prefs');
 const { verify } = require('./_session');
 
 const MAX_PHOTO_CHARS = 200000;
@@ -40,6 +41,8 @@ function sanitizeData(data) {
   if (data && typeof data === 'object') {
     if (data.profile && typeof data.profile === 'object') {
       out.profile = { ...data.profile };
+      // রিমাইন্ডার পছন্দ — শুধু চেনা অপশনের কীগুলোই সেভ হবে (জাঙ্ক বাদ)।
+      if (data.profile.reminders !== undefined) out.profile.reminders = sanitizePrefs(data.profile.reminders);
       // ছবি data URL হলে খুব বড় হতে পারে — ২০০ KB-এর বেশি হলে সার্ভারে
       // পাঠানো হবে না, ব্রাউজারের কপিতেই থাকবে।
       if (typeof out.profile.photo === 'string' && out.profile.photo.length > MAX_PHOTO_CHARS) delete out.profile.photo;

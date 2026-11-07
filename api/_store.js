@@ -206,4 +206,25 @@ async function saveCirculars(list) {
   return true;
 }
 
-module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, mergeCirculars, getCirculars, saveCirculars };
+// ---------- Admin contact (WhatsApp / Telegram) ----------
+// Shown in the slide menu as "আবেদন করতে চাইলে যোগাযোগ করুন" for EVERY
+// visitor — so it must live in server-side KV, never browser localStorage
+// (a localStorage value would only show on the admin's own browser).
+// Only the two link fields are stored — never a PIN or secret.
+const CONTACT_KEY = 'jt:contact';
+
+async function getContact() {
+  if (!kvAvailable()) return { whatsapp: '', telegram: '' };
+  try {
+    const v = await kvGet(CONTACT_KEY);
+    return { whatsapp: String((v && v.whatsapp) || ''), telegram: String((v && v.telegram) || '') };
+  } catch { return { whatsapp: '', telegram: '' }; }
+}
+
+async function saveContact(contact) {
+  if (!kvAvailable()) return false;
+  await kvSet(CONTACT_KEY, { whatsapp: String(contact.whatsapp || ''), telegram: String(contact.telegram || '') });
+  return true;
+}
+
+module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, mergeCirculars, getCirculars, saveCirculars, CONTACT_KEY, getContact, saveContact };
