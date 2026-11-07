@@ -1,17 +1,19 @@
 // GET /api/online-check — প্রতিটি সার্কুলারের আবেদন পোর্টাল (Teletalk / অফিসিয়াল
 // সাইট) এখন অনলাইনে চালু আছে কি না, সার্ভার থেকে লাইভ যাচাই করে।
 // হোম পেইজের "এখনই নতুন সার্কুলার খুঁজুন" বাটন এটাই ডাকে; ডেইলি ক্রনও
-// প্রতিদিন সকালে /api/daily-check-এর ভেতরে একই যাচাই চালায়, তাই তালিকাটা
-// শুধু সিড করা ডেটা নয় — অনলাইন পোর্টালের অবস্থা প্রতিদিন যাচাই হয়।
+// প্রতিদিন সকালে /api/daily-check-এর ভেতরে একই যাচাই চালায়।
+// এই এন্ডপয়েন্ট প্রথমে অটো-ডিসকভারি চালায় (api/_discover.js): Teletalk-এর
+// লাইভ সরকারি চাকরির তালিকা থেকে নতুন সার্কুলার KV তালিকায় যোগ হয়, তারপর
+// পোর্টাল যাচাই চলে — তাই বাটন চাপলেই নতুন সার্কুলার তালিকায় উঠে আসে।
 // সতর্কতা: কোনো পোর্টালে সংযোগ না-হলে সেটাকে "বন্ধ" বলা হয় না — সেটা
 // "অজানা" (unknown), কারণ অনেক Teletalk পোর্টাল কিছু নেটওয়ার্ক থেকে
 // সাড়া দেয় না। "live" মানে শুধু নিশ্চিতভাবে চালু। চেকগুলো একসাথে
 // (parallel) চলে, তাই পুরো যাচাই কয়েক সেকেন্ডে শেষ হয়।
-// কোনো পোর্টালের HTML পার্স করে সার্কুলার বানানো হয় না (Teletalk পেইজ
-// সেভাবে নির্ভরযোগ্যভাবে পার্স করা যায় না); নতুন সার্কুলার যোগ হয়
-// যাচাই করা অনলাইন সূত্র থেকে data/circulars.json-এ, আর এখানে প্রতিটি
-// পোর্টালের লাইভ অবস্থা দেখানো হয়।
-const circulars = require('../data/circulars.json');
+// ডিসকভারি ব্যর্থ হলেও (সূত্র ডাউন থাকলে) পোর্টাল যাচাই চলবে — সুইপ কখনো
+// এই এন্ডপয়েন্ট ভাঙে না।
+const { getCirculars } = require('./_store');
+const { runDiscovery } = require('./_discover');
+const seedCirculars = require('../data/circulars.json');
 
 async function checkPortal(url) {
   try {
@@ -29,6 +31,11 @@ async function checkPortal(url) {
 }
 
 module.exports = async (req, res) => {
+  // নতুন সার্কুলার অটো যোগ — ব্যর্থ হলেও নিচের যাচাই চলবে।
+  const discovered = await runDiscovery().catch(() => ({ ok: false, added: 0, error: 'sweep_failed' }));
+  let circulars = null;
+  try { circulars = await getCirculars(); } catch {}
+  if (!Array.isArray(circulars) || !circulars.length) circulars = seedCirculars;
   const seen = new Map();
   for (const c of circulars) {
     if (c.applyUrl && !seen.has(c.applyUrl)) seen.set(c.applyUrl, c);
@@ -46,6 +53,7 @@ module.exports = async (req, res) => {
     portals: results.length,
     live: liveCount,
     unknown: unknownCount,
+    discovered,
     results,
   });
 };

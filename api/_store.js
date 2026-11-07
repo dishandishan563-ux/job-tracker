@@ -112,4 +112,98 @@ async function getSentEmails() {
   } catch { return []; }
 }
 
-module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails };
+// ---------- Circulars list (KV) ----------
+// The list used to be read straight from data/circulars.json, so a new circular
+// only appeared after a code push. Now the list lives in KV under jt:circulars:
+// on first use it is seeded from data/circulars.json (deduped), and the
+// auto-discovery sweep (api/_discover.js) adds new circulars to it.
+// If KV is not configured, getCirculars() returns null and callers fall back
+// to the JSON file — the site keeps working, just without auto-add.
+const CIRCULARS_KEY = 'jt:circulars';
+
+// Org name without a parenthetical suffix, lowercased — "(এনএসডি)" / "(NSD)"
+// style suffixes must not create a second copy of the same org.
+function normalizeOrg(s) {
+  return String(s || '').replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function hostOf(url) {
+  try { return new URL(String(url)).hostname.toLowerCase(); } catch { return ''; }
+}
+
+// Deadline date in Asia/Dhaka (YYYY-MM-DD) — the same circular is listed with
+// "2026-11-08T23:59:00+06:00" in the seed and "2026-11-08T10:00:00.000Z"
+// (UTC) by Teletalk; both are 2026-11-08 in Dhaka time.
+function dhakaDate(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  try { return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' }); } catch { return d.toISOString().slice(0, 10); }
+}
+
+// Dedupe key for one circular. Primary: Teletalk host + deadline date — the
+// seed lists a portal root (https://cag.teletalk.com.bd) and Teletalk lists
+// a deep link (https://cag.teletalk.com.bd/cag202611/), but the host and the
+// deadline date are the same circular. Fallback when there is no usable
+// host: normalized org name + deadline date.
+function dedupeKey(c) {
+  const host = hostOf(c.applyUrl);
+  const dl = dhakaDate(c.deadline);
+  if (host && dl) return `host:${host}|${dl}`;
+  return `org:${normalizeOrg(c.org)}|${dl}`;
+}
+
+function dedupeList(list) {
+  const seen = new Set();
+  return (Array.isArray(list) ? list : []).filter(c => {
+    const k = dedupeKey(c);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+// All identity keys of one entry: the dedupe key plus id+deadline (an entry
+// re-added under a different host still matches by its stable id).
+function allKeys(c) {
+  const keys = [dedupeKey(c)];
+  const dl = dhakaDate(c.deadline);
+  if (c.id && dl) keys.push(`id:${c.id}|${dl}`);
+  return keys;
+}
+
+// Add candidates to the list, skipping anything already there. extraKeysFor
+// (optional) returns extra identity keys for a candidate — used for known
+// same-circular-different-host cases (e.g. Patuakhali: seed links the
+// district site, Teletalk links the teletalk portal).
+function mergeCirculars(list, candidates, extraKeysFor) {
+  const seen = new Set();
+  for (const c of list) for (const k of allKeys(c)) seen.add(k);
+  const added = [];
+  for (const cand of candidates) {
+    const keys = [...allKeys(cand), ...(extraKeysFor ? extraKeysFor(cand) : [])];
+    if (keys.some(k => seen.has(k))) continue;
+    keys.forEach(k => seen.add(k));
+    list.push(cand);
+    added.push(cand);
+  }
+  return added;
+}
+
+async function getCirculars() {
+  if (!kvAvailable()) return null;
+  try {
+    const stored = await kvGet(CIRCULARS_KEY);
+    if (Array.isArray(stored) && stored.length) return stored;
+    const seed = dedupeList(require('../data/circulars.json'));
+    await kvSet(CIRCULARS_KEY, seed);
+    return seed;
+  } catch { return null; }
+}
+
+async function saveCirculars(list) {
+  if (!kvAvailable()) return false;
+  await kvSet(CIRCULARS_KEY, list);
+  return true;
+}
+
+module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, mergeCirculars, getCirculars, saveCirculars };

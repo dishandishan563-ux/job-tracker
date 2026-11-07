@@ -132,6 +132,13 @@ function matchBadge(c) {
   return (eduOk && typeOk) ? '<span class="badge">✓ CV অনুযায়ী মিলেছে</span>' : '';
 }
 
+// "নতুন" ব্যাজ — অটো যোগ হওয়ার ৭ দিনের মধ্যে।
+function isNew(c) {
+  if (!c.addedAt) return false;
+  const t = new Date(c.addedAt).getTime();
+  return !isNaN(t) && (Date.now() - t) < 7 * 86400000;
+}
+
 // ---------- "তৈরি করেছেন" (Made by) ----------
 // অ্যাডমিনে বসানো তথ্য localStorage-এ সেভ থাকে (jt_creator) — ছবি বা লিংক
 // কিছুই কোডে হার্ডকোড করা নেই; কিছু না বসালে এই সেকশন দেখায় না।
@@ -207,7 +214,7 @@ async function initHome() {
     try {
       const r = await fetch('api/online-check', { cache: 'no-store' });
       const data = await r.json().catch(() => ({}));
-      if (data.ok) sessionStorage.setItem('jt_online_check', JSON.stringify({ live: data.live, unknown: data.unknown || 0, portals: data.portals, at: data.checkedAt }));
+      if (data.ok) sessionStorage.setItem('jt_online_check', JSON.stringify({ live: data.live, unknown: data.unknown || 0, portals: data.portals, at: data.checkedAt, added: (data.discovered && data.discovered.added) || 0 }));
     } catch {}
     location.reload(); // পেইজ আবার লোড হলে সার্ভার থেকে নতুন সার্কুলার আসে
   };
@@ -217,7 +224,8 @@ async function initHome() {
     if (oc) {
       const t = new Date(oc.at).toLocaleTimeString('bn-BD', { hour: 'numeric', minute: '2-digit' });
       const unk = oc.unknown ? `, ${bn(oc.unknown)}টির অবস্থা যাচাই হয়নি` : '';
-      document.getElementById('lastCheck').textContent = `অনলাইনে যাচাই: ${bn(oc.live)}/${bn(oc.portals)}টি পোর্টাল চালু${unk} • ${t}`;
+      const addedTxt = oc.added ? ` • নতুন ${bn(oc.added)}টি সার্কুলার যোগ হয়েছে` : '';
+      document.getElementById('lastCheck').textContent = `অনলাইনে যাচাই: ${bn(oc.live)}/${bn(oc.portals)}টি পোর্টাল চালু${unk}${addedTxt} • ${t}`;
     }
   } catch {}
   const user = getUser();
@@ -277,9 +285,9 @@ async function initHome() {
     list.forEach((c, i) => {
       const dl = daysLeft(c.deadline);
       const card = el(`<article class="card job ${dl < 0 ? 'closed' : ''}">
-        <span class="pill grey">${c.source === 'secondary' ? 'দ্বিতীয় সূত্র' : 'অফিসিয়াল'}</span> ${matchBadge(c)}
+        <span class="pill grey">${c.source === 'secondary' ? 'দ্বিতীয় সূত্র' : 'অফিসিয়াল'}</span> ${isNew(c) ? '<span class="badge">🆕 নতুন</span>' : ''} ${matchBadge(c)}
         <h2>${c.org}</h2>
-        <div class="meta"><span>HSC পদ: <b class="num">${bn(c.hscPosts)}টি</b></span><span>মোট পদ: <span class="num">${bn(c.totalPosts)}টি</span></span><span>ফি: ${c.fee ? '<span class="num">' + bn(c.fee) + '</span> টাকা' : 'উল্লেখ নেই'}</span><span>গ্রেড: <span class="num">${bn(c.grade)}</span></span></div>
+        <div class="meta"><span>HSC পদ: ${c.hscPosts == null ? 'উল্লেখ নেই' : '<b class="num">' + bn(c.hscPosts) + '</b>টি'}</span><span>মোট পদ: ${c.totalPosts == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.totalPosts) + '</span>টি'}</span><span>ফি: ${c.fee ? '<span class="num">' + bn(c.fee) + '</span> টাকা' : 'উল্লেখ নেই'}</span><span>গ্রেড: ${c.grade == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.grade) + '</span>'}</span></div>
         <p><span class="pill ${dl < 0 ? 'grey' : dl <= 3 ? 'red' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : dl === 0 ? 'আজই শেষ' : 'আর ' + bn(dl) + ' দিন'}</span> শেষ: <span class="num">${fmtDate(c.deadline)}</span><br><span class="live-cd" data-dl="${c.deadline}"></span></p>
         <div class="actions">
           <button class="btn outline small" data-act="shortlist">☆ শর্টলিস্ট</button>
@@ -288,7 +296,7 @@ async function initHome() {
           <button class="btn outline small" data-act="details">বিস্তারিত ▾</button>
         </div>
         <div class="details" style="display:none">
-          <table>${c.posts.map(p => `<tr><td>${p.title}</td><td><span class="num">${bn(p.count)}</span>টি</td><td>গ্রেড <span class="num">${bn(p.grade)}</span></td><td>${p.qualification}</td><td>${p.typingBn || p.typingEn ? 'টাইপিং: বাংলা <span class="num">' + bn(p.typingBn || 0) + '</span> / ইংরেজি <span class="num">' + bn(p.typingEn || 0) + '</span>' : ''}</td></tr>`).join('')}</table>
+          <table>${c.posts.map(p => `<tr><td>${p.title}</td><td>${p.count == null ? '—' : '<span class="num">' + bn(p.count) + '</span>টি'}</td><td>${p.grade == null ? '—' : 'গ্রেড <span class="num">' + bn(p.grade) + '</span>'}</td><td>${p.qualification || '—'}</td><td>${p.typingBn || p.typingEn ? 'টাইপিং: বাংলা <span class="num">' + bn(p.typingBn || 0) + '</span> / ইংরেজি <span class="num">' + bn(p.typingEn || 0) + '</span>' : ''}</td></tr>`).join('')}</table>
           <p>বেতন: ${c.salary} • বয়স: ${c.age} • জেলা: ${c.districts}</p>
           <div class="warn">⚠️ ${c.sourceNote}</div>
         </div>
@@ -700,10 +708,10 @@ async function initAdmin() {
   };
   async function renderAdmin() {
     const cs = await loadCirculars();
-    document.getElementById('tab-dash').innerHTML = `<p>মোট সার্কুলার: <span class="num">${bn(cs.length)}</span>টি • চলমান: <span class="num">${bn(cs.filter(c => daysLeft(c.deadline) >= 0).length)}</span>টি</p><p>অফিসিয়াল সেন্ডার Gmail: <span class="num">jobtrackerbd@gmail.com</span></p><p>ডেইলি ক্রন: প্রতিদিন সকাল ৮টা (ঢাকা) — /api/daily-check</p>`;
+    document.getElementById('tab-dash').innerHTML = `<p>মোট সার্কুলার: <span class="num">${bn(cs.length)}</span>টি • চলমান: <span class="num">${bn(cs.filter(c => daysLeft(c.deadline) >= 0).length)}</span>টি</p><p>অফিসিয়াল সেন্ডার Gmail: <span class="num">jobtrackerbd@gmail.com</span></p><p>ডেইলি ক্রন: প্রতিদিন সকাল ৮টা (ঢাকা) — /api/daily-check • নতুন সার্কুলার Teletalk-এর তালিকা থেকে অটো যোগ হয়</p>`;
     document.getElementById('tab-circulars').innerHTML = '<h4 style="margin-bottom:8px">সার্কুলার তালিকা</h4>' + cs.map(c => {
       const dl = daysLeft(c.deadline);
-      return `<div class="admin-row"><div class="info"><h4>${c.org}</h4><p>মোট পদ: <span class="num">${bn(c.totalPosts)}</span>টি • শেষ: <span class="num">${fmtDate(c.deadline)}</span> • <span class="pill ${dl < 0 ? 'grey' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : 'চলমান'}</span></p></div><button class="btn outline small" onclick="if(confirm('মুছবেন?')){const d=JSON.parse(localStorage.getItem('jt_deleted_circulars')||'[]');d.push('${c.id}');localStorage.setItem('jt_deleted_circulars',JSON.stringify(d));location.reload();}">মুছুন</button></div>`;
+      return `<div class="admin-row"><div class="info"><h4>${c.org}</h4><p>মোট পদ: ${c.totalPosts == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.totalPosts) + '</span>টি'} • শেষ: <span class="num">${fmtDate(c.deadline)}</span> • <span class="pill ${dl < 0 ? 'grey' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : 'চলমান'}</span></p></div><button class="btn outline small" onclick="if(confirm('মুছবেন?')){const d=JSON.parse(localStorage.getItem('jt_deleted_circulars')||'[]');d.push('${c.id}');localStorage.setItem('jt_deleted_circulars',JSON.stringify(d));location.reload();}">মুছুন</button></div>`;
     }).join('') +
       `<h4 style="margin:14px 0 4px">নতুন সার্কুলার যোগ করুন</h4><div class="field"><label>প্রতিষ্ঠান</label><input id="newOrg" placeholder="প্রতিষ্ঠানের নাম"></div><div class="field"><label>মোট পদ</label><input id="newPosts" type="number"></div><div class="field"><label>শেষ তারিখ</label><input id="newDeadline" type="date"></div><button class="btn green" id="addCircularBtn">যোগ করুন</button>`;
     document.getElementById('addCircularBtn').onclick = () => {

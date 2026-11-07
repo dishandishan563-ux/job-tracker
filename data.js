@@ -1,7 +1,8 @@
 // Shared data loader: circulars always come fresh from ONLINE first.
-// 1) /api/circulars (server, no-store — never a stale cached copy), which reads
-//    data/circulars.json on the server. New circulars added there from verified
-//    online sources (Teletalk portals / official pages) reach every visitor.
+// 1) /api/circulars (server, no-store — never a stale cached copy), which
+//    reads the KV list (seeded from data/circulars.json, auto-discovery adds
+//    new circulars from Teletalk's live list). New circulars reach every
+//    visitor as soon as the sweep adds them.
 // 2) Fallback: local data/circulars.json if the API is unreachable.
 // Admin edits are stored in localStorage (jt_admin_circulars) and merged over
 // the online list on the client. A production deployment should move this

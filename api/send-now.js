@@ -8,8 +8,8 @@
 // if it is not set, the admin panel's PIN gate is the only protection (see README).
 const fs = require('fs');
 const { sendMail } = require('./_mail');
-const { kvAvailable, kvSMembers, logSentEmail } = require('./_store');
-const circulars = require('../data/circulars.json');
+const { kvAvailable, kvSMembers, logSentEmail, getCirculars } = require('./_store');
+const seedCirculars = require('../data/circulars.json');
 
 const SENT_FILE = '/tmp/job-tracker-sent.json';
 function loadSent() { try { return JSON.parse(fs.readFileSync(SENT_FILE, 'utf8')); } catch { return {}; } }
@@ -32,6 +32,11 @@ module.exports = async (req, res) => {
       ...(kvAvailable() ? await kvSMembers('jt:recipients').catch(() => []) : []),
     ].map(s => String(s).trim().toLowerCase()).filter(Boolean))];
     if (!recipients.length) return res.status(200).json({ ok: true, sent: 0, note: 'কোনো প্রাপক নথিভুক্ত নেই (EMAIL_RECIPIENTS খালি)।' });
+    // রিমাইন্ডার KV তালিকা (অটো যোগ হওয়া সার্কুলারসহ) থেকে চলে; KV না
+    // থাকলে সিড করা JSON ফাইল থেকে।
+    let circulars = null;
+    try { circulars = await getCirculars(); } catch {}
+    if (!Array.isArray(circulars) || !circulars.length) circulars = seedCirculars;
     const now = new Date();
     const today = now.toISOString().slice(0, 10);
     const sent = loadSent();
@@ -45,7 +50,9 @@ module.exports = async (req, res) => {
         if (sent[key]) continue; // dedupe: আজকের রিমাইন্ডার আগেই পাঠানো হয়েছে
         const when = daysLeft === 0 ? 'আজই শেষ' : daysLeft === 1 ? 'আগামীকাল শেষ' : `আর ${bn(daysLeft)} দিন বাকি`;
         const subject = `Job Tracker — ${c.org}: ${when}`;
-        const text = `আসসালামু আলাইকুম,\n\n${c.org} — মোট ${bn(c.totalPosts)}টি পদ, HSC পদ ${bn(c.hscPosts)}টি।\nশেষ তারিখ: ${new Date(c.deadline).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}। ${when}।\nআবেদন: ${c.applyUrl}\n\nদ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।\n— Job Tracker (jobtrackerbd@gmail.com)`;
+        const totalTxt = c.totalPosts == null ? 'উল্লেখ নেই' : bn(c.totalPosts) + 'টি';
+        const hscTxt = c.hscPosts == null ? 'উল্লেখ নেই' : bn(c.hscPosts) + 'টি';
+        const text = `আসসালামু আলাইকুম,\n\n${c.org} — মোট ${totalTxt} পদ, HSC পদ ${hscTxt}।\nশেষ তারিখ: ${new Date(c.deadline).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}। ${when}।\nআবেদন: ${c.applyUrl}\n\nদ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।\n— Job Tracker (jobtrackerbd@gmail.com)`;
         try { await sendMail({ subject, text, to }); sent[key] = today; sentCount++; await logSentEmail(to, subject, 'manual'); }
         catch (e) { errors.push(`${to}: ${e.message}`); }
       }
