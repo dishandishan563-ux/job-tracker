@@ -124,6 +124,33 @@ async function sha256(str) {
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
+
+// ---------- ইনলাইন টোস্ট — ব্রাউজার পপআপ (alert/confirm) নয় ----------
+// পেইজের নিচে ছোট লাইনে বার্তা দেখায়, কয়েক সেকেন্ডে নিজে মিলিয়ে যায়।
+let toastTimer = null;
+function toast(msg) {
+  let t = document.getElementById('jtToast');
+  if (!t) { t = document.createElement('div'); t.id = 'jtToast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// অ্যাডমিনে সার্কুলার মোছা — দুই চাপে নিশ্চিতকরণ (প্রথম চাপে বোতাম বদলায়,
+// দ্বিতীয় চাপে মোছে; ৩ সেকেন্ডে না চাপলে আগের অবস্থায় ফেরে)।
+window.confirmDeleteCircular = function (btn, id) {
+  if (btn.dataset.armed) {
+    const d = JSON.parse(localStorage.getItem('jt_deleted_circulars') || '[]');
+    d.push(id);
+    localStorage.setItem('jt_deleted_circulars', JSON.stringify(d));
+    location.reload();
+  } else {
+    btn.dataset.armed = '1';
+    btn.textContent = 'নিশ্চিত মুছুন?';
+    setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = 'মুছুন'; } }, 3000);
+  }
+};
 function matchBadge(c) {
   const p = read('jt_profile', null);
   if (!p) return '';
@@ -419,13 +446,13 @@ async function initLoginPopup() {
     const emailRaw = document.getElementById('manualEmail').value.trim();
     const email = emailRaw.toLowerCase();
     const pass = document.getElementById('manualPass').value;
-    if (!name || !email || !pass) { alert('নাম, Gmail ও পাসওয়ার্ড — তিনটাই দিন।'); return; }
+    if (!name || !email || !pass) { toast('নাম, Gmail ও পাসওয়ার্ড — তিনটাই দিন।'); return; }
     const hash = await sha256(email + ':' + pass);
     const accounts = read('jt_accounts', {});
     const localAcc = accounts[emailRaw] || accounts[email];
     // আগের লোকাল অ্যাকাউন্ট থাকলে তার হ্যাশও মেনে নিন (আগে বড় হাতের
     // অক্ষরে টাইপ করে বানানো অ্যাকাউন্টের হ্যাশ আলাদা হতে পারে)।
-    if (localAcc && localAcc.hash !== hash && localAcc.hash !== await sha256(emailRaw + ':' + pass)) { alert('ভুল পাসওয়ার্ড।'); return; }
+    if (localAcc && localAcc.hash !== hash && localAcc.hash !== await sha256(emailRaw + ':' + pass)) { toast('ভুল পাসওয়ার্ড।'); return; }
     // সার্ভারে অ্যাকাউন্ট থাকলে (Vercel KV) সেখানেই যাচাই হবে — তাহলে একই
     // Gmail + পাসওয়ার্ড অন্য ডিভাইসেও চলবে। KV না থাকলে আগের মতো এই
     // ব্রাউজারের লোকাল অ্যাকাউন্টেই লগইন হবে।
@@ -438,7 +465,7 @@ async function initLoginPopup() {
         finishLogin(data.name || name, email, data.token);
         return;
       }
-      if (data.error === 'wrong_password') { alert('ভুল পাসওয়ার্ড।'); return; }
+      if (data.error === 'wrong_password') { toast('ভুল পাসওয়ার্ড।'); return; }
     } catch {}
     if (!accounts[email]) accounts[email] = { name, hash };
     store('jt_accounts', accounts);
@@ -557,7 +584,7 @@ function initSettings() {
   const photoFile = document.getElementById('pPhotoFile');
   if (photoFile) photoFile.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
-    if (f.size > 500 * 1024) { alert('ছবি ৫০০ KB-এর মধ্যে রাখুন।'); return; }
+    if (f.size > 500 * 1024) { toast('ছবি ৫০০ KB-এর মধ্যে রাখুন।'); return; }
     const r = new FileReader();
     r.onload = () => {
       document.getElementById('pPhotoUrl').value = String(r.result);
@@ -570,7 +597,7 @@ function initSettings() {
   document.getElementById('cvFile').onchange = e => {
     const f = e.target.files[0]; if (!f) return;
     const r = new FileReader();
-    r.onload = () => { let found = false; try { const t = String(r.result); const m = t.match(/(ঢাকা|চট্টগ্রাম|খুলনা|রাজশাহী|বরিশাল|সিলেট|রংপুর|ময়মনসিংহ|কুমিল্লা|নারায়ণগঞ্জ|পটুয়াখালী)/); if (m) { document.getElementById('pDistrict').value = m[1]; found = true; } } catch {} alert(found ? 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া গেছে।' : 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া যায়নি, নিজে বসান।'); };
+    r.onload = () => { let found = false; try { const t = String(r.result); const m = t.match(/(ঢাকা|চট্টগ্রাম|খুলনা|রাজশাহী|বরিশাল|সিলেট|রংপুর|ময়মনসিংহ|কুমিল্লা|নারায়ণগঞ্জ|পটুয়াখালী)/); if (m) { document.getElementById('pDistrict').value = m[1]; found = true; } } catch {} toast(found ? 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া গেছে।' : 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া যায়নি, নিজে বসান।'); };
     r.readAsText(f);
   };
   document.getElementById('saveProfileBtn').onclick = () => {
@@ -588,8 +615,8 @@ function initSettings() {
       reminders: collectPrefs(),
     });
     syncToServer(true);
-    alert('প্রোফাইল সেভ হয়েছে। এখন হোম পেইজে মিলে যাওয়া সার্কুলারে “✓ CV অনুযায়ী মিলেছে” ব্যাজ দেখাবে।');
-    location.href = 'index.html';
+    toast('✓ প্রোফাইল সেভ হয়েছে।');
+    setTimeout(() => { location.href = 'index.html'; }, 900);
   };
   document.getElementById('settingsCloseBtn').onclick = () => location.href = 'index.html';
 }
@@ -600,9 +627,9 @@ async function initAdmin() {
   setupNote.textContent = '';
   document.getElementById('adminLoginBtn').onclick = async () => {
     const pin = document.getElementById('adminPin').value;
-    if (pin.length < 4) { alert('কমপক্ষে ৪ অঙ্কের PIN দিন।'); return; }
+    if (pin.length < 4) { toast('কমপক্ষে ৪ অঙ্কের PIN দিন।'); return; }
     const hash = await pinMatches(pin);
-    if (!hash) { alert('ভুল PIN।'); return; }
+    if (!hash) { toast('ভুল PIN।'); return; }
     sessionStorage.setItem('jt_admin_ok', '1');
     sessionStorage.setItem('jt_admin_hash', hash);
     document.getElementById('adminLogin').style.display = 'none';
@@ -748,11 +775,11 @@ async function initAdmin() {
   };
   document.getElementById('changePinBtn').onclick = async () => {
     const oldHash = await pinMatches(document.getElementById('oldPin').value);
-    if (!oldHash) { alert('বর্তমান PIN ভুল।'); return; }
+    if (!oldHash) { toast('বর্তমান PIN ভুল।'); return; }
     const np = document.getElementById('newPin').value;
-    if (np.length < 4) { alert('নতুন PIN কমপক্ষে ৪ অঙ্কের হতে হবে।'); return; }
+    if (np.length < 4) { toast('নতুন PIN কমপক্ষে ৪ অঙ্কের হতে হবে।'); return; }
     localStorage.setItem('jt_admin_pin_hash', await sha256(np));
-    alert('PIN বদলে গেছে।');
+    toast('PIN বদলে গেছে।');
   };
   // ---------- "তৈরি করেছেন" ট্যাব — নাম, ছবি, WhatsApp / Facebook লিংক ----------
   const creatorForm = () => {
@@ -766,7 +793,7 @@ async function initAdmin() {
   const crPhotoFile = document.getElementById('crPhotoFile');
   if (crPhotoFile) crPhotoFile.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
-    if (f.size > 500 * 1024) { alert('ছবি ৫০০ KB-এর মধ্যে রাখুন।'); return; }
+    if (f.size > 500 * 1024) { toast('ছবি ৫০০ KB-এর মধ্যে রাখুন।'); return; }
     const r = new FileReader();
     r.onload = () => {
       document.getElementById('crPhotoUrl').value = String(r.result);
@@ -789,15 +816,15 @@ async function initAdmin() {
     document.getElementById('tab-dash').innerHTML = `<p>মোট সার্কুলার: <span class="num">${bn(cs.length)}</span>টি • চলমান: <span class="num">${bn(cs.filter(c => daysLeft(c.deadline) >= 0).length)}</span>টি</p><p>অফিসিয়াল সেন্ডার Gmail: <span class="num">jobtrackerbd@gmail.com</span></p><p>ডেইলি ক্রন: প্রতিদিন সকাল ৮টা (ঢাকা) — /api/daily-check • নতুন সার্কুলার Teletalk-এর তালিকা থেকে অটো যোগ হয়</p>`;
     document.getElementById('tab-circulars').innerHTML = '<h4 style="margin-bottom:8px">সার্কুলার তালিকা</h4>' + cs.map(c => {
       const dl = daysLeft(c.deadline);
-      return `<div class="admin-row"><div class="info"><h4>${c.org}</h4><p>মোট পদ: ${c.totalPosts == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.totalPosts) + '</span>টি'} • শেষ: <span class="num">${fmtDate(c.deadline)}</span> • <span class="pill ${dl < 0 ? 'grey' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : 'চলমান'}</span></p></div><button class="btn outline small" onclick="if(confirm('মুছবেন?')){const d=JSON.parse(localStorage.getItem('jt_deleted_circulars')||'[]');d.push('${c.id}');localStorage.setItem('jt_deleted_circulars',JSON.stringify(d));location.reload();}">মুছুন</button></div>`;
+      return `<div class="admin-row"><div class="info"><h4>${c.org}</h4><p>মোট পদ: ${c.totalPosts == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.totalPosts) + '</span>টি'} • শেষ: <span class="num">${fmtDate(c.deadline)}</span> • <span class="pill ${dl < 0 ? 'grey' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : 'চলমান'}</span></p></div><button class="btn outline small" onclick="confirmDeleteCircular(this,'${c.id}')">মুছুন</button></div>`;
     }).join('') +
       `<h4 style="margin:14px 0 4px">নতুন সার্কুলার যোগ করুন</h4><div class="field"><label>প্রতিষ্ঠান</label><input id="newOrg" placeholder="প্রতিষ্ঠানের নাম"></div><div class="field"><label>মোট পদ</label><input id="newPosts" type="number"></div><div class="field"><label>শেষ তারিখ</label><input id="newDeadline" type="date"></div><button class="btn green" id="addCircularBtn">যোগ করুন</button>`;
     document.getElementById('addCircularBtn').onclick = () => {
-      if (!document.getElementById('newOrg').value.trim() || !document.getElementById('newDeadline').value) { alert('প্রতিষ্ঠানের নাম ও শেষ তারিখ — দুটোই দিন।'); return; }
+      if (!document.getElementById('newOrg').value.trim() || !document.getElementById('newDeadline').value) { toast('প্রতিষ্ঠানের নাম ও শেষ তারিখ — দুটোই দিন।'); return; }
       const extra = JSON.parse(localStorage.getItem('jt_admin_circulars') || '[]');
       extra.push({ id: 'custom-' + Date.now(), org: document.getElementById('newOrg').value, totalPosts: +document.getElementById('newPosts').value || 0, hscPosts: 0, grade: 16, fee: null, deadline: document.getElementById('newDeadline').value + 'T17:00:00+06:00', posts: [], salary: '', age: '', districts: '', source: 'secondary', sourceNote: 'অ্যাডমিন যোগ করেছেন — অফিসিয়াল সার্কুলার যাচাই করুন।', type: 'ministry', typeBn: 'মন্ত্রণালয় / অধিদপ্তর', applyUrl: '#' });
       localStorage.setItem('jt_admin_circulars', JSON.stringify(extra));
-      alert('সার্কুলার যোগ হয়েছে।'); location.reload();
+      toast('✓ সার্কুলার যোগ হয়েছে।'); setTimeout(() => location.reload(), 900);
     };
   }
 }
