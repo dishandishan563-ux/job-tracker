@@ -3,6 +3,9 @@ package com.jobtrackerbd.app
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.OpenableColumns
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -14,10 +17,12 @@ class SettingsActivity : Activity() {
 
     private val PICK_CV = 2001
     private lateinit var cvStatus: TextView
+    private lateinit var cvRemoveBtn: Button
     private lateinit var updateStatus: TextView
     private lateinit var whatsappBtn: Button
     private lateinit var telegramBtn: Button
     private lateinit var contactEmpty: TextView
+    private var removeArmed: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,14 +71,48 @@ class SettingsActivity : Activity() {
         }
 
         // ---------- CV upload ----------
+        // Same flow as the website: PDF, text or image file → text is read
+        // (PDF via CvParse, the port of cv-parse.js) → fields are parsed →
+        // they fill the profile and are saved with the profile to the
+        // server (api/user-data), so they show in আমার প্রোফাইল.
+        // The old picker used type "text/*", which hid every PDF — that is
+        // why PDF upload did not work from the app.
+        cvRemoveBtn = findViewById(R.id.cvRemoveBtn)
+        refreshCvState()
         findViewById<Button>(R.id.cvBtn).setOnClickListener {
             if (!Store.isLoggedIn) {
                 Ui.toast(this, "CV আপলোড করতে আগে লগইন করুন।")
                 startActivity(Intent(this, LoginActivity::class.java))
                 return@setOnClickListener
             }
-            val i = Intent(Intent.ACTION_GET_CONTENT).apply { type = "text/*" }
+            val i = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "*/*"
+                putExtra(
+                    Intent.EXTRA_MIME_TYPES,
+                    arrayOf("application/pdf", "text/plain", "image/*")
+                )
+            }
             startActivityForResult(Intent.createChooser(i, "CV ফাইল বেছে নিন"), PICK_CV)
+        }
+        cvRemoveBtn.setOnClickListener {
+            if (!removeArmed) {
+                removeArmed = true
+                cvRemoveBtn.text = getString(R.string.cv_remove_confirm)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    removeArmed = false
+                    cvRemoveBtn.text = getString(R.string.cv_remove)
+                }, 3000)
+                return@setOnClickListener
+            }
+            removeArmed = false
+            cvRemoveBtn.text = getString(R.string.cv_remove)
+            val d = Store.cachedData
+            val snap = d.profile.cv?.fields ?: emptyMap()
+            d.profile = CvParse.removeCvFields(d.profile, snap)
+            Store.cachedData = d
+            Api.saveUserData(d)
+            cvStatus.text = "CV মুছে ফেলা হয়েছে — প্রোফাইল থেকে CV-র তথ্য সরানো হয়েছে।"
+            refreshCvState()
         }
 
         // ---------- app version + update ----------
@@ -107,25 +146,70 @@ class SettingsActivity : Activity() {
         Ui.applyTextScale(findViewById(android.R.id.content))
     }
 
+    private fun refreshCvState() {
+        val cv = Store.cachedData.profile.cv
+        if (cv != null && cv.name.isNotBlank()) {
+            cvStatus.text = "CV আপলোড করা আছে: ${cv.name}।"
+            cvRemoveBtn.visibility = View.VISIBLE
+        } else {
+            cvRemoveBtn.visibility = View.GONE
+        }
+    }
+
+    private fun displayName(uri: android.net.Uri): String? {
+        return try {
+            contentResolver.query(uri, null, null, null, null)?.use { c ->
+                if (c.moveToFirst()) {
+                    val idx = c.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (idx >= 0) c.getString(idx) else null
+                } else null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == PICK_CV && resultCode == RESULT_OK) {
             val uri = data?.data ?: return
             try {
-                val text = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: ""
-                val districts = listOf(
-                    "ঢাকা", "চট্টগ্রাম", "খুলনা", "রাজশাহী", "বরিশাল", "সিলেট",
-                    "রংপুর", "ময়মনসিংহ", "কুমিল্লা", "নারায়ণগঞ্জ", "পটুয়াখালী"
-                )
-                val found = districts.firstOrNull { text.contains(it) }
+                val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: run { cvStatus.text = "CV পড়া যায়নি — অন্য ফাইল চেষ্টা করুন।"; return }
+                val mime = contentResolver.getType(uri)
+                val name = displayName(uri) ?: "cv"
+                val text = CvParse.extractText(bytes, mime, name)
+                if (text == null) {
+                    cvStatus.text = "ছবির CV থেকে লেখা পড়া যায়নি — PDF বা টেক্সট CV দিন।"
+                    return
+                }
+                if (text.isBlank()) {
+                    cvStatus.text = "CV থেকে লেখা পাওয়া যায়নি — অন্য ফাইল চেষ্টা করুন।"
+                    return
+                }
+                val fields = CvParse.parseCvText(text)
                 val d = Store.cachedData
-                if (found != null) {
-                    d.profile.district = found
-                    Store.cachedData = d
-                    Api.saveUserData(d)
-                    cvStatus.text = "CV আপলোড হয়েছে — জেলা পাওয়া গেছে: $found।"
+                // CV-ই শেষ কথা: CV-তে যা আছে তা-ই প্রোফাইলে বসবে, আগের মান
+                // থাকলেও CV-র মান জিতবে (ওয়েবসাইটের applyCvFieldsToProfile
+                // এখন overwriteCvFields ব্যবহার করে)।
+                val (merged, filled) = CvParse.overwriteCvFields(d.profile, fields)
+                val fieldsStr = fields.mapValues { it.value.toString() }
+                merged.cv = CvInfo(
+                    name = name,
+                    size = bytes.size.toLong(),
+                    uploadedAt = System.currentTimeMillis(),
+                    text = text.take(4000),
+                    fields = fieldsStr
+                )
+                d.profile = merged
+                Store.cachedData = d
+                Api.saveUserData(d)
+                refreshCvState()
+                cvStatus.text = if (filled.isEmpty()) {
+                    "CV আপলোড হয়েছে — কোনো তথ্য মেলেনি, প্রোফাইলে নিজে বসান।"
                 } else {
-                    cvStatus.text = "CV আপলোড হয়েছে — জেলা পাওয়া যায়নি, প্রোফাইলে নিজে বসান।"
+                    val labels = filled.mapNotNull { CvParse.FIELD_LABELS[it] }
+                    "CV আপলোড হয়েছে — প্রোফাইলে বসেছে: ${labels.joinToString(", ")}।"
                 }
             } catch (e: Exception) {
                 cvStatus.text = "CV পড়া যায়নি — অন্য ফাইল চেষ্টা করুন।"

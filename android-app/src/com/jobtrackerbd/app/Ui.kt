@@ -40,8 +40,12 @@ object Ui {
     }
 
     /** A toggle chip button (used for type / qualification filters).
-        Slim: 13sp text, tight padding, no tall default min-height. */
+        Custom pill background + explicit text colors + button drawable
+        removed: the device's default ToggleButton draws a horizontal
+        groove line through the text and a gray circle indicator, so the
+        default rendering must never be used. Slim: 13sp text, 32dp tall. */
     fun chipButton(ctx: Context, label: String, active: Boolean): ToggleButton {
+        val density = ctx.resources.displayMetrics.density
         return ToggleButton(ctx).apply {
             textOn = label
             textOff = label
@@ -49,8 +53,12 @@ object Ui {
             isChecked = active
             textSize = 13f
             minimumHeight = 0
-            minHeight = 0
-            setPadding(14, 6, 14, 6)
+            minHeight = (32 * density).toInt()
+            setPadding((16 * density).toInt(), (8 * density).toInt(), (16 * density).toInt(), (8 * density).toInt())
+            // No default toggle chrome: no groove line, no circle indicator.
+            setButtonDrawable(null)
+            background = ctx.getDrawable(R.drawable.chip_bg)
+            setTextColor(ctx.getColorStateList(R.color.chip_text))
             val lp = ViewGroup.MarginLayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT

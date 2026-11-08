@@ -3,22 +3,23 @@ package com.jobtrackerbd.app
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.Menu
-import android.view.MenuItem
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ListView
+import android.widget.PopupMenu
 import android.widget.ProgressBar
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.ToggleButton
 import android.widget.Toolbar
@@ -42,6 +43,13 @@ class MainActivity : Activity() {
 
     private var all: List<Circular> = emptyList()
     private var contact: JSONObject? = null
+
+    // Custom slide-in drawer (right side): the framework overflow menu
+    // rendered as a too-wide popup and truncated the long contact label
+    // with "..", so the menu is a real drawer panel now — max 320dp /
+    // 80% of screen width, 16sp items, long labels wrap to two lines.
+    private var drawerRoot: FrameLayout? = null
+    private var drawerOpen: Boolean = false
 
     private var query: String = ""
     private var typeKey: String? = null
@@ -71,6 +79,8 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setActionBar(toolbar)
+        toolbar.setNavigationIcon(R.drawable.ic_menu)
+        toolbar.setNavigationOnClickListener { openDrawer() }
 
         listView = findViewById(R.id.list)
         heroStats = findViewById(R.id.heroStats)
@@ -107,7 +117,14 @@ class MainActivity : Activity() {
 
         buildTypeChips()
         buildQualChips()
-        setupSpinners()
+        setupFilterButtons()
+        // Shortlist toggle uses the same clean pill as the chips — no
+        // default ToggleButton chrome (groove line / gray circle).
+        findViewById<ToggleButton>(R.id.shortlistOnly).apply {
+            setButtonDrawable(null)
+            background = getDrawable(R.drawable.chip_bg)
+            setTextColor(getColorStateList(R.color.chip_text))
+        }
         findViewById<ToggleButton>(R.id.shortlistOnly).setOnCheckedChangeListener { _, checked ->
             shortlistOnly = checked
             applyFilters()
@@ -150,54 +167,149 @@ class MainActivity : Activity() {
         })
     }
 
-    // ---------- menu ----------
+    // ---------- custom drawer ----------
+    // The framework overflow menu rendered as a too-wide popup (~85% of the
+    // screen) and truncated the long contact label with "..", so the menu
+    // is a real right-side drawer panel now: max 320dp / 80% of the screen,
+    // 16sp items with 56dp rows, long labels wrap to two lines — never "..".
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menu.add(Menu.NONE, 1, Menu.NONE, getString(R.string.menu_profile))
-        menu.add(Menu.NONE, 2, Menu.NONE, getString(R.string.menu_settings))
-        menu.add(Menu.NONE, 3, Menu.NONE, getString(R.string.menu_contact))
-        menu.add(Menu.NONE, 4, Menu.NONE, getString(R.string.menu_refresh))
-        menu.add(Menu.NONE, 5, Menu.NONE, "")
-        menu.add(Menu.NONE, 6, Menu.NONE, getString(R.string.menu_about))
-        return true
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+
+    private fun drawerWidth(): Int =
+        minOf(dp(320), (resources.displayMetrics.widthPixels * 0.8).toInt())
+
+    private fun ensureDrawer() {
+        if (drawerRoot != null) return
+        val root = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            visibility = View.GONE
+        }
+        val dim = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            setBackgroundColor(0x80000000.toInt())
+            setOnClickListener { closeDrawer() }
+        }
+        root.addView(dim)
+        (findViewById<View>(android.R.id.content) as ViewGroup).addView(root)
+        drawerRoot = root
     }
 
-    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        val contactItem = menu.findItem(3)
+    private fun openDrawer() {
+        ensureDrawer()
+        val root = drawerRoot ?: return
+        // Rebuild the panel on every open: login state + contact may change.
+        root.removeViewAt(1)
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.WHITE)
+            elevation = dp(8).toFloat()
+            layoutParams = FrameLayout.LayoutParams(drawerWidth(), ViewGroup.LayoutParams.MATCH_PARENT)
+                .apply { gravity = Gravity.END }
+            setPadding(dp(8), dp(16), dp(8), dp(16))
+        }
+        val head = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), 0, dp(8), dp(12))
+        }
+        val headTitle = TextView(this).apply {
+            text = getString(R.string.drawer_menu)
+            textSize = 16f
+            setTextColor(Color.parseColor("#14532d"))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val closeBtn = Button(this).apply {
+            text = "✕"
+            textSize = 15f
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(12), dp(6), dp(12), dp(6))
+            background = getDrawable(R.drawable.btn_ghost)
+            setTextColor(Color.parseColor("#1a1a1a"))
+            setOnClickListener { closeDrawer() }
+        }
+        head.addView(headTitle)
+        head.addView(closeBtn)
+        panel.addView(head)
+        panel.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
+            setBackgroundColor(Color.parseColor("#E5E7EB"))
+        })
+
+        fun item(label: String, onClick: () -> Unit) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = dp(56)
+                setPadding(dp(8), dp(12), dp(8), dp(12))
+                // Ripple feedback.
+                val out = TypedValue()
+                theme.resolveAttribute(android.R.attr.selectableItemBackground, out, true)
+                setBackgroundResource(out.resourceId)
+                setOnClickListener { closeDrawer(); onClick() }
+            }
+            val labelView = TextView(this).apply {
+                text = label
+                textSize = 16f
+                setTextColor(Color.parseColor("#1a1a1a"))
+                maxLines = 2
+                ellipsize = null
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            }
+            row.addView(labelView)
+            panel.addView(row)
+        }
+
+        item(getString(R.string.menu_profile)) {
+            if (Store.isLoggedIn) startActivity(Intent(this, ProfileActivity::class.java))
+            else startActivity(Intent(this, LoginActivity::class.java))
+        }
+        item(getString(R.string.menu_settings)) {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
         val wa = contact?.optString("whatsapp", "") ?: ""
         val tg = contact?.optString("telegram", "") ?: ""
-        contactItem.isVisible = wa.isNotBlank() || tg.isNotBlank()
-        menu.findItem(5).title =
-            if (Store.isLoggedIn) getString(R.string.menu_logout) else getString(R.string.menu_login)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            1 -> {
-                if (Store.isLoggedIn) startActivity(Intent(this, ProfileActivity::class.java))
-                else startActivity(Intent(this, LoginActivity::class.java))
+        if (wa.isNotBlank() || tg.isNotBlank()) {
+            item(getString(R.string.menu_contact)) { showContactDialog() }
+        }
+        item(getString(R.string.menu_refresh)) { loadCirculars() }
+        if (Store.isLoggedIn) {
+            item(getString(R.string.menu_logout)) {
+                Store.logout()
+                Ui.toast(this, "লগআউট হয়েছে।")
+                adapter.notifyDataSetChanged()
             }
-            2 -> startActivity(Intent(this, SettingsActivity::class.java))
-            3 -> showContactDialog()
-            4 -> loadCirculars()
-            5 -> {
-                if (Store.isLoggedIn) {
-                    Store.logout()
-                    Ui.toast(this, "লগআউট হয়েছে।")
-                    adapter.notifyDataSetChanged()
-                    invalidateOptionsMenu()
-                } else {
-                    startActivity(Intent(this, LoginActivity::class.java))
-                }
+        } else {
+            item(getString(R.string.menu_login)) {
+                startActivity(Intent(this, LoginActivity::class.java))
             }
-            6 -> AlertDialog.Builder(this)
+        }
+        item(getString(R.string.menu_about)) {
+            AlertDialog.Builder(this)
                 .setTitle("Job Tracker")
-                .setMessage("সংস্করণ v${Api.APP_VERSION_NAME}\n\nনেটিভ অ্যান্ড্রয়েড অ্যাপ — সার্কুলার, লগইন, প্রোফাইল ও রিমাইন্ডার সার্ভার থেকে চলে, ওয়েবসাইটের মতোই।")
+                .setMessage("সংস্করণ v${Api.APP_VERSION_NAME}")
                 .setPositiveButton("ঠিক আছে", null)
                 .show()
         }
-        return true
+        root.addView(panel)
+        Ui.applyTextScale(panel)
+        root.visibility = View.VISIBLE
+        drawerOpen = true
+    }
+
+    private fun closeDrawer() {
+        drawerRoot?.visibility = View.GONE
+        drawerOpen = false
+    }
+
+    override fun onBackPressed() {
+        if (drawerOpen) { closeDrawer(); return }
+        super.onBackPressed()
     }
 
     private fun showContactDialog() {
@@ -314,43 +426,59 @@ class MainActivity : Activity() {
         applyFilters()
     }
 
-    private fun setupSpinners() {
-        val sort = findViewById<Spinner>(R.id.sortSpinner)
-        val sortAdapter = ArrayAdapter(
-            this, R.layout.spinner_item,
-            listOf(
-                getString(R.string.sort_deadline),
-                getString(R.string.sort_posts),
-                getString(R.string.sort_name)
-            )
-        )
-        sortAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        sort.adapter = sortAdapter
-        sort.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                sortMode = pos
+    // ---------- filter dropdowns ----------
+    // Plain Button + PopupMenu (single "▼" arrow drawn as part of the
+    // label). Spinners are gone: the device spinner chrome rendered a
+    // phantom second arrow plus a stray gray circle in this row.
+    private fun setupFilterButtons() {
+        val sortBtn = findViewById<Button>(R.id.sortBtn)
+        sortBtn.setOnClickListener {
+            val pm = PopupMenu(this, sortBtn)
+            pm.menu.add(0, 0, 0, getString(R.string.sort_deadline))
+            pm.menu.add(0, 1, 0, getString(R.string.sort_posts))
+            pm.menu.add(0, 2, 0, getString(R.string.sort_name))
+            pm.setOnMenuItemClickListener { item ->
+                sortMode = item.itemId
+                updateFilterButtonLabels()
                 applyFilters()
+                true
             }
-            override fun onNothingSelected(p: AdapterView<*>?) {}
+            pm.show()
         }
-        val grade = findViewById<Spinner>(R.id.gradeSpinner)
-        val gradeAdapter = ArrayAdapter(
-            this, R.layout.spinner_item,
-            listOf("সব গ্রেড (All)", "১৩", "১৬", "২০")
-        )
-        gradeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        grade.adapter = gradeAdapter
-        grade.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                gradeFilter = when (pos) {
+        val gradeBtn = findViewById<Button>(R.id.gradeBtn)
+        gradeBtn.setOnClickListener {
+            val pm = PopupMenu(this, gradeBtn)
+            pm.menu.add(0, 0, 0, getString(R.string.all_grades))
+            pm.menu.add(0, 1, 0, "১৩")
+            pm.menu.add(0, 2, 0, "১৬")
+            pm.menu.add(0, 3, 0, "২০")
+            pm.setOnMenuItemClickListener { item ->
+                gradeFilter = when (item.itemId) {
                     1 -> 13
                     2 -> 16
                     3 -> 20
                     else -> 0
                 }
+                updateFilterButtonLabels()
                 applyFilters()
+                true
             }
-            override fun onNothingSelected(p: AdapterView<*>?) {}
+            pm.show()
+        }
+        updateFilterButtonLabels()
+    }
+
+    private fun updateFilterButtonLabels() {
+        findViewById<Button>(R.id.sortBtn).text = when (sortMode) {
+            1 -> getString(R.string.sort_posts_short) + " ▼"
+            2 -> getString(R.string.sort_name_short) + " ▼"
+            else -> getString(R.string.sort_deadline_short) + " ▼"
+        }
+        findViewById<Button>(R.id.gradeBtn).text = when (gradeFilter) {
+            13 -> "১৩ ▼"
+            16 -> "১৬ ▼"
+            20 -> "২০ ▼"
+            else -> getString(R.string.grade_all_short) + " ▼"
         }
     }
 
@@ -363,8 +491,7 @@ class MainActivity : Activity() {
         sortMode = 0
         shortlistOnly = false
         findViewById<ToggleButton>(R.id.shortlistOnly).isChecked = false
-        findViewById<Spinner>(R.id.sortSpinner).setSelection(0)
-        findViewById<Spinner>(R.id.gradeSpinner).setSelection(0)
+        updateFilterButtonLabels()
         selectType(null, findViewById(R.id.typeChips))
         selectQual(null, findViewById(R.id.qualChips))
         applyFilters()

@@ -108,26 +108,38 @@
                 <Button
                     android:id="@+id/statusApplied"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:textSize="13sp"
-                    android:text="আবেদন করেছি (Applied)" />
+                    android:text="আবেদন করেছি (Applied)"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="@color/text_dark"
+            />
                 <Button
                     android:id="@+id/statusFee"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:textSize="13sp"
                     android:text="ফি দিয়েছি (Fee Paid)"
-                    android:layout_marginLeft="6dp" />
+                    android:layout_marginLeft="6dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="@color/text_dark"
+            />
                 <Button
                     android:id="@+id/statusAdmit"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:textSize="13sp"
                     android:text="অ্যাডমিট কার্ড (Admit Card)"
-                    android:layout_marginLeft="6dp" />
+                    android:layout_marginLeft="6dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="@color/text_dark"
+            />
             </LinearLayout>
             <TextView
                 android:id="@+id/statusText"
@@ -141,17 +153,25 @@
             <Button
                 android:id="@+id/applyBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:text="@string/apply"
                 android:textSize="14sp"
-                android:layout_marginTop="14dp" />
+                android:layout_marginTop="14dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_primary"
+                android:textColor="#ffffff"
+            />
             <Button
                 android:id="@+id/shortlistBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:text="@string/save_shortlist"
                 android:textSize="14sp"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="8dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_secondary"
+                android:textColor="@color/green_dark"
+            />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

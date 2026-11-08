@@ -6,14 +6,14 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.ToggleButton
 import android.widget.Toolbar
@@ -36,16 +36,28 @@ class ProfileActivity : Activity() {
     private lateinit var pPhone: EditText
     private lateinit var pDistrict: EditText
     private lateinit var pDob: EditText
-    private lateinit var pEdu: Spinner
+    private lateinit var pEduBtn: Button
     private lateinit var pTypeBn: EditText
     private lateinit var pTypeEn: EditText
     private lateinit var pAddress: EditText
     private lateinit var pNotes: EditText
+    private lateinit var pEmail: EditText
+    private lateinit var pPermAddress: EditText
+    private lateinit var pFatherName: EditText
+    private lateinit var pMotherName: EditText
+    private lateinit var pSkills: EditText
+    private lateinit var pExperience: EditText
+    private lateinit var pLanguages: EditText
     private lateinit var photoPreview: ImageView
     private lateinit var remYes: ToggleButton
     private lateinit var remNo: ToggleButton
-    private lateinit var remNote: TextView
     private lateinit var statusTv: TextView
+    private lateinit var cvInfo: TextView
+    private lateinit var removeCvBtnProfile: Button
+    private lateinit var resetProfileBtn: Button
+    private var resetArmed: Boolean = false
+    private var cvRemoveArmed: Boolean = false
+    private var eduSelected: String = "HSC"
 
     private val eduOptions = listOf("HSC", "SSC", "স্নাতক", "JSC")
 
@@ -67,22 +79,85 @@ class ProfileActivity : Activity() {
         pPhone = findViewById(R.id.pPhone)
         pDistrict = findViewById(R.id.pDistrict)
         pDob = findViewById(R.id.pDob)
-        pEdu = findViewById(R.id.pEdu)
+        pEduBtn = findViewById(R.id.pEduBtn)
         pTypeBn = findViewById(R.id.pTypeBn)
         pTypeEn = findViewById(R.id.pTypeEn)
         pAddress = findViewById(R.id.pAddress)
         pNotes = findViewById(R.id.pNotes)
+        pEmail = findViewById(R.id.pEmail)
+        pPermAddress = findViewById(R.id.pPermAddress)
+        pFatherName = findViewById(R.id.pFatherName)
+        pMotherName = findViewById(R.id.pMotherName)
+        pSkills = findViewById(R.id.pSkills)
+        pExperience = findViewById(R.id.pExperience)
+        pLanguages = findViewById(R.id.pLanguages)
         photoPreview = findViewById(R.id.photoPreview)
         remYes = findViewById(R.id.remYes)
         remNo = findViewById(R.id.remNo)
-        remNote = findViewById(R.id.remNote)
         statusTv = findViewById(R.id.status)
+        cvInfo = findViewById(R.id.cvInfo)
+        removeCvBtnProfile = findViewById(R.id.removeCvBtnProfile)
+        resetProfileBtn = findViewById(R.id.resetProfileBtn)
 
-        val eduAdapter = ArrayAdapter(
-            this, R.layout.spinner_item, eduOptions
-        )
-        eduAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        pEdu.adapter = eduAdapter
+        // CV remove from the profile screen (same as the website's
+        // profile page): two-tap confirm, only snapshot-matching fields
+        // are cleared, hand-edited fields stay.
+        removeCvBtnProfile.setOnClickListener {
+            if (!cvRemoveArmed) {
+                cvRemoveArmed = true
+                removeCvBtnProfile.text = "নিশ্চিত মুছবেন?"
+                Handler(Looper.getMainLooper()).postDelayed({
+                    cvRemoveArmed = false
+                    removeCvBtnProfile.text = "🗑️ CV মুছুন (Remove CV)"
+                }, 3000)
+                return@setOnClickListener
+            }
+            cvRemoveArmed = false
+            removeCvBtnProfile.text = "🗑️ CV মুছুন (Remove CV)"
+            val d = Store.cachedData
+            val snap = d.profile.cv?.fields ?: emptyMap()
+            d.profile = CvParse.removeCvFields(d.profile, snap)
+            Store.cachedData = d
+            Api.saveUserData(d)
+            fillFromProfile(d.profile)
+            Ui.toast(this, "CV মুছে ফেলা হয়েছে।")
+        }
+
+        // Profile reset (same as the website's resetProfileBtn): only the
+        // profile + CV are cleared to empty defaults — login/account,
+        // shortlist and application status are never touched.
+        resetProfileBtn.setOnClickListener {
+            if (!resetArmed) {
+                resetArmed = true
+                resetProfileBtn.text = "নিশ্চিত রিসেট করবেন?"
+                Handler(Looper.getMainLooper()).postDelayed({
+                    resetArmed = false
+                    resetProfileBtn.text = "↺ প্রোফাইল রিসেট করুন (Reset Profile)"
+                }, 3000)
+                return@setOnClickListener
+            }
+            resetArmed = false
+            resetProfileBtn.text = "↺ প্রোফাইল রিসেট করুন (Reset Profile)"
+            val data = Store.cachedData
+            data.profile = Profile()
+            Store.cachedData = data
+            Api.saveUserData(data)
+            fillFromProfile(data.profile)
+            Ui.toast(this, "প্রোফাইল রিসেট হয়েছে।")
+        }
+
+        // Education: clean dropdown button (single ▼), same as the home
+        // filter dropdowns — no OEM spinner chrome anywhere in the app.
+        pEduBtn.setOnClickListener {
+            val pm = android.widget.PopupMenu(this, pEduBtn)
+            for ((i, e) in eduOptions.withIndex()) pm.menu.add(0, i, 0, e)
+            pm.setOnMenuItemClickListener { item ->
+                eduSelected = eduOptions[item.itemId]
+                pEduBtn.text = "$eduSelected ▼"
+                true
+            }
+            pm.show()
+        }
         findViewById<Button>(R.id.photoBtn).setOnClickListener {
             val i = Intent(Intent.ACTION_GET_CONTENT).apply { type = "image/*" }
             startActivityForResult(Intent.createChooser(i, "ছবি বেছে নিন"), PICK_PHOTO)
@@ -101,11 +176,6 @@ class ProfileActivity : Activity() {
         remindersEnabled = enabled
         remYes.isChecked = enabled
         remNo.isChecked = !enabled
-        remNote.text = if (enabled) {
-            "হ্যাঁ — ডেডলাইনের রিমাইন্ডার আপনার Gmail-এ যাবে (নিচের পছন্দ অনুযায়ী)।"
-        } else {
-            "না — কোনো রিমাইন্ডার ইমেইল যাবে না। চাইলে পরে আবার হ্যাঁ করতে পারবেন।"
-        }
     }
 
     private fun buildPrefChips() {
@@ -159,11 +229,19 @@ class ProfileActivity : Activity() {
         pPhone.setText(p.phone)
         pDistrict.setText(p.district)
         pDob.setText(p.dob)
-        pEdu.setSelection(eduOptions.indexOf(p.edu).takeIf { it >= 0 } ?: 0)
+        eduSelected = p.edu.ifBlank { "HSC" }
+        pEduBtn.text = "$eduSelected ▼"
         pTypeBn.setText(p.typeBn.toString())
         pTypeEn.setText(p.typeEn.toString())
         pAddress.setText(p.address)
         pNotes.setText(p.notes)
+        pEmail.setText(p.email)
+        pPermAddress.setText(p.permAddress)
+        pFatherName.setText(p.fatherName)
+        pMotherName.setText(p.motherName)
+        pSkills.setText(p.skills)
+        pExperience.setText(p.experience)
+        pLanguages.setText(p.languages)
         photoDataUrl = p.photo
         showPhoto()
         selTypes.clear()
@@ -172,6 +250,18 @@ class ProfileActivity : Activity() {
         selQuals.addAll(p.remQuals)
         syncChipStates()
         setRemToggle(p.remindersEnabled)
+        refreshCvState(p)
+    }
+
+    private fun refreshCvState(p: Profile) {
+        val cv = p.cv
+        if (cv != null && cv.name.isNotBlank()) {
+            cvInfo.text = "📄 ${cv.name}"
+            removeCvBtnProfile.visibility = View.VISIBLE
+        } else {
+            cvInfo.text = "📄 আমার CV — এখনো কোনো CV আপলোড করা হয়নি।"
+            removeCvBtnProfile.visibility = View.GONE
+        }
     }
 
     private fun showPhoto() {
@@ -191,20 +281,29 @@ class ProfileActivity : Activity() {
     }
 
     private fun saveProfile() {
-        val p = Profile(
+        // copy() keeps the saved CV snapshot (p.cv) — rebuilding a fresh
+        // Profile here would wipe the CV on every profile save.
+        val p = Store.cachedData.profile.copy(
             name = pName.text.toString().trim(),
             address = pAddress.text.toString().trim(),
             phone = pPhone.text.toString().trim(),
             photo = photoDataUrl,
             district = pDistrict.text.toString().trim(),
             dob = pDob.text.toString().trim(),
-            edu = eduOptions.getOrNull(pEdu.selectedItemPosition) ?: "HSC",
+            edu = eduSelected,
             typeBn = pTypeBn.text.toString().toIntOrNull() ?: 20,
             typeEn = pTypeEn.text.toString().toIntOrNull() ?: 20,
             notes = pNotes.text.toString().trim(),
             remindersEnabled = remindersEnabled,
             remTypes = selTypes.toList(),
-            remQuals = selQuals.toList()
+            remQuals = selQuals.toList(),
+            email = pEmail.text.toString().trim(),
+            permAddress = pPermAddress.text.toString().trim(),
+            fatherName = pFatherName.text.toString().trim(),
+            motherName = pMotherName.text.toString().trim(),
+            skills = pSkills.text.toString().trim(),
+            experience = pExperience.text.toString().trim(),
+            languages = pLanguages.text.toString().trim()
         )
         val data = Store.cachedData
         data.profile = p

@@ -141,34 +141,61 @@
             android:paddingRight="8dp" />
     </HorizontalScrollView>
 
+    <!-- Filter row: two clean dropdown buttons (single ▼ in the label),
+         a pill toggle for shortlist, and a small clear button.
+         Spinners were removed: their OEM chrome drew a phantom second
+         arrow and a stray gray circle in this row. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:padding="8dp">
-        <Spinner
-            android:id="@+id/sortSpinner"
+        <Button
+            android:id="@+id/sortBtn"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-        <Spinner
-            android:id="@+id/gradeSpinner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:background="@drawable/dropdown_bg"
+            android:textColor="@color/text_dark"
+            android:textSize="13sp"
+            android:gravity="center" />
+        <Button
+            android:id="@+id/gradeBtn"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:background="@drawable/dropdown_bg"
+            android:textColor="@color/text_dark"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:layout_marginLeft="8dp" />
         <ToggleButton
             android:id="@+id/shortlistOnly"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textOn="★ আমার তালিকা (My List)"
-            android:textOff="★ আমার তালিকা (My List)"
-            android:text="★ আমার তালিকা (My List)"
-            android:textSize="13sp" />
+            android:layout_height="40dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:textOn="★ আমার তালিকা"
+            android:textOff="★ আমার তালিকা"
+            android:text="★ আমার তালিকা"
+            android:textSize="13sp"
+            android:layout_marginLeft="8dp" />
         <Button
             android:id="@+id/clearFilters"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:background="@drawable/btn_ghost"
+            android:textColor="@color/text_dark"
             android:text="✕"
-            android:textSize="13sp" />
+            android:textSize="13sp"
+            android:layout_marginLeft="8dp" />
     </LinearLayout>
 
     <ListView

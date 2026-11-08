@@ -129,6 +129,49 @@ data class Circular(
     }
 }
 
+/**
+ * CV snapshot saved with the profile (same shape as the website's
+ * `p.cv`: file name, size, upload time, extracted text, and the field
+ * values the CV filled, so a later removal can undo exactly those).
+ */
+data class CvInfo(
+    var name: String = "",
+    var size: Long = 0,
+    var uploadedAt: Long = 0,
+    var text: String = "",
+    var fields: Map<String, String> = emptyMap()
+) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("name", name)
+        put("size", size)
+        put("uploadedAt", uploadedAt)
+        put("text", text)
+        put("fields", JSONObject(fields))
+    }
+
+    companion object {
+        fun fromJson(o: JSONObject?): CvInfo {
+            if (o == null) return CvInfo()
+            val f = mutableMapOf<String, String>()
+            val fo = o.optJSONObject("fields")
+            if (fo != null) {
+                val keys = fo.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    f[k] = fo.optString(k, "")
+                }
+            }
+            return CvInfo(
+                name = o.optString("name", ""),
+                size = o.optLong("size", 0),
+                uploadedAt = o.optLong("uploadedAt", 0),
+                text = o.optString("text", ""),
+                fields = f
+            )
+        }
+    }
+}
+
 data class Profile(
     var name: String = "",
     var address: String = "",
@@ -142,7 +185,16 @@ data class Profile(
     var notes: String = "",
     var remindersEnabled: Boolean = true,
     var remTypes: List<String> = emptyList(),
-    var remQuals: List<String> = emptyList()
+    var remQuals: List<String> = emptyList(),
+    // Extra fields a CV has (same names as the website profile).
+    var email: String = "",
+    var permAddress: String = "",
+    var fatherName: String = "",
+    var motherName: String = "",
+    var skills: String = "",
+    var experience: String = "",
+    var languages: String = "",
+    var cv: CvInfo? = null
 ) {
     fun toJson(): JSONObject {
         val rem = JSONObject()
@@ -161,6 +213,14 @@ data class Profile(
             put("notes", notes)
             put("remindersEnabled", remindersEnabled)
             put("reminders", rem)
+            put("email", email)
+            put("permAddress", permAddress)
+            put("fatherName", fatherName)
+            put("motherName", motherName)
+            put("skills", skills)
+            put("experience", experience)
+            put("languages", languages)
+            if (cv != null) put("cv", cv!!.toJson())
         }
     }
 
@@ -189,7 +249,15 @@ data class Profile(
                 notes = o.optString("notes", ""),
                 remindersEnabled = o.optBoolean("remindersEnabled", true),
                 remTypes = types,
-                remQuals = quals
+                remQuals = quals,
+                email = o.optString("email", ""),
+                permAddress = o.optString("permAddress", ""),
+                fatherName = o.optString("fatherName", ""),
+                motherName = o.optString("motherName", ""),
+                skills = o.optString("skills", ""),
+                experience = o.optString("experience", ""),
+                languages = o.optString("languages", ""),
+                cv = if (o.has("cv")) CvInfo.fromJson(o.optJSONObject("cv")) else null
             )
         }
     }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filter chip background. Explicit custom background is REQUIRED:
+     the device's default ToggleButton background draws a horizontal
+     groove line straight through the chip text (and its toggle
+     indicator draws a gray circle), so chips must never use it. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:drawable="@drawable/chip_bg_checked" />
+    <item android:drawable="@drawable/chip_bg_unchecked" />
+</selector>

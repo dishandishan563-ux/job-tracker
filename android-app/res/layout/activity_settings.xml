@@ -39,34 +39,50 @@
                 <Button
                     android:id="@+id/sizeSmall"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:textSize="14sp"
-                    android:text="A-" />
+                    android:text="A-"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="@color/text_dark"
+            />
                 <Button
                     android:id="@+id/sizeMedium"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:textSize="14sp"
                     android:text="A"
-                    android:layout_marginLeft="6dp" />
+                    android:layout_marginLeft="6dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="@color/text_dark"
+            />
                 <Button
                     android:id="@+id/sizeLarge"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:textSize="14sp"
                     android:text="A+"
-                    android:layout_marginLeft="6dp" />
+                    android:layout_marginLeft="6dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="@color/text_dark"
+            />
                 <Button
                     android:id="@+id/sizeXl"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:textSize="14sp"
                     android:text="A++"
-                    android:layout_marginLeft="6dp" />
+                    android:layout_marginLeft="6dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="@color/text_dark"
+            />
             </LinearLayout>
 
             <TextView
@@ -76,25 +92,34 @@
                 android:textStyle="bold"
                 android:textSize="15sp"
                 android:layout_marginTop="20dp" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="CV থেকে জেলা খুঁজে প্রোফাইলে বসানো হবে।"
-                android:textSize="13sp"
-                android:textColor="@color/text_grey" />
             <Button
                 android:id="@+id/cvBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:text="CV ফাইল বেছে নিন (Choose CV)"
                 android:textSize="14sp"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="8dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_primary"
+                android:textColor="#ffffff"
+            />
             <TextView
                 android:id="@+id/cvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="14sp"
                 android:layout_marginTop="6dp" />
+            <Button
+                android:id="@+id/cvRemoveBtn"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="#b91c1c"
+                android:text="@string/cv_remove"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -112,10 +137,14 @@
             <Button
                 android:id="@+id/checkUpdateBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:text="আপডেট চেক করুন (Check Update)"
                 android:textSize="14sp"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="8dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_secondary"
+                android:textColor="@color/green_dark"
+            />
             <TextView
                 android:id="@+id/updateStatus"
                 android:layout_width="wrap_content"
@@ -133,19 +162,27 @@
             <Button
                 android:id="@+id/whatsappBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:text="📱 WhatsApp-এ যোগাযোগ করুন"
                 android:textSize="14sp"
                 android:layout_marginTop="8dp"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_secondary"
+                android:textColor="@color/green_dark"
+            />
             <Button
                 android:id="@+id/telegramBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:text="✈️ Telegram-এ যোগাযোগ করুন"
                 android:textSize="14sp"
                 android:layout_marginTop="8dp"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_secondary"
+                android:textColor="@color/green_dark"
+            />
             <TextView
                 android:id="@+id/contactEmpty"
                 android:layout_width="wrap_content"

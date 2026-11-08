@@ -26,9 +26,17 @@
     <string name="detail_title">সার্কুলারের বিস্তারিত (Details)</string>
     <string name="menu_profile">👤 আমার প্রোফাইল (Profile)</string>
     <string name="menu_settings">⚙️ সেটিংস (Settings)</string>
-    <string name="menu_contact">📞 আবেদন করতে চাইলে যোগাযোগ করুন (Contact)</string>
+    <!-- Short on purpose: the long label truncated with ".." in the menu. -->
+    <string name="menu_contact">📞 যোগাযোগ করুন (Contact)</string>
     <string name="menu_login">🔑 লগইন করুন (Login)</string>
     <string name="menu_logout">🚪 লগআউট (Logout)</string>
     <string name="menu_refresh">⟳ তালিকা রিফ্রেশ করুন (Refresh)</string>
     <string name="menu_about">ℹ️ অ্যাপ সম্পর্কে (About)</string>
+    <string name="drawer_menu">☰ মেনু (Menu)</string>
+    <string name="sort_deadline_short">ডেডলাইন</string>
+    <string name="sort_posts_short">বেশি পদ</string>
+    <string name="sort_name_short">নাম (A–Z)</string>
+    <string name="grade_all_short">সব গ্রেড</string>
+    <string name="cv_remove">🗑️ CV মুছুন (Remove CV)</string>
+    <string name="cv_remove_confirm">নিশ্চিত মুছবেন?</string>
 </resources>

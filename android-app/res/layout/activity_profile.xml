@@ -25,12 +25,6 @@
             android:orientation="vertical"
             android:padding="16dp"
             android:paddingBottom="32dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="নাম, ঠিকানা ও ছবি দিন — আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।"
-                android:textSize="14sp"
-                android:textColor="@color/text_grey" />
             <ImageView
                 android:id="@+id/photoPreview"
                 android:layout_width="120dp"
@@ -42,11 +36,15 @@
             <Button
                 android:id="@+id/photoBtn"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:layout_gravity="center"
                 android:text="ছবি বেছে নিন (Choose Photo)"
                 android:textSize="14sp"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="8dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="@color/text_dark"
+            />
             <EditText
                 android:id="@+id/pName"
                 android:layout_width="match_parent"
@@ -92,10 +90,19 @@
                 android:textSize="14sp"
                 android:layout_marginTop="12dp"
                 android:textStyle="bold" />
-            <Spinner
-                android:id="@+id/pEdu"
+            <Button
+                android:id="@+id/pEduBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="40dp"
+                android:minHeight="0dp"
+                android:background="@drawable/dropdown_bg"
+                android:textColor="@color/text_dark"
+                android:textSize="14sp"
+                android:gravity="left|center_vertical"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:text="HSC ▼"
+                android:layout_marginTop="4dp" />
             <EditText
                 android:id="@+id/pTypeBn"
                 android:layout_width="match_parent"
@@ -121,6 +128,72 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="বর্তমান ঠিকানা"
+                android:textSize="14sp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/card_bg"
+                android:padding="12dp" />
+            <!-- Extra CV fields: the website profile has every field a CV
+                 has, so the app profile does too. CV upload fills these. -->
+            <EditText
+                android:id="@+id/pEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="ইমেইল (Email)"
+                android:inputType="textEmailAddress"
+                android:textSize="14sp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/card_bg"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pPermAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="স্থায়ী ঠিকানা (Permanent Address)"
+                android:textSize="14sp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/card_bg"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pFatherName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="পিতার নাম (Father's Name)"
+                android:textSize="14sp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/card_bg"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pMotherName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="মাতার নাম (Mother's Name)"
+                android:textSize="14sp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/card_bg"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pSkills"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="দক্ষতা (Skills)"
+                android:textSize="14sp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/card_bg"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pExperience"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="অভিজ্ঞতা (Experience)"
+                android:textSize="14sp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/card_bg"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pLanguages"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="ভাষা (Languages)"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/card_bg"
@@ -156,30 +229,33 @@
                 <ToggleButton
                     android:id="@+id/remYes"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:textSize="13sp"
                     android:textOn="✅ হ্যাঁ, পেতে চাই (Yes)"
                     android:textOff="✅ হ্যাঁ, পেতে চাই (Yes)"
-                    android:text="✅ হ্যাঁ, পেতে চাই (Yes)" />
+                    android:text="✅ হ্যাঁ, পেতে চাই (Yes)"
+                android:minHeight="0dp"
+                android:button="@null"
+                android:background="@drawable/chip_bg"
+                android:textColor="@color/chip_text"
+            />
                 <ToggleButton
                     android:id="@+id/remNo"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:textSize="13sp"
                     android:textOn="❌ না, চাই না (No)"
                     android:textOff="❌ না, চাই না (No)"
                     android:text="❌ না, চাই না (No)"
-                    android:layout_marginLeft="8dp" />
+                    android:layout_marginLeft="8dp"
+                android:minHeight="0dp"
+                android:button="@null"
+                android:background="@drawable/chip_bg"
+                android:textColor="@color/chip_text"
+            />
             </LinearLayout>
-            <TextView
-                android:id="@+id/remNote"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/text_grey"
-                android:textSize="13sp"
-                android:layout_marginTop="4dp" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -217,13 +293,52 @@
                     android:orientation="horizontal" />
             </HorizontalScrollView>
 
+            <!-- My CV (same as the website's profile page): shows the
+                 uploaded CV and lets it be removed from here too. -->
+            <TextView
+                android:id="@+id/cvInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📄 আমার CV — এখনো কোনো CV আপলোড করা হয়নি।"
+                android:textSize="14sp"
+                android:textColor="@color/text_grey"
+                android:layout_marginTop="18dp" />
+            <Button
+                android:id="@+id/removeCvBtnProfile"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="#b91c1c"
+                android:text="🗑️ CV মুছুন (Remove CV)"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+
             <Button
                 android:id="@+id/saveProfileBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:text="প্রোফাইল সেভ করুন (Save Profile)"
                 android:textSize="14sp"
-                android:layout_marginTop="18dp" />
+                android:layout_marginTop="18dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_primary"
+                android:textColor="#ffffff"
+            />
+            <!-- Profile reset (same as the website): only the profile + CV
+                 are cleared — login/account, shortlist and application
+                 status are never touched. Two-tap confirm, no popup. -->
+            <Button
+                android:id="@+id/resetProfileBtn"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:minHeight="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="#b91c1c"
+                android:text="↺ প্রোফাইল রিসেট করুন (Reset Profile)"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp" />
             <TextView
                 android:id="@+id/status"
                 android:layout_width="wrap_content"

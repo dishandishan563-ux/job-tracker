@@ -1,6 +1,6 @@
 #!/bin/bash
 # Job Tracker NATIVE Android app (Kotlin) builder.
-# No Gradle / Maven — uses only the local Android SDK (kotlinc + d8 + aapt2
+# No Gradle / Maven — uses only the local Android SDK (kotlinc + R8 + aapt2
 # + apksigner + zipalign) under ~/workspace/android-sdk.
 # Output: android-app/build/job-tracker.apk (signed release) and
 # job-tracker.apk.b64 at the repo root (base64 text, so it can be pushed
@@ -23,6 +23,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 KOTLINC="$SDK/kotlin-compiler/kotlinc/bin/kotlinc"
 AAPT2="$SDK/build-tools/34.0.0/aapt2"
 D8="$SDK/build-tools/34.0.0/d8"
+R8_JAR="$SDK/cmdline-tools/latest/lib/r8.jar"
 ZIPALIGN="$SDK/build-tools/34.0.0/zipalign"
 APKSIGNER="$SDK/build-tools/34.0.0/apksigner"
 PLATFORM_JAR="$SDK/platforms/android-34/android.jar"
@@ -59,7 +60,7 @@ for name, size in [("mipmap-mdpi", 48), ("mipmap-hdpi", 72), ("mipmap-xhdpi", 96
     im.save(f"{out}/{name}/ic_launcher_round.png")
     print("icon", name, size)
 EOF
-cp -r "$APP/res/values" "$APP/res/layout" "$APP/res/drawable" "$APP/res/mipmap-anydpi-v26" "$WORK/res/"
+cp -r "$APP/res/values" "$APP/res/layout" "$APP/res/drawable" "$APP/res/color" "$APP/res/mipmap-anydpi-v26" "$WORK/res/"
 
 # ---------- resources ----------
 "$AAPT2" compile --dir "$WORK/res" -o "$WORK/compiled.zip"
@@ -79,16 +80,40 @@ cp -r "$APP/res/values" "$APP/res/layout" "$APP/res/drawable" "$APP/res/mipmap-a
   -jvm-target 1.8 -include-runtime -d "$WORK/app.jar"
 "$JAVA_HOME/bin/jar" --create --file "$WORK/classes.jar" -C "$WORK/classes" .
 
-# ---------- jar -> dex ----------
-"$D8" --lib "$PLATFORM_JAR" --release --output "$WORK/dex" "$WORK/app.jar" "$WORK/classes.jar"
+# ---------- jar -> dex (R8: shrink + obfuscate the release build) ----------
+# R8 replaces d8 here: minify + obfuscate with proguard-rules.pro (keeps
+# only entry points / framework callbacks / JSON model members — no
+# blanket keep). The mapping file stays in build/ only: it is never
+# committed to the repo (build/ is gitignored) and never shipped in the APK.
+# shrinkResources has no standalone-R8 equivalent (it is an AGP feature);
+# R8's shrinking + unused-resource removal by aapt2 link is what applies.
+if [ ! -f "$R8_JAR" ]; then
+  echo "ERROR: R8 jar not found at $R8_JAR — release build must be obfuscated." >&2
+  exit 1
+fi
+# -printmapping lives in a generated config so the path is absolute:
+# a relative path in proguard-rules.pro would land in the caller's CWD.
+printf -- '-printmapping %s\n' "$WORK/mapping.txt" > "$WORK/r8-args.pro"
+"$JAVA_HOME/bin/java" -cp "$R8_JAR" com.android.tools.r8.R8 --release \
+  --output "$WORK/dex" \
+  --lib "$PLATFORM_JAR" \
+  --min-api 24 \
+  --pg-conf "$APP/proguard-rules.pro" \
+  --pg-conf "$WORK/r8-args.pro" \
+  "$WORK/app.jar" "$WORK/classes.jar"
+echo "R8 done: mapping at $WORK/mapping.txt (build-only, never committed)"
+ls -l "$WORK/dex"
 
 # ---------- add classes.dex, align, sign ----------
-python3 - "$WORK/app-unsigned.apk" "$WORK/dex/classes.dex" <<'EOF'
-import sys, zipfile
-apk, dex = sys.argv[1], sys.argv[2]
+python3 - "$WORK/app-unsigned.apk" "$WORK/dex" <<'EOF'
+import sys, zipfile, glob, os
+apk, dexdir = sys.argv[1], sys.argv[2]
+dexes = sorted(glob.glob(os.path.join(dexdir, "classes*.dex")))
+assert dexes, "no dex files produced by R8"
 with zipfile.ZipFile(apk, "a", zipfile.ZIP_DEFLATED) as z:
-    z.write(dex, "classes.dex")
-print("classes.dex added")
+    for d in dexes:
+        z.write(d, os.path.basename(d))
+print("dex added:", [os.path.basename(d) for d in dexes])
 EOF
 "$ZIPALIGN" -f 4 "$WORK/app-unsigned.apk" "$WORK/app-aligned.apk"
 
@@ -98,6 +123,7 @@ fi
 export KS_PASS
 "$APKSIGNER" sign --ks "$KEYSTORE" --ks-key-alias jobtracker \
   --ks-pass env:KS_PASS --key-pass env:KS_PASS \
+  --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
   --out "$WORK/job-tracker.apk" "$WORK/app-aligned.apk"
 
 # ---------- verify ----------
