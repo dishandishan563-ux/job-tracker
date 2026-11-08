@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.TypedValue
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -69,10 +70,14 @@ class DetailActivity : Activity() {
         if (circular.posts.isEmpty()) {
             val t = TextView(this)
             t.text = "পদের বিস্তারিত তথ্য দেওয়া নেই — মোট ${Util.bn(circular.totalPosts)}টি পদ।"
+            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            t.setLineSpacing(0f, 1.15f)
             postsBox.addView(t)
         } else {
             for (p in circular.posts) {
                 val t = TextView(this)
+                t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                t.setLineSpacing(0f, 1.15f)
                 val typing = buildString {
                     if (p.typingBn > 0 || p.typingEn > 0) {
                         append(" — টাইপিং বাংলা ${Util.bn(p.typingBn)} + ইংরেজি ${Util.bn(p.typingEn)}")

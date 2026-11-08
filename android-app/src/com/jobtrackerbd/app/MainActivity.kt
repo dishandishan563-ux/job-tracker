@@ -145,7 +145,7 @@ class MainActivity : Activity() {
     private fun checkUpdate() {
         UpdateChecker.check(this, onNewVersion = { name, code ->
             pendingUpdateCode = code
-            updateText.text = "🔔 নতুন আপডেট এসেছে (v$name) — আপডেট করুন"
+            updateText.text = "🔔 নতুন আপডেট এসেছে (v$name) — আপডেট করুন (Update)"
             updateBanner.visibility = View.VISIBLE
         })
     }
@@ -316,14 +316,16 @@ class MainActivity : Activity() {
 
     private fun setupSpinners() {
         val sort = findViewById<Spinner>(R.id.sortSpinner)
-        sort.adapter = ArrayAdapter(
-            this, android.R.layout.simple_spinner_dropdown_item,
+        val sortAdapter = ArrayAdapter(
+            this, R.layout.spinner_item,
             listOf(
                 getString(R.string.sort_deadline),
                 getString(R.string.sort_posts),
                 getString(R.string.sort_name)
             )
         )
+        sortAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        sort.adapter = sortAdapter
         sort.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                 sortMode = pos
@@ -332,10 +334,12 @@ class MainActivity : Activity() {
             override fun onNothingSelected(p: AdapterView<*>?) {}
         }
         val grade = findViewById<Spinner>(R.id.gradeSpinner)
-        grade.adapter = ArrayAdapter(
-            this, android.R.layout.simple_spinner_dropdown_item,
-            listOf("সব গ্রেড", "১৩", "১৬", "২০")
+        val gradeAdapter = ArrayAdapter(
+            this, R.layout.spinner_item,
+            listOf("সব গ্রেড (All)", "১৩", "১৬", "২০")
         )
+        gradeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        grade.adapter = gradeAdapter
         grade.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                 gradeFilter = when (pos) {

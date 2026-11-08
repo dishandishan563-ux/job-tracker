@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/bg">
+    android:background="@color/bg"
+    android:fitsSystemWindows="true">
 
     <android.widget.Toolbar
         android:id="@+id/toolbar"
@@ -11,16 +12,19 @@
         android:layout_height="?android:attr/actionBarSize"
         android:background="@color/green_dark"
         android:titleTextColor="#ffffff"
+        android:titleTextAppearance="@style/ToolbarTitle"
         android:title="@string/login_title" />
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:paddingBottom="32dp">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -33,8 +37,9 @@
                 android:layout_height="wrap_content"
                 android:hint="Gmail ঠিকানা"
                 android:inputType="textEmailAddress"
+                android:textSize="14sp"
                 android:layout_marginTop="16dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/name"
@@ -42,8 +47,9 @@
                 android:layout_height="wrap_content"
                 android:hint="আপনার নাম"
                 android:inputType="textPersonName"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/password"
@@ -51,27 +57,31 @@
                 android:layout_height="wrap_content"
                 android:hint="পাসওয়ার্ড"
                 android:inputType="textPassword"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <Button
                 android:id="@+id/loginBtn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="লগইন / রেজিস্টার করুন"
+                android:text="লগইন / রেজিস্টার করুন (Login)"
+                android:textSize="14sp"
                 android:layout_marginTop="16dp" />
             <TextView
                 android:id="@+id/status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
+                android:textSize="14sp"
                 android:textColor="@color/danger" />
             <TextView
                 android:id="@+id/forgotLink"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="পাসওয়ার্ড ভুলে গেছেন?"
+                android:text="পাসওয়ার্ড ভুলে গেছেন? (Forgot Password)"
                 android:textColor="@color/green_dark"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginTop="18dp"
                 android:padding="6dp" />
@@ -82,7 +92,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp"
                 android:layout_marginTop="8dp">
                 <TextView
@@ -97,6 +107,7 @@
                     android:layout_height="wrap_content"
                     android:hint="৬ সংখ্যার কোড"
                     android:inputType="number"
+                    android:textSize="14sp"
                     android:layout_marginTop="10dp"
                     android:background="@color/bg"
                     android:padding="10dp" />
@@ -106,6 +117,7 @@
                     android:layout_height="wrap_content"
                     android:hint="নতুন পাসওয়ার্ড (কমপক্ষে ৪ অক্ষর)"
                     android:inputType="textPassword"
+                    android:textSize="14sp"
                     android:layout_marginTop="10dp"
                     android:background="@color/bg"
                     android:padding="10dp" />
@@ -113,18 +125,21 @@
                     android:id="@+id/fpSendBtn"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="কোড পাঠান"
+                    android:text="কোড পাঠান (Send Code)"
+                    android:textSize="14sp"
                     android:layout_marginTop="10dp" />
                 <Button
                     android:id="@+id/fpVerifyBtn"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="কোড দিয়ে পাসওয়ার্ড বদলান"
+                    android:text="কোড দিয়ে পাসওয়ার্ড বদলান (Reset Password)"
+                    android:textSize="14sp"
                     android:layout_marginTop="8dp" />
                 <TextView
                     android:id="@+id/fpStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textSize="14sp"
                     android:layout_marginTop="8dp" />
             </LinearLayout>
         </LinearLayout>

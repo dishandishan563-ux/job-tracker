@@ -1,30 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Language rule (v1.1.1): Bengali + English mix. Sentences stay Bengali;
+     short labels/buttons/titles are Bengali + (English). Same label = same
+     wording on every screen. Circular content (org, posts, dates) comes
+     from the server and is not translated. -->
 <resources>
     <string name="app_name">Job Tracker</string>
     <string name="home_title">সব ধরনের সরকারি চাকরির সার্কুলার</string>
-    <string name="search_hint">প্রতিষ্ঠান বা পদের নাম লিখে খুঁজুন…</string>
-    <string name="refresh_now">⟳ এখনই নতুন সার্কুলার খুঁজুন</string>
-    <string name="apply">আবেদন করুন</string>
-    <string name="save">সংরক্ষণ করুন</string>
-    <string name="saved">★ সংরক্ষিত</string>
-    <string name="save_shortlist">☆ সংরক্ষণ</string>
-    <string name="clear_filters">ফিল্টার পরিষ্কার করুন</string>
-    <string name="my_list">★ আমার তালিকা</string>
-    <string name="all_types">সব ধরনের</string>
-    <string name="all_quals">সব যোগ্যতা</string>
-    <string name="all_grades">সব গ্রেড</string>
-    <string name="sort_deadline">ডেডলাইন অনুযায়ী</string>
-    <string name="sort_posts">পদ বেশি → কম</string>
+    <string name="search_hint">Search — প্রতিষ্ঠান বা পদের নাম লিখে খুঁজুন…</string>
+    <string name="refresh_now">⟳ এখনই নতুন সার্কুলার খুঁজুন (Refresh)</string>
+    <string name="apply">আবেদন করুন (Apply)</string>
+    <string name="save">সংরক্ষণ করুন (Save)</string>
+    <string name="saved">★ সংরক্ষিত (Saved)</string>
+    <string name="save_shortlist">☆ সংরক্ষণ (Save)</string>
+    <string name="clear_filters">ফিল্টার পরিষ্কার করুন (Clear)</string>
+    <string name="my_list">★ আমার তালিকা (My List)</string>
+    <string name="all_types">সব ধরনের (All)</string>
+    <string name="all_quals">সব যোগ্যতা (All)</string>
+    <string name="all_grades">সব গ্রেড (All)</string>
+    <string name="sort_deadline">ডেডলাইন অনুযায়ী (Deadline)</string>
+    <string name="sort_posts">পদ বেশি → কম (Most Posts)</string>
     <string name="sort_name">নাম অনুযায়ী (A–Z)</string>
-    <string name="login_title">লগইন / রেজিস্টার</string>
-    <string name="profile_title">আমার প্রোফাইল</string>
-    <string name="settings_title">সেটিংস</string>
-    <string name="detail_title">সার্কুলারের বিস্তারিত</string>
-    <string name="menu_profile">👤 আমার প্রোফাইল</string>
-    <string name="menu_settings">⚙️ সেটিংস</string>
-    <string name="menu_contact">📞 আবেদন করতে চাইলে যোগাযোগ করুন</string>
-    <string name="menu_login">🔑 লগইন করুন</string>
-    <string name="menu_logout">🚪 লগআউট</string>
-    <string name="menu_refresh">⟳ তালিকা রিফ্রেশ করুন</string>
-    <string name="menu_about">ℹ️ অ্যাপ সম্পর্কে</string>
+    <string name="login_title">লগইন / রেজিস্টার (Login)</string>
+    <string name="profile_title">আমার প্রোফাইল (Profile)</string>
+    <string name="settings_title">সেটিংস (Settings)</string>
+    <string name="detail_title">সার্কুলারের বিস্তারিত (Details)</string>
+    <string name="menu_profile">👤 আমার প্রোফাইল (Profile)</string>
+    <string name="menu_settings">⚙️ সেটিংস (Settings)</string>
+    <string name="menu_contact">📞 আবেদন করতে চাইলে যোগাযোগ করুন (Contact)</string>
+    <string name="menu_login">🔑 লগইন করুন (Login)</string>
+    <string name="menu_logout">🚪 লগআউট (Logout)</string>
+    <string name="menu_refresh">⟳ তালিকা রিফ্রেশ করুন (Refresh)</string>
+    <string name="menu_about">ℹ️ অ্যাপ সম্পর্কে (About)</string>
 </resources>

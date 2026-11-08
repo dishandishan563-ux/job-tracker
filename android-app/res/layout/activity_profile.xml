@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/bg">
+    android:background="@color/bg"
+    android:fitsSystemWindows="true">
 
     <android.widget.Toolbar
         android:id="@+id/toolbar"
@@ -11,16 +12,19 @@
         android:layout_height="?android:attr/actionBarSize"
         android:background="@color/green_dark"
         android:titleTextColor="#ffffff"
+        android:titleTextAppearance="@style/ToolbarTitle"
         android:title="@string/profile_title" />
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:paddingBottom="32dp">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -33,22 +37,24 @@
                 android:layout_height="120dp"
                 android:layout_gravity="center"
                 android:layout_marginTop="12dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:visibility="gone" />
             <Button
                 android:id="@+id/photoBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="ছবি বেছে নিন"
+                android:text="ছবি বেছে নিন (Choose Photo)"
+                android:textSize="14sp"
                 android:layout_marginTop="8dp" />
             <EditText
                 android:id="@+id/pName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="নাম"
+                android:textSize="14sp"
                 android:layout_marginTop="12dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pPhone"
@@ -56,16 +62,18 @@
                 android:layout_height="wrap_content"
                 android:hint="মোবাইল নম্বর"
                 android:inputType="phone"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pDistrict"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="জেলা (যেমন: ঢাকা)"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pDob"
@@ -73,13 +81,15 @@
                 android:layout_height="wrap_content"
                 android:hint="জন্ম তারিখ (যেমন: 2000-01-15)"
                 android:inputType="date"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="শিক্ষাগত যোগ্যতা"
+                android:text="শিক্ষাগত যোগ্যতা (Education)"
+                android:textSize="14sp"
                 android:layout_marginTop="12dp"
                 android:textStyle="bold" />
             <Spinner
@@ -92,8 +102,9 @@
                 android:layout_height="wrap_content"
                 android:hint="টাইপিং — বাংলা (শব্দ/মিনিট)"
                 android:inputType="number"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pTypeEn"
@@ -101,37 +112,41 @@
                 android:layout_height="wrap_content"
                 android:hint="টাইপিং — ইংরেজি (শব্দ/মিনিট)"
                 android:inputType="number"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pAddress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="বর্তমান ঠিকানা"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pNotes"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="অন্যান্য তথ্য (ঐচ্ছিক)"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@color/card"
+                android:background="@drawable/card_bg"
                 android:padding="12dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🔔 রিমাইন্ডার পছন্দ"
+                android:text="🔔 রিমাইন্ডার পছন্দ (Reminder)"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:layout_marginTop="18dp" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="আপনি কি চাকরির রিমাইন্ডার পেতে চান?"
+                android:textSize="14sp"
                 android:layout_marginTop="8dp" />
             <LinearLayout
                 android:layout_width="match_parent"
@@ -143,17 +158,19 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textOn="✅ হ্যাঁ, পেতে চাই"
-                    android:textOff="✅ হ্যাঁ, পেতে চাই"
-                    android:text="✅ হ্যাঁ, পেতে চাই" />
+                    android:textSize="13sp"
+                    android:textOn="✅ হ্যাঁ, পেতে চাই (Yes)"
+                    android:textOff="✅ হ্যাঁ, পেতে চাই (Yes)"
+                    android:text="✅ হ্যাঁ, পেতে চাই (Yes)" />
                 <ToggleButton
                     android:id="@+id/remNo"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textOn="❌ না, চাই না"
-                    android:textOff="❌ না, চাই না"
-                    android:text="❌ না, চাই না"
+                    android:textSize="13sp"
+                    android:textOn="❌ না, চাই না (No)"
+                    android:textOff="❌ না, চাই না (No)"
+                    android:text="❌ না, চাই না (No)"
                     android:layout_marginLeft="8dp" />
             </LinearLayout>
             <TextView
@@ -166,7 +183,8 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="কোন ধরনের সার্কুলারের রিমাইন্ডার চান?"
+                android:text="কোন ধরনের সার্কুলারের রিমাইন্ডার চান? (Type)"
+                android:textSize="14sp"
                 android:layout_marginTop="12dp"
                 android:textStyle="bold" />
             <HorizontalScrollView
@@ -183,7 +201,8 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="কোন যোগ্যতার পদের রিমাইন্ডার চান?"
+                android:text="কোন যোগ্যতার পদের রিমাইন্ডার চান? (Qualification)"
+                android:textSize="14sp"
                 android:layout_marginTop="10dp"
                 android:textStyle="bold" />
             <HorizontalScrollView
@@ -202,12 +221,14 @@
                 android:id="@+id/saveProfileBtn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="প্রোফাইল সেভ করুন"
+                android:text="প্রোফাইল সেভ করুন (Save Profile)"
+                android:textSize="14sp"
                 android:layout_marginTop="18dp" />
             <TextView
                 android:id="@+id/status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textSize="13sp"
                 android:layout_marginTop="8dp" />
         </LinearLayout>
     </ScrollView>

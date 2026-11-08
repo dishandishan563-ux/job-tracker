@@ -1,6 +1,6 @@
 # Job Tracker অ্যাপ (APK) — আপডেটের নিয়ম
 
-## এটা কী (v1.1.0 থেকে)
+## এটা কী (v1.1.1 থেকে)
 
 - **নেটিভ অ্যান্ড্রয়েড অ্যাপ (Kotlin)** — আসল অ্যাপ, ওয়েবসাইটের wrapper নয়,
   ভেতরে কোনো WebView নেই। হোম, বিস্তারিত, লগইন, প্রোফাইল ও সেটিংস সব নেটিভ
@@ -30,6 +30,9 @@
 ## কীভাবে কাজ করে (টেকনিক্যাল)
 
 - অ্যাপ = নেটিভ Kotlin, minSdk 24, targetSdk 34, package `com.jobtrackerbd.app`।
+  (v1.1.1 থেকে manifest-এ `targetSdkVersion 34` বসানো আছে — না থাকলে
+  Android নিজে থেকে ফোনের পারমিশন (READ_PHONE_STATE) ও স্টোরেজ পারমিশন
+  বসাতো আর পুরনো স্কেলিংয়ে লেখা বড় দেখাতো ও নিচের অংশ কাটা পড়তো।)
 - API: শুধু আগের Vercel এন্ডপয়েন্ট — `GET /api/circulars`, `GET /api/config`,
   `GET /api/online-check`, `POST /api/auth-manual`, `POST /api/forgot-password`,
   `POST /api/user-data`, `GET /version.json`। নতুন কোনো API ফাংশন যোগ হয়নি
@@ -73,7 +76,7 @@
   রাখুন। হারালে অ্যাপ আর জায়গায় আপডেট হবে না, আনইনস্টল করে আবার
   ইনস্টল করতে হবে।
 - `version.json`, `job-tracker.apk.b64`
-- অ্যাপ: package `com.jobtrackerbd.app`, v1.1.0 (code 2),
+- অ্যাপ: package `com.jobtrackerbd.app`, v1.1.1 (code 3),
   সাইনিং SHA-256: `7C:57:BC:E4:DB:17:EB:56:4F:15:E9:E1:48:10:AB:C7:74:DE:EC:F1:D5:75:94:35:3E:E8:81:55:66:22:06:77`
 
 ## ইনস্টল (ব্যবহারকারীর ফোনে)

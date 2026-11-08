@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@color/card"
+    android:background="@drawable/card_bg"
+    android:elevation="2dp"
     android:padding="12dp">
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,6 +17,7 @@
             android:layout_weight="1"
             android:textColor="@color/text_dark"
             android:textSize="16sp"
+            android:lineSpacingMultiplier="1.15"
             android:textStyle="bold" />
         <TextView
             android:id="@+id/newBadge"
@@ -39,14 +41,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/text_dark"
-        android:textSize="14sp"
+        android:textSize="13sp"
+        android:lineSpacingMultiplier="1.15"
         android:layout_marginTop="4dp" />
     <TextView
         android:id="@+id/deadlineLine"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/text_dark"
-        android:textSize="14sp"
+        android:textSize="13sp"
+        android:lineSpacingMultiplier="1.15"
         android:layout_marginTop="2dp" />
     <TextView
         android:id="@+id/cdText"
@@ -85,11 +89,13 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:textSize="14sp"
             android:text="@string/apply" />
         <Button
             android:id="@+id/shortlistBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="14sp"
             android:text="@string/save_shortlist"
             android:layout_marginLeft="8dp" />
     </LinearLayout>

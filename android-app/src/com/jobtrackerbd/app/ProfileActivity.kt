@@ -78,9 +78,11 @@ class ProfileActivity : Activity() {
         remNote = findViewById(R.id.remNote)
         statusTv = findViewById(R.id.status)
 
-        pEdu.adapter = ArrayAdapter(
-            this, android.R.layout.simple_spinner_dropdown_item, eduOptions
+        val eduAdapter = ArrayAdapter(
+            this, R.layout.spinner_item, eduOptions
         )
+        eduAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        pEdu.adapter = eduAdapter
         findViewById<Button>(R.id.photoBtn).setOnClickListener {
             val i = Intent(Intent.ACTION_GET_CONTENT).apply { type = "image/*" }
             startActivityForResult(Intent.createChooser(i, "ছবি বেছে নিন"), PICK_PHOTO)

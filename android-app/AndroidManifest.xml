@@ -6,6 +6,17 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- targetSdkVersion সেট করা বাধ্যতামূলক: না থাকলে Android পুরনো
+         অ্যাপ ধরে নিয়ে নিজে থেকে বাড়তি পারমিশন বসায় (ফোনের
+         READ_PHONE_STATE + স্টোরেজ) আর পুরনো স্কেলিংয়ে পুরো UI বড়
+         দেখায় ও নিচের অংশ নেভিগেশন বারের আড়ালে কাটা পড়ে। 34 সেট
+         করায় ওই বাড়তি পারমিশন আর আসে না, প্রথম চালুতে কোনো
+         পারমিশন স্ক্রিনও আসে না। ছবি/CV বাছাই সিস্টেম পিকার
+         (ACTION_GET_CONTENT) দিয়ে হয়, তাই স্টোরেজ পারমিশন লাগে না।
+         REQUEST_INSTALL_PACKAGES শুধু অ্যাপের ভিতর থেকে APK আপডেট
+         ইনস্টল করতে লাগে — এটা রানটাইম পপআপ নয়। -->
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

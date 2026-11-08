@@ -47,11 +47,12 @@ object Store {
         }
         set(v) = prefs.edit().putString("jt_data", v.toJson().toString()).apply()
 
-    /** Text-size scale factor for the whole app. */
+    /** Text-size scale factor for the whole app. Kept gentle (max 1.20x)
+        so even the largest setting stays readable, never oversized. */
     fun fontScale(): Float = when (fontSize) {
-        "small" -> 0.85f
-        "large" -> 1.15f
-        "xl" -> 1.3f
+        "small" -> 0.90f
+        "large" -> 1.10f
+        "xl" -> 1.20f
         else -> 1.0f
     }
 }

@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/bg">
+    android:background="@color/bg"
+    android:fitsSystemWindows="true">
 
     <android.widget.Toolbar
         android:id="@+id/toolbar"
@@ -11,22 +12,25 @@
         android:layout_height="?android:attr/actionBarSize"
         android:background="@color/green_dark"
         android:titleTextColor="#ffffff"
+        android:titleTextAppearance="@style/ToolbarTitle"
         android:title="@string/settings_title" />
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:paddingBottom="32dp">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="লেখার সাইজ"
+                android:text="লেখার সাইজ (Text Size)"
                 android:textStyle="bold"
-                android:textSize="16sp" />
+                android:textSize="15sp" />
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -37,12 +41,14 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textSize="14sp"
                     android:text="A-" />
                 <Button
                     android:id="@+id/sizeMedium"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textSize="14sp"
                     android:text="A"
                     android:layout_marginLeft="6dp" />
                 <Button
@@ -50,6 +56,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textSize="14sp"
                     android:text="A+"
                     android:layout_marginLeft="6dp" />
                 <Button
@@ -57,6 +64,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:textSize="14sp"
                     android:text="A++"
                     android:layout_marginLeft="6dp" />
             </LinearLayout>
@@ -64,9 +72,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CV আপলোড"
+                android:text="CV আপলোড (Upload CV)"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:layout_marginTop="20dp" />
             <TextView
                 android:layout_width="wrap_content"
@@ -78,50 +86,56 @@
                 android:id="@+id/cvBtn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="CV ফাইল বেছে নিন"
+                android:text="CV ফাইল বেছে নিন (Choose CV)"
+                android:textSize="14sp"
                 android:layout_marginTop="8dp" />
             <TextView
                 android:id="@+id/cvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textSize="14sp"
                 android:layout_marginTop="6dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="অ্যাপ"
+                android:text="অ্যাপ (App)"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:layout_marginTop="20dp" />
             <TextView
                 android:id="@+id/versionText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textSize="14sp"
                 android:layout_marginTop="6dp" />
             <Button
                 android:id="@+id/checkUpdateBtn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="আপডেট চেক করুন"
+                android:text="আপডেট চেক করুন (Check Update)"
+                android:textSize="14sp"
                 android:layout_marginTop="8dp" />
             <TextView
                 android:id="@+id/updateStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textSize="14sp"
                 android:layout_marginTop="6dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="যোগাযোগ"
+                android:text="যোগাযোগ (Contact)"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:layout_marginTop="20dp" />
             <Button
                 android:id="@+id/whatsappBtn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="📱 WhatsApp-এ যোগাযোগ করুন"
+                android:textSize="14sp"
                 android:layout_marginTop="8dp"
                 android:visibility="gone" />
             <Button
@@ -129,6 +143,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="✈️ Telegram-এ যোগাযোগ করুন"
+                android:textSize="14sp"
                 android:layout_marginTop="8dp"
                 android:visibility="gone" />
             <TextView
@@ -137,6 +152,7 @@
                 android:layout_height="wrap_content"
                 android:text="অ্যাডমিন এখনো যোগাযোগের তথ্য দেননি।"
                 android:textColor="@color/text_grey"
+                android:textSize="14sp"
                 android:layout_marginTop="6dp" />
         </LinearLayout>
     </ScrollView>

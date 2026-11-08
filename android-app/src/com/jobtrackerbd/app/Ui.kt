@@ -39,7 +39,8 @@ object Ui {
         walk(root)
     }
 
-    /** A toggle chip button (used for type / qualification filters). */
+    /** A toggle chip button (used for type / qualification filters).
+        Slim: 13sp text, tight padding, no tall default min-height. */
     fun chipButton(ctx: Context, label: String, active: Boolean): ToggleButton {
         return ToggleButton(ctx).apply {
             textOn = label
@@ -47,7 +48,9 @@ object Ui {
             text = label
             isChecked = active
             textSize = 13f
-            setPadding(18, 8, 18, 8)
+            minimumHeight = 0
+            minHeight = 0
+            setPadding(14, 6, 14, 6)
             val lp = ViewGroup.MarginLayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -67,9 +70,9 @@ object Ui {
     }
 
     fun statusLabel(status: String?): String = when (status) {
-        "applied" -> "✓ আবেদন করেছি"
-        "fee_paid" -> "✓ ফি দিয়েছি"
-        "admit" -> "✓ অ্যাডমিট কার্ড পেয়েছি"
+        "applied" -> "✓ আবেদন করেছি (Applied)"
+        "fee_paid" -> "✓ ফি দিয়েছি (Fee Paid)"
+        "admit" -> "✓ অ্যাডমিট কার্ড পেয়েছি (Admit Card)"
         else -> ""
     }
 }
