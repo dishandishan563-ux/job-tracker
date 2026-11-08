@@ -58,7 +58,7 @@ module.exports = async (req, res) => {
     try {
       await sendMail({
         subject: 'Job Tracker — অ্যাডমিন PIN রিসেট কোড',
-        text: `আসসালামু আলাইকুম,\n\nJob Tracker-এর অ্যাডমিন PIN রিসেটের কোড: ${code}\n\nএই কোড ১৫ মিনিটের জন্য কার্যকর। কোডটি কাউকে দেবেন না। আপনি রিসেট চাননি হলে এই ইমেইলটি উপেক্ষা করুন — আপনার PIN বদলাবে না।\n\n— Job Tracker`,
+        text: `নমস্কার / আসসালামু আলাইকুম,\n\nJob Tracker-এর অ্যাডমিন PIN রিসেটের কোড: ${code}\n\nএই কোড ১৫ মিনিটের জন্য কার্যকর। কোডটি কাউকে দেবেন না। আপনি রিসেট চাননি হলে এই ইমেইলটি উপেক্ষা করুন — আপনার PIN বদলাবে না।\n\n— Job Tracker`,
         to: ownerEmail,
       });
     } catch (e) {

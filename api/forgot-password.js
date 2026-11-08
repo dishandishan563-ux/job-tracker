@@ -58,7 +58,7 @@ module.exports = async (req, res) => {
     try {
       await sendMail({
         subject: 'Job Tracker — পাসওয়ার্ড রিসেট কোড',
-        text: `আসসালামু আলাইকুম,\n\nJob Tracker-এ আপনার পাসওয়ার্ড রিসেটের কোড: ${code}\n\nএই কোড ১৫ মিনিটের জন্য কার্যকর। কোডটি কাউকে দেবেন না। আপনি রিসেট চাননি হলে এই ইমেইলটি উপেক্ষা করুন — আপনার পুরনো পাসওয়ার্ড বদলাবে না।\n\n— Job Tracker (jobtrackerbd@gmail.com)`,
+        text: `নমস্কার / আসসালামু আলাইকুম,\n\nJob Tracker-এ আপনার পাসওয়ার্ড রিসেটের কোড: ${code}\n\nএই কোড ১৫ মিনিটের জন্য কার্যকর। কোডটি কাউকে দেবেন না। আপনি রিসেট চাননি হলে এই ইমেইলটি উপেক্ষা করুন — আপনার পুরনো পাসওয়ার্ড বদলাবে না।\n\n— Job Tracker (jobtrackerbd@gmail.com)`,
         to: email,
       });
     } catch (e) {

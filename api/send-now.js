@@ -64,7 +64,7 @@ module.exports = async (req, res) => {
         const subject = `Job Tracker — ${c.org}: ${when}`;
         const totalTxt = c.totalPosts == null ? 'উল্লেখ নেই' : bn(c.totalPosts) + 'টি';
         const hscTxt = c.hscPosts == null ? 'উল্লেখ নেই' : bn(c.hscPosts) + 'টি';
-        const text = `আসসালামু আলাইকুম,\n\n${c.org} — মোট ${totalTxt} পদ, HSC পদ ${hscTxt}।\nশেষ তারিখ: ${new Date(c.deadline).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}। ${when}।\nআবেদন: ${c.applyUrl}\n\nদ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।\n— Job Tracker (jobtrackerbd@gmail.com)`;
+        const text = `নমস্কার / আসসালামু আলাইকুম,\n\n${c.org} — মোট ${totalTxt} পদ, HSC পদ ${hscTxt}।\nশেষ তারিখ: ${new Date(c.deadline).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}। ${when}।\nআবেদন: ${c.applyUrl}\n\nদ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।\n— Job Tracker (jobtrackerbd@gmail.com)`;
         try { await sendMail({ subject, text, to }); sent[key] = today; sentCount++; await logSentEmail(to, subject, 'manual'); }
         catch (e) { errors.push(`${to}: ${e.message}`); }
       }
