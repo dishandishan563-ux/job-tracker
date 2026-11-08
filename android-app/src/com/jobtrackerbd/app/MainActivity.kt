@@ -200,7 +200,11 @@ class MainActivity : Activity() {
         ensureDrawer()
         val root = drawerRoot ?: return
         // Rebuild the panel on every open: login state + contact may change.
-        root.removeViewAt(1)
+        // Guard: on the very first open the root holds only the dim view
+        // (index 0) — there is no old panel at index 1 yet. Calling
+        // removeViewAt(1) unguarded threw IndexOutOfBoundsException and
+        // crashed the app on the first ☰ tap (v1.1.2 regression).
+        if (root.childCount > 1) root.removeViewAt(1)
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.WHITE)

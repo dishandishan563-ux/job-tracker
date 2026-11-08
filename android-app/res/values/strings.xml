@@ -5,7 +5,6 @@
      from the server and is not translated. -->
 <resources>
     <string name="app_name">Job Tracker</string>
-    <string name="home_title">সব ধরনের সরকারি চাকরির সার্কুলার</string>
     <string name="search_hint">Search — প্রতিষ্ঠান বা পদের নাম লিখে খুঁজুন…</string>
     <string name="refresh_now">⟳ এখনই নতুন সার্কুলার খুঁজুন (Refresh)</string>
     <string name="apply">আবেদন করুন (Apply)</string>
