@@ -15,6 +15,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.PopupMenu
@@ -23,6 +24,7 @@ import android.widget.TextView
 import android.widget.ToggleButton
 import android.widget.Toolbar
 import org.json.JSONObject
+import kotlin.concurrent.thread
 
 /**
  * Home — native circular list.
@@ -42,6 +44,13 @@ class MainActivity : Activity() {
 
     private var all: List<Circular> = emptyList()
     private var contact: JSONObject? = null
+    private var creator: Creator = Creator()
+
+    // "তৈরি করেছেন" (Made by) home footer — built once, filled when the
+    // server config arrives, hidden entirely while the admin has set
+    // nothing (no name, photo or links).
+    private var madeByFooter: View? = null
+    private var madeByFooterViews: MadeByViews? = null
 
     // Custom slide-in drawer (right side): the framework overflow menu
     // rendered as a too-wide popup and truncated the long contact label
@@ -89,6 +98,9 @@ class MainActivity : Activity() {
         updateBanner = findViewById(R.id.updateBanner)
         updateText = findViewById(R.id.updateText)
 
+        // Made-by footer must be added BEFORE the adapter is set.
+        madeByFooter = buildMadeByFooter()
+        listView.addFooterView(madeByFooter)
         adapter = CircularAdapter(
             this, emptyList(),
             onApply = { c -> onApply(c) },
@@ -131,12 +143,24 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.clearFilters).setOnClickListener { clearFilters() }
 
         loadCirculars()
-        Api.fetchConfig { json ->
-            contact = json?.optJSONObject("contact")
-            invalidateOptionsMenu()
-        }
+        loadConfig()
         tickHandler.post(tickRunnable)
         updateHandler.post(updateRunnable)
+    }
+
+    /** GET /api/config — contact links + the Made-by profile (both public,
+     * server-side, so every user sees the same thing). Telegram falls back
+     * to the contact tab's value when the creator profile has none. */
+    private fun loadConfig() {
+        Api.fetchConfig { json ->
+            contact = json?.optJSONObject("contact")
+            val c = Creator.fromJson(json?.optJSONObject("creator"))
+            creator = if (c.telegram.isBlank()) {
+                c.copy(telegram = contact?.optString("telegram", "") ?: "")
+            } else c
+            refreshMadeBy()
+            invalidateOptionsMenu()
+        }
     }
 
     override fun onResume() {
@@ -148,6 +172,7 @@ class MainActivity : Activity() {
         updateHero()
         invalidateOptionsMenu()
         checkUpdate()
+        loadConfig()
         // Sync with the server on every return to home: the profile/CV may
         // have been changed on the website (same Gmail) since this app
         // last fetched it — without this the home list kept showing the
@@ -348,13 +373,7 @@ class MainActivity : Activity() {
             }
         }
         divider()
-        item(getString(R.string.menu_about)) {
-            AlertDialog.Builder(this)
-                .setTitle("Job Tracker")
-                .setMessage("সংস্করণ v${Api.APP_VERSION_NAME}")
-                .setPositiveButton("ঠিক আছে", null)
-                .show()
-        }
+        item(getString(R.string.menu_about)) { showAboutDialog() }
         root.addView(panel)
         Ui.applyTextScale(panel)
         root.visibility = View.VISIBLE
@@ -385,6 +404,218 @@ class MainActivity : Activity() {
             }
             .setNegativeButton("বন্ধ", null)
             .show()
+    }
+
+    // ---------- "তৈরি করেছেন" (Made by) ----------
+    // One builder for both places the section shows: the home-list footer
+    // and the About dialog. Photo (circular, green ring) or a "JT"
+    // monogram when the admin has not set a photo yet — never a fake
+    // photo. Link buttons open in the browser; only set links appear.
+
+    private class MadeByViews(
+        val root: LinearLayout,
+        val photo: ImageView,
+        val mono: TextView,
+        val name: TextView,
+        val links: LinearLayout
+    )
+
+    private fun buildMadeByViews(photoSizeDp: Int, withVersion: Boolean): MadeByViews {
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+        }
+        val title = TextView(this).apply {
+            text = getString(R.string.made_by_title)
+            textSize = 15f
+            setTextColor(Color.parseColor("#1a1a1a"))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+        }
+        root.addView(title)
+        // Photo / monogram: a green circle with a 2dp ring. The photo is
+        // circular-cropped in code; the monogram is white "JT" on green.
+        val photoWrap = FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(photoSizeDp), dp(photoSizeDp))
+                .apply { topMargin = dp(10) }
+            background = getDrawable(R.drawable.made_by_mono_bg)
+            setPadding(dp(2), dp(2), dp(2), dp(2))
+        }
+        val photo = ImageView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            visibility = View.GONE
+        }
+        val mono = TextView(this).apply {
+            text = "JT"
+            textSize = (photoSizeDp * 0.32).toFloat()
+            setTextColor(Color.WHITE)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        }
+        photoWrap.addView(photo)
+        photoWrap.addView(mono)
+        root.addView(photoWrap)
+        val name = TextView(this).apply {
+            textSize = 17f
+            setTextColor(Color.parseColor("#1a1a1a"))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setPadding(0, dp(8), 0, 0)
+            visibility = View.GONE
+        }
+        root.addView(name)
+        if (withVersion) {
+            root.addView(TextView(this).apply {
+                text = "সংস্করণ v${Api.APP_VERSION_NAME}"
+                textSize = 13f
+                setTextColor(Color.parseColor("#5f6368"))
+                gravity = Gravity.CENTER
+                setPadding(0, dp(2), 0, 0)
+            })
+        }
+        val links = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, dp(10), 0, 0)
+        }
+        root.addView(links)
+        return MadeByViews(root, photo, mono, name, links)
+    }
+
+    private fun fillMadeByViews(v: MadeByViews, c: Creator) {
+        v.name.text = c.name
+        v.name.visibility = if (c.name.isNotBlank()) View.VISIBLE else View.GONE
+        v.links.removeAllViews()
+        val buttons = listOfNotNull(
+            if (c.whatsapp.isNotBlank()) Triple("💬 WhatsApp", c.whatsapp, true) else null,
+            if (c.facebook.isNotBlank()) Triple("📘 Facebook", c.facebook, false) else null,
+            if (c.telegram.isNotBlank()) Triple("✈️ Telegram", c.telegram, false) else null
+        )
+        for ((label, url, primary) in buttons) {
+            val b = Button(this).apply {
+                text = label
+                textSize = 13f
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                minHeight = 0
+                minimumHeight = 0
+                minWidth = 0
+                minimumWidth = 0
+                setPadding(dp(14), dp(8), dp(14), dp(8))
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, dp(40))
+                    .apply { setMargins(dp(4), 0, dp(4), 0) }
+                background = getDrawable(
+                    if (primary) R.drawable.btn_primary else R.drawable.btn_secondary)
+                setTextColor(
+                    if (primary) Color.WHITE else Color.parseColor("#14532d"))
+                setOnClickListener { Ui.openUrl(this@MainActivity, url) }
+            }
+            v.links.addView(b)
+        }
+        v.links.visibility = if (buttons.isEmpty()) View.GONE else View.VISIBLE
+        loadCreatorPhoto(c.photo, v.photo, v.mono)
+    }
+
+    /** Fill the home footer from the server creator; hide it entirely
+     * while the admin has set nothing. */
+    private fun refreshMadeBy() {
+        val footer = madeByFooter ?: return
+        val views = madeByFooterViews ?: return
+        footer.visibility = if (creator.isEmpty()) View.GONE else View.VISIBLE
+        if (creator.isEmpty()) return
+        fillMadeByViews(views, creator)
+    }
+
+    private fun buildMadeByFooter(): View {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = getDrawable(R.drawable.card_bg)
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+            visibility = View.GONE
+        }
+        val views = buildMadeByViews(64, false)
+        madeByFooterViews = views
+        card.addView(views.root)
+        return card
+    }
+
+    private fun showAboutDialog() {
+        val views = buildMadeByViews(72, true)
+        if (!creator.isEmpty()) fillMadeByViews(views, creator)
+        else {
+            // Nothing set yet: still show the monogram + version, so the
+            // About screen itself answers "who made this".
+            views.name.text = "Job Tracker"
+            views.name.visibility = View.VISIBLE
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Job Tracker")
+            .setView(views.root)
+            .setPositiveButton("ঠিক আছে", null)
+            .show()
+        Ui.applyTextScale(views.root)
+    }
+
+    /** Load the creator photo (base64 data URL or https URL) on a worker
+     * thread, circular-crop it, and show it; on any failure the "JT"
+     * monogram stays. A blank photo shows the monogram immediately. */
+    private fun loadCreatorPhoto(photo: String, imageView: ImageView, monogram: TextView) {
+        if (photo.isBlank()) {
+            imageView.visibility = View.GONE
+            monogram.visibility = View.VISIBLE
+            return
+        }
+        thread {
+            val bmp = try {
+                if (photo.startsWith("data:image")) {
+                    val b64 = photo.substringAfter(",", "")
+                    val bytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT)
+                    android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                } else {
+                    val conn = java.net.URL(photo).openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout = 10000
+                    conn.readTimeout = 10000
+                    conn.inputStream.use { android.graphics.BitmapFactory.decodeStream(it) }
+                }
+            } catch (e: Exception) {
+                null
+            }
+            val round = bmp?.let { circularBitmap(it) }
+            runOnUiThread {
+                if (round != null) {
+                    imageView.setImageBitmap(round)
+                    imageView.visibility = View.VISIBLE
+                    monogram.visibility = View.GONE
+                } else {
+                    imageView.visibility = View.GONE
+                    monogram.visibility = View.VISIBLE
+                }
+            }
+        }
+    }
+
+    private fun circularBitmap(src: android.graphics.Bitmap): android.graphics.Bitmap {
+        val size = minOf(src.width, src.height)
+        val out = android.graphics.Bitmap.createBitmap(
+            size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(out)
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        val shader = android.graphics.BitmapShader(
+            src, android.graphics.Shader.TileMode.CLAMP,
+            android.graphics.Shader.TileMode.CLAMP)
+        val scale = size.toFloat() / minOf(src.width, src.height)
+        val m = android.graphics.Matrix()
+        m.setScale(scale, scale)
+        m.postTranslate((size - src.width * scale) / 2f, (size - src.height * scale) / 2f)
+        shader.setLocalMatrix(m)
+        paint.shader = shader
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+        return out
     }
 
     // ---------- data ----------

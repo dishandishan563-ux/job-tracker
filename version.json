@@ -1,7 +1,7 @@
 {
   "apkFileName": "job-tracker.apk",
   "apkUrl": "/job-tracker.apk.b64",
-  "changelogBn": "ওয়েবসাইটে আপলোড করা CV এখন অ্যাপেও দেখাবে — প্রোফাইল সিঙ্ক ঠিক করা হয়েছে।",
-  "versionCode": 7,
-  "versionName": "1.1.5"
+  "changelogBn": "অ্যাপে “তৈরি করেছেন” সেকশন যোগ হয়েছে — কে বানিয়েছে এখন অ্যাপেও দেখাবে।",
+  "versionCode": 8,
+  "versionName": "1.1.6"
 }

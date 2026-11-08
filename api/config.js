@@ -1,16 +1,23 @@
 // GET /api/config — public client config.
-//   { googleClientId, contact, reminderOptions }
+//   { googleClientId, contact, creator, reminderOptions }
 // - googleClientId: Google OAuth client ID only, never the secret.
 // - contact: the admin-set WhatsApp / Telegram links (KV jt:contact), shown
 //   to every visitor in the menu as "আবেদন করতে চাইলে যোগাযোগ করুন".
 //   Empty when the admin has set nothing — then the menu entry stays hidden.
+// - creator: the admin-set "তৈরি করেছেন" (Made by) profile (KV jt:creator) —
+//   name, photo, WhatsApp / Facebook / Telegram links. Shown to every
+//   visitor on the website home and in the app (home footer + About).
+//   Empty when the admin has set nothing — then the section stays hidden.
 // - reminderOptions: the circular-type + qualification options for the
 //   reminder-preference section in Settings (single source of truth; the
 //   client falls back to a built-in copy if this fetch fails).
 //
 // POST /api/config — admin only. Two kinds of writes, same PIN gate:
 // 1) { pinHash, contact: { whatsapp, telegram } } — saves the contact links.
-// 2) { pinHash, action: 'add' | 'update' | 'delete' | 'sync-seed', ... } —
+// 2) { pinHash, creator: { name, photo, whatsapp, facebook, telegram } } —
+//    saves the Made-by profile. The photo is a URL or a small base64 data
+//    URL (200 KB max — the server rejects anything bigger).
+// 3) { pinHash, action: 'add' | 'update' | 'delete' | 'sync-seed', ... } —
 //    server-side circulars writes (KV jt:circulars), so every user sees the
 //    change. Before this, admin add/delete only wrote to the admin's own
 //    browser localStorage (jt_admin_circulars / jt_deleted_circulars) —
@@ -41,7 +48,7 @@
 //           Skips anything already present, anything the admin deleted,
 //           and any seed entry whose deadline already passed (expired seed
 //           entries never come back to the live list).
-const { kvAvailable, getContact, saveContact, getCirculars, saveCirculars, allKeys, dedupeKey, getDeletedKeys, addDeletedKeys, isExpired } = require('./_store');
+const { kvAvailable, getContact, saveContact, getCreator, saveCreator, getCirculars, saveCirculars, allKeys, dedupeKey, getDeletedKeys, addDeletedKeys, isExpired } = require('./_store');
 const { TYPE_OPTIONS, QUAL_OPTIONS } = require('./_prefs');
 const seedCirculars = require('../data/circulars.json');
 
@@ -68,6 +75,48 @@ function normTelegram(v) {
   if (v.startsWith('@')) return 'https://t.me/' + v.slice(1);
   if (/^[A-Za-z0-9_]{5,}$/.test(v)) return 'https://t.me/' + v;
   return '';
+}
+
+function normFacebook(v) {
+  v = String(v || '').trim();
+  if (!v) return '';
+  if (/^https?:\/\//i.test(v)) return v;
+  return '';
+}
+
+// Validate + clean the Made-by profile. Only the five allowlisted fields
+// are kept. The photo is a URL or a base64 data URL no bigger than 200 KB
+// (a bigger photo would bloat every /api/config response for every visitor).
+const CREATOR_PHOTO_MAX_BYTES = 200 * 1024;
+
+function cleanCreator(input) {
+  const name = String((input && input.name) || '').trim().slice(0, 100);
+  let photo = String((input && input.photo) || '').trim();
+  if (photo) {
+    if (/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(photo)) {
+      const b64 = photo.slice(photo.indexOf(',') + 1);
+      if (Math.ceil(b64.length * 3 / 4) > CREATOR_PHOTO_MAX_BYTES) {
+        return { ok: false, error: 'ছবি ২০০ KB-এর মধ্যে রাখুন।' };
+      }
+    } else if (!/^https?:\/\//i.test(photo)) {
+      return { ok: false, error: 'ছবির সঠিক লিংক দিন (https://…) অথবা ছবি আপলোড করুন।' };
+    }
+    if (photo.length > 300 * 1024) return { ok: false, error: 'ছবি ২০০ KB-এর মধ্যে রাখুন।' };
+  }
+  const facebook = normFacebook(input && input.facebook);
+  if (input && input.facebook && String(input.facebook).trim() && !facebook) {
+    return { ok: false, error: 'সঠিক Facebook লিংক দিন (https://…)।' };
+  }
+  return {
+    ok: true,
+    creator: {
+      name,
+      photo,
+      whatsapp: normWhatsApp(input && input.whatsapp),
+      facebook,
+      telegram: normTelegram(input && input.telegram),
+    },
+  };
 }
 
 // Validate + clean one circular from the admin form. Only allowlisted
@@ -202,15 +251,18 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     let contact = { whatsapp: '', telegram: '' };
     try { contact = await getContact(); } catch {}
+    let creator = { name: '', photo: '', whatsapp: '', facebook: '', telegram: '' };
+    try { creator = await getCreator(); } catch {}
     return res.status(200).json({
       googleClientId: process.env.GOOGLE_CLIENT_ID || '',
       contact,
+      creator,
       reminderOptions: { types: TYPE_OPTIONS, quals: QUAL_OPTIONS },
     });
   }
   if (req.method === 'POST') {
     try {
-      const { pinHash, contact, action } = req.body || {};
+      const { pinHash, contact, creator, action } = req.body || {};
       if (process.env.ADMIN_PIN_HASH && pinHash !== process.env.ADMIN_PIN_HASH) {
         return res.status(401).json({ ok: false, error: 'ভুল PIN।' });
       }
@@ -220,6 +272,12 @@ module.exports = async (req, res) => {
       if (action) {
         const r = await handleCircularAction(action, req.body || {});
         return res.status(r.status).json(r.body);
+      }
+      if (creator && typeof creator === 'object') {
+        const cleaned = cleanCreator(creator);
+        if (!cleaned.ok) return res.status(400).json({ ok: false, error: cleaned.error });
+        await saveCreator(cleaned.creator);
+        return res.status(200).json({ ok: true, creator: cleaned.creator });
       }
       if (!contact || typeof contact !== 'object') {
         return res.status(400).json({ ok: false, error: 'contact দিতে হবে।' });

@@ -31,6 +31,7 @@
     <string name="menu_logout">🚪 লগআউট (Logout)</string>
     <string name="menu_refresh">⟳ তালিকা রিফ্রেশ করুন (Refresh)</string>
     <string name="menu_about">ℹ️ অ্যাপ সম্পর্কে (About)</string>
+    <string name="made_by_title">👤 তৈরি করেছেন</string>
     <string name="drawer_menu">☰ মেনু (Menu)</string>
     <string name="sort_deadline_short">ডেডলাইন</string>
     <string name="sort_posts_short">বেশি পদ</string>

@@ -236,13 +236,32 @@ function bindApkButtons() {
   });
 }
 
+// ---------- অ্যাডমিন সার্কুলার সার্ভার-সেভ ----------
+// অ্যাডমিনের যোগ/ঠিক/মোছা এখন সার্ভারে (KV) সেভ হয় — api/config-এর
+// PIN-গেটেড action (add/update/delete/sync-seed)। সার্ভার না পারলে null
+// ফেরে, তখন কলার আগের মতো শুধু এই ব্রাউজারের localStorage-এ সেভ করে।
+async function saveCircularToServer(body) {
+  try {
+    const r = await fetch('api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pinHash: sessionStorage.getItem('jt_admin_hash') || '', ...body }) });
+    const d = await r.json().catch(() => ({}));
+    return d && d.ok ? d : null;
+  } catch { return null; }
+}
+
 // অ্যাডমিনে সার্কুলার মোছা — দুই চাপে নিশ্চিতকরণ (প্রথম চাপে বোতাম বদলায়,
 // দ্বিতীয় চাপে মোছে; ৩ সেকেন্ডে না চাপলে আগের অবস্থায় ফেরে)।
-window.confirmDeleteCircular = function (btn, id) {
+window.confirmDeleteCircular = async function (btn, id) {
   if (btn.dataset.armed) {
-    const d = JSON.parse(localStorage.getItem('jt_deleted_circulars') || '[]');
-    d.push(id);
-    localStorage.setItem('jt_deleted_circulars', JSON.stringify(d));
+    const r = await saveCircularToServer({ action: 'delete', id });
+    if (r) {
+      try { const d = JSON.parse(localStorage.getItem('jt_deleted_circulars') || '[]').filter(x => x !== id); localStorage.setItem('jt_deleted_circulars', JSON.stringify(d)); } catch {}
+      toast('✓ মুছে গেছে — সবার তালিকা থেকে যাবে।');
+    } else {
+      const d = JSON.parse(localStorage.getItem('jt_deleted_circulars') || '[]');
+      d.push(id);
+      localStorage.setItem('jt_deleted_circulars', JSON.stringify(d));
+      toast('সার্ভারে মোছা যায়নি — শুধু এই ব্রাউজারে মুছেছে।');
+    }
     location.reload();
   } else {
     btn.dataset.armed = '1';
@@ -266,15 +285,38 @@ function isNew(c) {
 }
 
 // ---------- "তৈরি করেছেন" (Made by) ----------
-// অ্যাডমিনে বসানো তথ্য localStorage-এ সেভ থাকে (jt_creator) — ছবি বা লিংক
-// কিছুই কোডে হার্ডকোড করা নেই; কিছু না বসালে এই সেকশন দেখায় না।
+// সার্ভারে (KV jt:creator) সেভ থাকে — সবাই দেখতে পায়। সার্ভারে কিছু না
+// থাকলে পুরনো localStorage (jt_creator) দেখায়, যাতে আগে বসানো তথ্য
+// হারায় না। কিছুই কোডে হার্ডকোড করা নেই; কিছু না বসালে এই সেকশন দেখায় না।
+let serverCreator = null; // null = সার্ভার থেকে এখনো আনা হয়নি
+let serverContactForCreator = null;
+async function loadServerCreator() {
+  if (serverCreator !== null) return serverCreator;
+  try {
+    const d = await fetch('api/config', { cache: 'no-store' }).then(r => r.json());
+    serverCreator = d.creator || {};
+    serverContactForCreator = d.contact || {};
+  } catch { serverCreator = {}; serverContactForCreator = {}; }
+  return serverCreator;
+}
 function getCreator() {
+  const s = serverCreator || {};
+  if (s.name || s.photo || s.whatsapp || s.facebook || s.telegram) {
+    return {
+      name: (s.name || '').trim(),
+      photo: (s.photo || '').trim(),
+      whatsapp: (s.whatsapp || '').trim(),
+      facebook: (s.facebook || '').trim(),
+      telegram: (s.telegram || '').trim(),
+    };
+  }
   const c = read('jt_creator', {});
   return {
     name: (c.name || '').trim(),
     photo: (c.photo || '').trim(),
     whatsapp: (c.whatsapp || '').trim(),
     facebook: (c.facebook || '').trim(),
+    telegram: (c.telegram || '').trim(),
   };
 }
 function normWhatsApp(v) {
@@ -290,9 +332,11 @@ function renderMadeBy() {
   if (!box) return;
   const c = getCreator();
   c.whatsapp = normWhatsApp(c.whatsapp);
-  if (!c.name && !c.photo && !c.whatsapp && !c.facebook) { box.style.display = 'none'; box.innerHTML = ''; return; }
-  box.style.display = 'block';
-  box.innerHTML = `<h3>👤 তৈরি করেছেন</h3>
+  const telegram = (c.telegram || '').trim() || ((serverContactForCreator && serverContactForCreator.telegram) || '').trim();
+  if (!c.name && !c.photo && !c.whatsapp && !c.facebook && !telegram) { box.style.display = 'none'; box.innerHTML = ''; }
+  else {
+    box.style.display = 'block';
+    box.innerHTML = `<h3>👤 তৈরি করেছেন</h3>
     <div class="made-by">
       ${c.photo ? `<img class="made-by-photo" src="${c.photo}" alt="তৈরি করেছেন" onerror="this.style.display='none'">` : ''}
       <div class="made-by-info">
@@ -300,10 +344,14 @@ function renderMadeBy() {
         <div class="made-by-links">
           ${c.whatsapp ? `<a class="btn green small" href="${c.whatsapp}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
           ${c.facebook ? `<a class="btn outline small" href="${c.facebook}" target="_blank" rel="noopener">📘 Facebook</a>` : ''}
+          ${telegram ? `<a class="btn outline small" href="${telegram}" target="_blank" rel="noopener">✈️ Telegram</a>` : ''}
         </div>
-        ${!c.whatsapp && !c.facebook ? '<p style="font-size:14px;color:var(--muted)">যোগাযোগের লিংক এখনো দেওয়া হয়নি।</p>' : ''}
+        ${!c.whatsapp && !c.facebook && !telegram ? '<p style="font-size:14px;color:var(--muted)">যোগাযোগের লিংক এখনো দেওয়া হয়নি।</p>' : ''}
       </div>
     </div>`;
+  }
+  // সার্ভারের তথ্য এখনো আনা হয়নি — এনে আবার আঁকি (সার্ভারের তথ্য জিতবে)।
+  if (serverCreator === null) loadServerCreator().then(() => renderMadeBy());
 }
 
 // ---------- HOME ----------
@@ -1019,6 +1067,7 @@ async function initAdmin() {
     ['dash', 'circulars', 'email', 'pin', 'creator', 'contact'].forEach(t => document.getElementById('tab-' + t).style.display = t === b.dataset.tab ? 'block' : 'none');
     if (b.dataset.tab === 'email') loadRecipients();
     if (b.dataset.tab === 'contact') loadContactForm();
+    if (b.dataset.tab === 'creator') loadCreatorForm();
   });
   // ---------- "যোগাযোগ" ট্যাব — মেনুতে দেখানো WhatsApp / Telegram ----------
   // সার্ভারে (KV) সেভ হয়, তাই সব ভিজিটর দেখতে পায়; PIN ছাড়া বদলানো যায় না।
@@ -1083,11 +1132,22 @@ async function initAdmin() {
     localStorage.setItem('jt_admin_pin_hash', await sha256(np));
     toast('PIN বদলে গেছে।');
   };
-  // ---------- "তৈরি করেছেন" ট্যাব — নাম, ছবি, WhatsApp / Facebook লিংক ----------
+  // ---------- "তৈরি করেছেন" ট্যাব — নাম, ছবি, WhatsApp / Facebook / Telegram ----------
+  // সার্ভারে (KV) সেভ হয়, তাই সব ভিজিটর দেখতে পায়; সার্ভার না পারলে শুধু
+  // এই ব্রাউজারের localStorage-এ সেভ হয় (আগের আচরণ)।
+  async function loadCreatorForm() {
+    try {
+      const d = await fetch('api/config', { cache: 'no-store' }).then(r => r.json());
+      if (d.creator && (d.creator.name || d.creator.photo || d.creator.whatsapp || d.creator.facebook || d.creator.telegram)) {
+        serverCreator = d.creator;
+      }
+    } catch {}
+    creatorForm();
+  }
   const creatorForm = () => {
     const c = getCreator();
     const set = (id, v) => { const f = document.getElementById(id); if (f) f.value = v; };
-    set('crName', c.name); set('crPhotoUrl', c.photo); set('crWhatsapp', c.whatsapp); set('crFacebook', c.facebook);
+    set('crName', c.name); set('crPhotoUrl', c.photo); set('crWhatsapp', c.whatsapp); set('crFacebook', c.facebook); set('crTelegram', c.telegram);
     const prev = document.getElementById('crPhotoPreview');
     if (prev) { prev.src = c.photo || ''; prev.style.display = c.photo ? 'block' : 'none'; }
   };
@@ -1095,7 +1155,7 @@ async function initAdmin() {
   const crPhotoFile = document.getElementById('crPhotoFile');
   if (crPhotoFile) crPhotoFile.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
-    if (f.size > 500 * 1024) { toast('ছবি ৫০০ KB-এর মধ্যে রাখুন।'); return; }
+    if (f.size > 200 * 1024) { toast('ছবি ২০০ KB-এর মধ্যে রাখুন।'); return; }
     const r = new FileReader();
     r.onload = () => {
       document.getElementById('crPhotoUrl').value = String(r.result);
@@ -1104,24 +1164,74 @@ async function initAdmin() {
     r.readAsDataURL(f);
   };
   const crSave = document.getElementById('crSaveBtn');
-  if (crSave) crSave.onclick = () => {
-    store('jt_creator', {
+  if (crSave) crSave.onclick = async () => {
+    const st = document.getElementById('crStatus');
+    const data = {
       name: document.getElementById('crName').value.trim(),
       photo: document.getElementById('crPhotoUrl').value.trim(),
       whatsapp: normWhatsApp(document.getElementById('crWhatsapp').value),
       facebook: document.getElementById('crFacebook').value.trim(),
-    });
-    document.getElementById('crStatus').textContent = '✓ সেভ হয়েছে — হোম পেইজে “তৈরি করেছেন” সেকশনে দেখাবে।';
+      telegram: document.getElementById('crTelegram').value.trim(),
+    };
+    st.textContent = 'সেভ হচ্ছে…';
+    try {
+      const r = await fetch('api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pinHash: sessionStorage.getItem('jt_admin_hash') || '', creator: data }) });
+      const d = await r.json().catch(() => ({}));
+      if (d.ok) {
+        serverCreator = d.creator || data;
+        store('jt_creator', serverCreator);
+        st.textContent = '✓ সেভ হয়েছে — সবাই দেখতে পাবে।';
+      } else {
+        st.textContent = '✗ ' + (d.error || 'সেভ হয়নি।');
+      }
+    } catch {
+      store('jt_creator', data);
+      st.textContent = 'সার্ভারে সেভ হয়নি — শুধু এই ব্রাউজারে সেভ হয়েছে।';
+    }
   };
+  let adminCirculars = [];
   async function renderAdmin() {
     const cs = await loadCirculars();
-    document.getElementById('tab-dash').innerHTML = `<p>মোট সার্কুলার: <span class="num">${bn(cs.length)}</span>টি • চলমান: <span class="num">${bn(cs.filter(c => daysLeft(c.deadline) >= 0).length)}</span>টি</p><p>অফিসিয়াল সেন্ডার Gmail: <span class="num">jobtrackerbd@gmail.com</span></p><p>ডেইলি ক্রন: প্রতিদিন সকাল ৮টা (ঢাকা) — /api/daily-check • নতুন সার্কুলার Teletalk-এর তালিকা থেকে অটো যোগ হয়</p>`;
-    document.getElementById('tab-circulars').innerHTML = '<h4 style="margin-bottom:8px">সার্কুলার তালিকা</h4>' + cs.map(c => {
+    adminCirculars = cs;
+    document.getElementById('tab-dash').innerHTML = `<p>মোট সার্কুলার: <span class="num">${bn(cs.length)}</span>টি • চলমান: <span class="num">${bn(cs.filter(c => daysLeft(c.deadline) >= 0).length)}</span>টি</p><p>অফিসিয়াল সেন্ডার Gmail: <span class="num">jobtrackerbd@gmail.com</span></p><p>ডেইলি ক্রন: প্রতিদিন সকাল ৮টা (ঢাকা) — /api/daily-check • নতুন সার্কুলার Teletalk-এর তালিকা থেকে অটো যোগ হয় — অ্যাপ/ওয়েবসাইট খুললেই (সর্বোচ্চ ১ ঘণ্টা পর পর)</p><p>অ্যাডমিন যোগ/ঠিক/মোছা এখন সার্ভারে সেভ হয় — সবাই দেখতে পাবে।</p>`;
+    document.getElementById('tab-circulars').innerHTML = '<button class="btn outline" id="syncSeedBtn" style="width:100%;margin-bottom:8px">🔄 নতুন সিড সার্কুলার সিঙ্ক করুন (একবার চাপুন)</button><p id="syncSeedStatus" style="font-size:14px"></p><h4 style="margin-bottom:8px">সার্কুলার তালিকা</h4>' + cs.map(c => {
       const dl = daysLeft(c.deadline);
-      return `<div class="admin-row"><div class="info"><h4>${c.org}</h4><p>মোট পদ: ${c.totalPosts == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.totalPosts) + '</span>টি'} • শেষ: <span class="num">${fmtDate(c.deadline)}</span> • <span class="pill ${dl < 0 ? 'grey' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : 'চলমান'}</span></p></div><button class="btn outline small" onclick="confirmDeleteCircular(this,'${c.id}')">মুছুন</button></div>`;
+      return `<div class="admin-row"><div class="info"><h4>${c.org}</h4><p>মোট পদ: ${c.totalPosts == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.totalPosts) + '</span>টি'} • শেষ: <span class="num">${fmtDate(c.deadline)}</span> • <span class="pill ${dl < 0 ? 'grey' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : 'চলমান'}</span></p></div><button class="btn outline small" onclick="editCircular('${c.id}')">✏️ ঠিক করুন</button> <button class="btn outline small" onclick="confirmDeleteCircular(this,'${c.id}')">মুছুন</button></div>`;
     }).join('') +
       `<h4 style="margin:14px 0 4px">নতুন সার্কুলার যোগ করুন</h4><div class="field"><label>প্রতিষ্ঠান</label><input id="newOrg" placeholder="প্রতিষ্ঠানের নাম"></div><div class="field"><label>আবেদনের লিংক</label><input id="newApplyUrl" placeholder="https://…teletalk.com.bd"></div><div class="field"><label>ধরণ</label><select id="newType"><option value="govt">সরকারি</option><option value="ministry" selected>মন্ত্রণালয় / অধিদপ্তর</option><option value="bank">ব্যাংক</option><option value="police">পুলিশ / সেনা / প্রতিরক্ষা</option><option value="teacher">শিক্ষক / শিক্ষা</option><option value="health">স্বাস্থ্য</option><option value="railway">রেলওয়ে</option><option value="district">জেলা প্রশাসন</option><option value="tax">কর / রাজস্ব / অডিট</option><option value="court">আদালত</option><option value="private">বেসরকারি</option><option value="ngo">এনজিও</option><option value="other">অন্যান্য</option></select></div><div class="field"><label>মোট পদ</label><input id="newPosts" type="number"></div><div class="field"><label>HSC পদ</label><input id="newHsc" type="number"></div><div class="field"><label>ফি (টাকা)</label><input id="newFee" type="number"></div><div class="field"><label>বেতন</label><input id="newSalary" placeholder="যেমন: ২১,৯০০–৫২,৯০০ টাকা"></div><div class="field"><label>বয়স</label><input id="newAge" placeholder="যেমন: ১৮–৩২ বছর"></div><div class="field"><label>জেলা</label><input id="newDistricts" placeholder="যেমন: সব জেলা"></div><div class="field"><label>পদের নাম</label><input id="newPostTitle" placeholder="যেমন: অফিস সহকারী কাম কম্পিউটার মুদ্রাক্ষরিক"></div><div class="field"><label>ওই পদের সংখ্যা</label><input id="newPostCount" type="number"></div><div class="field"><label>ওই পদের যোগ্যতা</label><select id="newPostQual"><option>HSC</option><option>SSC</option><option>স্নাতক</option><option>JSC</option></select></div><div class="field"><label>শেষ তারিখ</label><input id="newDeadline" type="date"></div><button class="btn green" id="addCircularBtn">যোগ করুন</button>`;
-    document.getElementById('addCircularBtn').onclick = () => {
+    // সিড সিঙ্ক (একবারের মাইগ্রেশন) — সিডের নতুন এন্ট্রি (BSCS/BPSC/NIPORT)
+    // লাইভ তালিকায় যোগ করে, DMP-র ভুল এন্ট্রি ঠিক করা সংস্করণ দিয়ে বদলায়।
+    const syncBtn = document.getElementById('syncSeedBtn');
+    if (syncBtn) syncBtn.onclick = async () => {
+      const st = document.getElementById('syncSeedStatus');
+      st.textContent = 'সিঙ্ক হচ্ছে…';
+      const r = await saveCircularToServer({ action: 'sync-seed' });
+      if (r) {
+        st.textContent = `✓ সিঙ্ক হয়েছে — নতুন: ${r.added || 0}টি, ঠিক করা: ${r.replaced || 0}টি, মোট: ${r.count || 0}টি।`;
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        st.textContent = '✗ সিঙ্ক হয়নি — নেটওয়ার্ক/সার্ভার দেখুন।';
+      }
+    };
+    // সার্কুলার ঠিক করা — পুরনো তথ্য ফর্মে বসিয়ে দেয়, সেভে সার্ভার আপডেট হয়।
+    window.editCircular = function (id) {
+      const c = (adminCirculars || []).find(x => x.id === id);
+      if (!c) { toast('সার্কুলারটি পাওয়া যায়নি।'); return; }
+      const set = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v == null ? '' : v; };
+      set('newOrg', c.org); set('newApplyUrl', c.applyUrl); set('newPosts', c.totalPosts); set('newHsc', c.hscPosts); set('newFee', c.fee);
+      set('newSalary', c.salary); set('newAge', c.age); set('newDistricts', c.districts);
+      const p0 = (c.posts && c.posts[0]) || {};
+      set('newPostTitle', p0.title); set('newPostCount', p0.count);
+      const q = document.getElementById('newPostQual'); if (q && p0.qualification) q.value = p0.qualification;
+      const t = document.getElementById('newType'); if (t && c.type) t.value = c.type;
+      const dl = document.getElementById('newDeadline'); if (dl && c.deadline) dl.value = String(c.deadline).slice(0, 10);
+      const btn = document.getElementById('addCircularBtn');
+      btn.dataset.editing = id;
+      btn.textContent = '✓ ঠিক করে সেভ করুন';
+      document.getElementById('newOrg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      toast('ফর্মে পুরনো তথ্য বসানো হয়েছে — ঠিক করে সেভ করুন।');
+    };
+    document.getElementById('addCircularBtn').onclick = async () => {
       const org = document.getElementById('newOrg').value.trim();
       const applyUrl = document.getElementById('newApplyUrl').value.trim();
       const dl = document.getElementById('newDeadline').value;
@@ -1129,10 +1239,28 @@ async function initAdmin() {
       if (!applyUrl) { toast('আবেদনের লিংক দিন — নইলে আবেদন বোতাম কাজ করবে না।'); return; }
       const typeSel = document.getElementById('newType');
       const postTitle = document.getElementById('newPostTitle').value.trim();
-      const extra = JSON.parse(localStorage.getItem('jt_admin_circulars') || '[]');
-      extra.push({ id: 'custom-' + Date.now(), org, totalPosts: +document.getElementById('newPosts').value || 0, hscPosts: +document.getElementById('newHsc').value || 0, grade: 16, fee: +document.getElementById('newFee').value || null, deadline: dl + 'T17:00:00+06:00', posts: postTitle ? [{ title: postTitle, count: +document.getElementById('newPostCount').value || 0, grade: 16, qualification: document.getElementById('newPostQual').value }] : [], salary: document.getElementById('newSalary').value.trim(), age: document.getElementById('newAge').value.trim(), districts: document.getElementById('newDistricts').value.trim(), source: 'secondary', sourceNote: 'অ্যাডমিন যোগ করেছেন — অফিসিয়াল সার্কুলার যাচাই করুন।', type: typeSel.value, typeBn: typeSel.options[typeSel.selectedIndex].text, applyUrl });
-      localStorage.setItem('jt_admin_circulars', JSON.stringify(extra));
-      toast('✓ সার্কুলার যোগ হয়েছে।'); setTimeout(() => location.reload(), 900);
+      const circ = { org, totalPosts: +document.getElementById('newPosts').value || 0, hscPosts: +document.getElementById('newHsc').value || 0, grade: 16, fee: +document.getElementById('newFee').value || null, deadline: dl + 'T17:00:00+06:00', posts: postTitle ? [{ title: postTitle, count: +document.getElementById('newPostCount').value || 0, grade: 16, qualification: document.getElementById('newPostQual').value }] : [], salary: document.getElementById('newSalary').value.trim(), age: document.getElementById('newAge').value.trim(), districts: document.getElementById('newDistricts').value.trim(), source: 'secondary', sourceNote: 'অ্যাডমিন যোগ করেছেন — অফিসিয়াল সার্কুলার যাচাই করুন।', type: typeSel.value, typeBn: typeSel.options[typeSel.selectedIndex].text, applyUrl };
+      const editingId = document.getElementById('addCircularBtn').dataset.editing || '';
+      const saved = await saveCircularToServer(editingId ? { action: 'update', id: editingId, circular: circ } : { action: 'add', circular: circ });
+      if (saved) {
+        // সার্ভারে সেভ হয়েছে — পুরনো লোকাল কপি থাকলে সরিয়ে দিই, নইলে সেটাই
+        // সার্ভারের নতুন কপিকে ঢেকে দেবে (data.js-এর মার্জে লোকাল জেতে)।
+        try {
+          const extra = JSON.parse(localStorage.getItem('jt_admin_circulars') || '[]').filter(x => x.id !== (editingId || saved.id));
+          localStorage.setItem('jt_admin_circulars', JSON.stringify(extra));
+          const del = JSON.parse(localStorage.getItem('jt_deleted_circulars') || '[]').filter(x => x !== (editingId || saved.id));
+          localStorage.setItem('jt_deleted_circulars', JSON.stringify(del));
+        } catch {}
+        toast('✓ সেভ হয়েছে — সবাই দেখতে পাবে।');
+      } else {
+        // সার্ভারে সেভ হয়নি — আগের মতো শুধু এই ব্রাউজারে সেভ থাকবে।
+        const extra = JSON.parse(localStorage.getItem('jt_admin_circulars') || '[]');
+        if (editingId) { const i = extra.findIndex(x => x.id === editingId); if (i >= 0) extra[i] = { ...circ, id: editingId }; else extra.push({ ...circ, id: editingId }); }
+        else extra.push({ id: 'custom-' + Date.now(), ...circ });
+        localStorage.setItem('jt_admin_circulars', JSON.stringify(extra));
+        toast('সার্ভারে সেভ হয়নি — শুধু এই ব্রাউজারে যোগ হয়েছে।');
+      }
+      setTimeout(() => location.reload(), 900);
     };
   }
 }

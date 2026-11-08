@@ -290,4 +290,39 @@ async function saveContact(contact) {
   return true;
 }
 
-module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, allKeys, mergeCirculars, getCirculars, saveCirculars, EXPIRE_GRACE_MS, deadlineMs, isExpired, isPastGrace, DELETED_CIRCULARS_KEY, getDeletedKeys, addDeletedKeys, LAST_DISCOVERY_KEY, getLastDiscovery, setLastDiscovery, CONTACT_KEY, getContact, saveContact };
+// ---------- Creator ("তৈরি করেছেন" / Made by) ----------
+// Who made the app — shown to EVERY visitor in the website home section
+// and in the app (home footer + About). It must live in server-side KV,
+// never browser localStorage (a localStorage value would only show on the
+// admin's own browser — that was the old behaviour). Only the five public
+// fields are stored — never a PIN, Gmail or secret. The photo is a URL or
+// a small base64 data URL (the 200 KB limit is enforced in api/config.js).
+const CREATOR_KEY = 'jt:creator';
+
+async function getCreator() {
+  if (!kvAvailable()) return { name: '', photo: '', whatsapp: '', facebook: '', telegram: '' };
+  try {
+    const v = await kvGet(CREATOR_KEY);
+    return {
+      name: String((v && v.name) || ''),
+      photo: String((v && v.photo) || ''),
+      whatsapp: String((v && v.whatsapp) || ''),
+      facebook: String((v && v.facebook) || ''),
+      telegram: String((v && v.telegram) || ''),
+    };
+  } catch { return { name: '', photo: '', whatsapp: '', facebook: '', telegram: '' }; }
+}
+
+async function saveCreator(creator) {
+  if (!kvAvailable()) return false;
+  await kvSet(CREATOR_KEY, {
+    name: String(creator.name || ''),
+    photo: String(creator.photo || ''),
+    whatsapp: String(creator.whatsapp || ''),
+    facebook: String(creator.facebook || ''),
+    telegram: String(creator.telegram || ''),
+  });
+  return true;
+}
+
+module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, allKeys, mergeCirculars, getCirculars, saveCirculars, EXPIRE_GRACE_MS, deadlineMs, isExpired, isPastGrace, DELETED_CIRCULARS_KEY, getDeletedKeys, addDeletedKeys, LAST_DISCOVERY_KEY, getLastDiscovery, setLastDiscovery, CONTACT_KEY, getContact, saveContact, CREATOR_KEY, getCreator, saveCreator };

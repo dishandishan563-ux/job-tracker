@@ -3,6 +3,36 @@ package com.jobtrackerbd.app
 import org.json.JSONArray
 import org.json.JSONObject
 
+/** Who made the app ("তৈরি করেছেন" / Made by) — server-side (KV jt:creator),
+ * read from GET /api/config together with the contact links. Everything is
+ * optional: an empty creator hides the Made-by section entirely. The photo
+ * is a URL or a small base64 data URL; until the admin sets one, the UI
+ * shows a "JT" monogram instead — no photo or link is ever invented. */
+data class Creator(
+    val name: String = "",
+    val photo: String = "",
+    val whatsapp: String = "",
+    val facebook: String = "",
+    val telegram: String = ""
+) {
+    fun isEmpty(): Boolean =
+        name.isBlank() && photo.isBlank() && whatsapp.isBlank() &&
+            facebook.isBlank() && telegram.isBlank()
+
+    companion object {
+        fun fromJson(o: JSONObject?): Creator {
+            if (o == null) return Creator()
+            return Creator(
+                name = o.optString("name", ""),
+                photo = o.optString("photo", ""),
+                whatsapp = o.optString("whatsapp", ""),
+                facebook = o.optString("facebook", ""),
+                telegram = o.optString("telegram", "")
+            )
+        }
+    }
+}
+
 data class Post(
     val count: Int = 0,
     val grade: Int = 0,
