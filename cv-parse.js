@@ -29,7 +29,9 @@ const CV_FIELDS = ['name', 'phone', 'email', 'dob', 'district', 'edu', 'typeBn',
 const MONTHS = { january: 1, jan: 1, february: 2, feb: 2, march: 3, mar: 3, april: 4, apr: 4, may: 5, june: 6, jun: 6, july: 7, jul: 7, august: 8, aug: 8, september: 9, sep: 9, sept: 9, october: 10, oct: 10, november: 11, nov: 11, december: 12, dec: 12 };
 
 function cleanLines(text) {
-  return bnToEn(String(text || '')).replace(/\r/g, '').split('\n').map(l => l.replace(/[ \t]+/g, ' ').trim()).filter(Boolean);
+  // Word থেকে আসা PDF-এ কার্লি অ্যাপোস্ট্রফি (’) থাকে — "Father’s Name"
+  // মিলত না, তাই সোজা ' বানিয়ে নিই; বাংলা সংখ্যাও ইংরেজি করি।
+  return bnToEn(String(text || '').replace(/[’‘]/g, "'").replace(/[“”]/g, '"')).replace(/\r/g, '').split('\n').map(l => l.replace(/[ \t]+/g, ' ').trim()).filter(Boolean);
 }
 
 // লেবেলের পরের লেখা (যেমন "Name: Ashish" → "Ashish")।
@@ -75,7 +77,14 @@ function parseDateStr(s) {
   let m = s.match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
   if (m) return validDate(m[1], m[2], m[3]);
   m = s.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
-  if (m) { let d = +m[1], mo = +m[2]; if (d > 12 && mo <= 12) { const t = d; d = mo; mo = t; } return validDate(m[3], mo, d); }
+  if (m) {
+    // বাংলাদেশে dd/mm/yyyy চলে: 15/03/2001 মানে ১৫ মার্চ।
+    // প্রথম সংখ্যা ১২-এর বেশি হলে সেটা দিনই — বদলানো যাবে না।
+    // দ্বিতীয় সংখ্যা ১২-এর বেশি হলে তবেই mm/dd ধরে বদলাতে হয়।
+    let d = +m[1], mo = +m[2];
+    if (mo > 12 && d <= 12) { const t = d; d = mo; mo = t; }
+    return validDate(m[3], mo, d);
+  }
   m = s.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
   if (m && MONTHS[m[2].toLowerCase()]) return validDate(m[3], MONTHS[m[2].toLowerCase()], m[1]);
   m = s.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
@@ -104,11 +113,19 @@ function parseCvText(text) {
   }
 
   // ---- মোবাইল ----
-  const ph = full.match(/(?:\+?880[\s\-]?|0)1[3-9]\d{8}/);
-  if (ph) { const d = ph[0].replace(/\D/g, ''); out.phone = d.startsWith('880') ? '0' + d.slice(3) : d; }
+  // নম্বরে মাঝখানে - বা স্পেস থাকে (01712-345678) — সেগুলো সহ মিলিয়ে
+  // শুধু সংখ্যাগুলো নিই; শেষে ০১ দিয়ে শুরু ১১ সংখ্যার নম্বর হতে হবে।
+  const ph = full.match(/(?:\+?880[\s\-]?|0)1[3-9][\d\s\-]{7,12}/);
+  if (ph) {
+    let d = ph[0].replace(/\D/g, '');
+    if (d.startsWith('880')) d = '0' + d.slice(3);
+    if (/^01[3-9]\d{8}$/.test(d)) out.phone = d;
+  }
 
   // ---- ইমেইল ----
-  const em = full.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
+  // TLD-র পর আর অক্ষর থাকলে সেটা জোড়া লেখা (লাইন ভাঙা পড়েনি) —
+  // তখন মিলবে না, ভুল ইমেইল বসবে না।
+  const em = full.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?![A-Za-z])/);
   if (em) out.email = em[0];
 
   // ---- জন্ম তারিখ ----
@@ -138,9 +155,11 @@ function parseCvText(text) {
   else if (/\bjsc\b/.test(full)) out.edu = 'JSC';
 
   // ---- টাইপিং (শব্দ/মিনিট) ----
-  const tb = full.match(/(বাংলা|bangla)[^0-9]{0,25}(\d{1,3})/i);
+  // \b লাগে: "Bangladesh"-এর ভেতরের "Bangla" ধরে পরের ১৫ (জন্ম তারিখ)
+  // টাইপিং ভেবে বসত — শব্দের সীমানা থাকলে সেটা হয় না।
+  const tb = full.match(/\b(বাংলা|bangla)\b[^0-9\n]{0,25}(\d{1,3})/i);
   if (tb && +tb[2] >= 5 && +tb[2] <= 80) out.typeBn = +tb[2];
-  const te = full.match(/(ইংরেজি|english)[^0-9]{0,25}(\d{1,3})/i);
+  const te = full.match(/\b(ইংরেজি|english)\b[^0-9\n]{0,25}(\d{1,3})/i);
   if (te && +te[2] >= 5 && +te[2] <= 80) out.typeEn = +te[2];
 
   // ---- ঠিকানা ----
@@ -190,6 +209,21 @@ function parseCvText(text) {
   if (lg && lg.value) out.languages = lg.value;
 
   return out;
+}
+
+// CV আপলোডে CV-ই শেষ কথা: CV-তে যা আছে, প্রোফাইলের সব ঘরে তা-ই বসবে —
+// আগে কোনো মান থাকলেও CV-র মান জিতবে (ASHISH-এর নির্দেশ: A-Z সব বসবে)।
+// বসানো ফিল্ডের নাম ফেরে; স্ন্যাপশট আলাদা করে রাখা হয় যাতে CV মুছলে
+// এই মানগুলো আবার খালি করা যায়।
+function overwriteCvFields(profile, fields) {
+  const next = Object.assign({}, profile);
+  const filled = [];
+  CV_FIELDS.forEach(k => {
+    const v = fields[k];
+    if (v === undefined || v === '' || v === null) return;
+    next[k] = v; filled.push(k);
+  });
+  return { profile: next, filled };
 }
 
 // CV-র পুরনো স্ন্যাপশটের সাথে মিলিয়ে প্রোফাইলে বসানো:
@@ -263,13 +297,15 @@ async function extractPdfTextRaw(buf) {
       } catch { text = null; }
     }
     if (text === null) text = m[1];
-    // Tj/TJ রানগুলো ক্রমে নাও; মাঝে Td/T*/TD (নতুন লাইন) থাকলে লাইন ভাঙো।
+    // Tj/TJ রানগুলো ক্রমে নাও; মাঝে Td/T*/TD/Tm (নতুন লাইন/অবস্থান)
+    // থাকলে লাইন ভাঙো — নইলে সব লাইন জোড়া লেগে একটাই লাইন হয়ে যায়
+    // (Word থেকে আসা PDF-এ লাইন সাজাতে Tm-ই বেশি ব্যবহৃত হয়)।
     const segs = [];
     const mm = [...text.matchAll(/\((?:\\.|[^\\()])*\)\s*Tj|\[(?:[^\]])*\]\s*TJ/g)];
     let prevEnd = 0;
     for (const hit of mm) {
       const gap = text.slice(prevEnd, hit.index);
-      if (segs.length && /(^|\s)(Td|TD|T\*)/.test(gap)) segs.push('\n');
+      if (segs.length && /(^|\s)(Td|TD|T\*|Tm)/.test(gap)) segs.push('\n');
       const s = hit[0];
       if (s.trimEnd().endsWith('Tj')) segs.push(unescapePdfString(s));
       else {
@@ -284,5 +320,5 @@ async function extractPdfTextRaw(buf) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { parseCvText, mergeCvFields, removeCvFields, extractPdfTextRaw, bnToEn, DISTRICTS, CV_FIELDS };
+  module.exports = { parseCvText, mergeCvFields, overwriteCvFields, removeCvFields, extractPdfTextRaw, bnToEn, DISTRICTS, CV_FIELDS };
 }

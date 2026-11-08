@@ -781,7 +781,9 @@ const TESS_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min
 
 async function extractPdfText(buf) {
   try {
-    await loadScript(PDFJS_URL);
+    // CDN ধীর হলে (ফোনের নেটে হয়) ১৫ সেকেন্ডে ছেড়ে দিয়ে raw ফলব্যাকে
+    // যাবে — "CV পড়া হচ্ছে…" লেখায় অনন্তকাল আটকে থাকবে না।
+    await Promise.race([loadScript(PDFJS_URL), new Promise((_, rej) => setTimeout(() => rej(new Error('pdf.js timeout')), 15000))]);
     const lib = window.pdfjsLib;
     if (lib) {
       lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
@@ -831,13 +833,13 @@ async function extractCvText(file) {
 
 const CV_FIELD_LABELS = { name: 'নাম', phone: 'মোবাইল', email: 'ইমেইল', dob: 'জন্ম তারিখ', district: 'জেলা', edu: 'শিক্ষা', typeBn: 'টাইপিং (বাংলা)', typeEn: 'টাইপিং (ইংরেজি)', address: 'ঠিকানা', permAddress: 'স্থায়ী ঠিকানা', fatherName: 'পিতার নাম', motherName: 'মাতার নাম', skills: 'দক্ষতা', experience: 'কর্ম অভিজ্ঞতা', languages: 'ভাষা' };
 
-// CV-র তথ্য প্রোফাইলে বসানো (খালি ঘর + আগের CV-র ঘরই বদলায়;
-// নিজে হাতে বদলানো ঘর ছোঁয়া হয় না)। বসানো ফিল্ডের নাম ফেরে।
+// CV-র তথ্য প্রোফাইলে বসানো — CV-তে যা আছে তা-ই বসবে, আগের মান
+// থাকলেও CV-র মান জিতবে (ASHISH-এর নির্দেশ: CV-র A-Z সব ঘরে বসবে)।
+// বসানো ফিল্ডের নাম ফেরে।
 function applyCvFieldsToProfile(fields, meta) {
   const p = read('jt_profile', {});
-  const old = (p.cv && p.cv.fields) || {};
-  const merged = (typeof mergeCvFields === 'function')
-    ? mergeCvFields(p, fields, old)
+  const merged = (typeof overwriteCvFields === 'function')
+    ? overwriteCvFields(p, fields)
     : { profile: p, filled: [] };
   const np = merged.profile;
   np.cv = { name: meta.name, size: meta.size, uploadedAt: new Date().toISOString(), text: (meta.text || '').slice(0, 4000), fields };
