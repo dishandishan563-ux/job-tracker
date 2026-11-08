@@ -38,8 +38,10 @@
 //           are missing, e.g. BSCS / BPSC / NIPORT) and REPLACES the entries
 //           in REPLACE_IDS with the seed version (DMP: the live entry is
 //           wrong — 10 posts — the seed has the corrected 20-post version).
-//           Skips anything already present and anything the admin deleted.
-const { kvAvailable, getContact, saveContact, getCirculars, saveCirculars, allKeys, dedupeKey, getDeletedKeys, addDeletedKeys } = require('./_store');
+//           Skips anything already present, anything the admin deleted,
+//           and any seed entry whose deadline already passed (expired seed
+//           entries never come back to the live list).
+const { kvAvailable, getContact, saveContact, getCirculars, saveCirculars, allKeys, dedupeKey, getDeletedKeys, addDeletedKeys, isExpired } = require('./_store');
 const { TYPE_OPTIONS, QUAL_OPTIONS } = require('./_prefs');
 const seedCirculars = require('../data/circulars.json');
 
@@ -167,6 +169,10 @@ async function handleCircularAction(action, body) {
     for (const s of seedCirculars) {
       const keys = allKeys(s);
       if (keys.some(k => deleted.has(k))) { skipped++; continue; }
+      // মেয়াদ শেষ সিড এন্ট্রি আর লাইভে আনবে না — সিডে পুরনো সার্কুলার
+      // থাকলেও (যেমন BPATC/CID, মেয়াদ শেষ) সিঙ্ক সেটা ফিরিয়ে আনবে না।
+      // Deadline নেই এমন এন্ট্রি বাদ পড়ে না।
+      if (isExpired(s)) { skipped++; continue; }
       if (REPLACE_IDS.includes(s.id)) {
         // DMP: একই id বা একই host+তারিখের লাইভ এন্ট্রি থাকলে সিড দিয়ে বদলাও —
         // শুধু দেখে এড়িয়ে গেলে ভুল এন্ট্রিটাই থেকে যাবে।

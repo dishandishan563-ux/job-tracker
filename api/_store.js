@@ -206,6 +206,34 @@ async function saveCirculars(list) {
   return true;
 }
 
+// ---------- Expiry ----------
+// A circular is expired once its deadline instant has passed. Deadlines
+// are stored as absolute ISO timestamps, so a plain instant comparison is
+// correct in every timezone (Dhaka included — the timestamp already pins
+// the moment). An entry with no parseable deadline can never be judged
+// expired — it keeps showing and is never deleted.
+// Hard-delete from KV only after a 3-day grace past the deadline, so a
+// late deadline correction is not lost instantly — but the list endpoint
+// hides an expired entry immediately, grace or not (api/circulars.js).
+const EXPIRE_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
+
+function deadlineMs(c) {
+  if (!c || !c.deadline) return NaN;
+  const t = new Date(c.deadline).getTime();
+  return Number.isFinite(t) ? t : NaN;
+}
+
+function isExpired(c, nowMs) {
+  const d = deadlineMs(c);
+  return Number.isFinite(d) && d < (nowMs == null ? Date.now() : nowMs);
+}
+
+function isPastGrace(c, nowMs) {
+  const d = deadlineMs(c);
+  const now = nowMs == null ? Date.now() : nowMs;
+  return Number.isFinite(d) && (now - d) > EXPIRE_GRACE_MS;
+}
+
 // ---------- Admin-deleted circulars (server-side) ----------
 // When the admin deletes a circular from the portal, its identity keys
 // (dedupe key + id|deadline) go into this KV SET. The auto-discovery sweep
@@ -262,4 +290,4 @@ async function saveContact(contact) {
   return true;
 }
 
-module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, allKeys, mergeCirculars, getCirculars, saveCirculars, DELETED_CIRCULARS_KEY, getDeletedKeys, addDeletedKeys, LAST_DISCOVERY_KEY, getLastDiscovery, setLastDiscovery, CONTACT_KEY, getContact, saveContact };
+module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, allKeys, mergeCirculars, getCirculars, saveCirculars, EXPIRE_GRACE_MS, deadlineMs, isExpired, isPastGrace, DELETED_CIRCULARS_KEY, getDeletedKeys, addDeletedKeys, LAST_DISCOVERY_KEY, getLastDiscovery, setLastDiscovery, CONTACT_KEY, getContact, saveContact };
