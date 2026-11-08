@@ -56,7 +56,8 @@
 // a reCAPTCHA bot check (unfetchable from a serverless function) and
 // chakri.com returns a Cloudflare error. Teletalk's own API is the one
 // reliable, structured source.
-const { getCirculars, saveCirculars, mergeCirculars, dhakaDate, allKeys, getDeletedKeys, addDeletedKeys, isPastGrace, getLastDiscovery, setLastDiscovery } = require('./_store');
+const { getCirculars, saveCirculars, mergeCirculars, dhakaDate, allKeys, getDeletedKeys, addDeletedKeys, isPastGrace, getLastDiscovery, setLastDiscovery, keyFor, kvAvailable, kvGet, kvSMembers, sendPush, wasPushSent, markPushSent } = require('./_store');
+const { sanitizePrefs, circularMatchesPrefs } = require('./_prefs');
 
 const DISCOVER_URL = 'https://alljobs.teletalk.com.bd/api/v1/govt-jobs/list?skipLimit=YES';
 const DISCOVER_TIMEOUT_MS = 8000;
@@ -275,13 +276,74 @@ async function runTeletalkDiscovery() {
   }
 }
 
+// ---------- New-circular push notifications ----------
+// When a sweep adds a NEW circular, users who (a) have a pushToken,
+// (b) have pushEnabled !== false, (c) have reminders ON, and (d) whose
+// selected reminder categories match that circular (exactly the same
+// rules as the reminder emails — api/_prefs.js; nothing selected = all;
+// an auto-added circular matches a TYPE filter only, never a
+// qualification filter) get ONE Bengali push per circular. Dedupe is
+// per (user, circular) in KV (jt:push-sent), so a later sweep never
+// re-pushes the same circular. No FCM_SERVER_KEY env var = silently
+// skipped (no key is ever logged or committed). This runs ONLY when the
+// caller asks (opts.notifyNew) — daily-check and online-check do;
+// GET /api/circulars (discoverIfDue) never does, so opening the app or
+// website alone never sends a push.
+function bnDigits(n) { return String(n).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[+d]); }
+
+function pushTextFor(c) {
+  const total = c.totalPosts == null ? 'উল্লেখ নেই' : bnDigits(c.totalPosts) + 'টি';
+  let dl = '';
+  try { dl = new Date(c.deadline).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }); } catch { dl = ''; }
+  return {
+    title: `নতুন সার্কুলার: ${c.org}`,
+    body: `মোট ${total} পদ${dl ? ` • শেষ: ${dl}` : ''}`,
+  };
+}
+
+async function notifyNewCirculars(added) {
+  const out = { sent: 0, skipped: 0, users: 0 };
+  if (!Array.isArray(added) || !added.length) return out;
+  if (!kvAvailable() || !process.env.FCM_SERVER_KEY) return out;
+  let recipients = [];
+  try { recipients = await kvSMembers('jt:recipients'); } catch { return out; }
+  for (const rawEmail of recipients) {
+    const email = String(rawEmail || '').trim().toLowerCase();
+    if (!email) continue;
+    let rec = null;
+    try { rec = await kvGet(keyFor('jt:user', email)); } catch { continue; }
+    const data = rec && rec.data;
+    if (!data || typeof data.pushToken !== 'string' || !data.pushToken) continue;
+    if (data.profile && data.profile.pushEnabled === false) continue;
+    if (data.profile && data.profile.remindersEnabled === false) continue;
+    const prefs = (data.profile && data.profile.reminders) ? sanitizePrefs(data.profile.reminders) : null;
+    const userHash = keyFor('jt:user', email).split(':').pop();
+    out.users++;
+    for (const c of added) {
+      if (!circularMatchesPrefs(c, prefs)) { out.skipped++; continue; }
+      const tag = `new:${c.id}`;
+      try { if (await wasPushSent(userHash, tag)) { out.skipped++; continue; } } catch {}
+      const { title, body } = pushTextFor(c);
+      const r = await sendPush(data.pushToken, title, body, { circularId: String(c.id || ''), org: String(c.org || ''), type: 'new_circular', url: 'https://job-tracker-official-68.vercel.app/' });
+      if (r && r.ok) {
+        out.sent++;
+        try { await markPushSent(userHash, tag); } catch {}
+      } else { out.skipped++; }
+    }
+  }
+  return out;
+}
+
 // Run one discovery sweep: both passes in parallel, prune expired entries
 // from KV (3-day grace), then merge the new ones into the KV list.
 // Returns a summary; never throws.
 // Top-level fields stay backward compatible (ok, added, skipped, total,
 // checked, addedIds); per-source detail lives under `sources`, pruned
 // (grace পেরিয়ে KV থেকে মুছে ফেলা) count under `pruned`.
-async function runDiscovery() {
+// opts.notifyNew (daily-check / online-check only): new circulars also
+// trigger a push per matching user — see notifyNewCirculars above.
+async function runDiscovery(opts) {
+  const notifyNew = !!(opts && opts.notifyNew);
   try {
     // অ্যাডমিন সার্ভার থেকে মুছে ফেলা সার্কুলার আর ফিরবে না — মুছে ফেলার
     // চাবিগুলো (host+তারিখ / id+তারিখ) KV-তে jt:deleted-circulars-এ থাকে।
@@ -328,6 +390,10 @@ async function runDiscovery() {
       return alias ? [`id:${alias}|${dhakaDate(cand.deadline)}`] : [];
     });
     if (added.length || pruned.length) await saveCirculars(list);
+    let push = null;
+    if (notifyNew && added.length) {
+      try { push = await notifyNewCirculars(added); } catch { push = { sent: 0, skipped: 0, users: 0 }; }
+    }
     return {
       ok: true,
       added: added.length,
@@ -337,6 +403,7 @@ async function runDiscovery() {
       addedIds: added.map(a => a.id),
       pruned: pruned.length,
       prunedIds: pruned.map(p => p.id),
+      push,
       sources: { teletalk: stripPass(tt), cpa: stripPass(cpa) },
     };
   } catch (e) {
@@ -352,7 +419,7 @@ function stripPass(p) {
   return { ...rest, candidates: (candidates || []).length };
 }
 
-module.exports = { runDiscovery, runTeletalkDiscovery, runCpaDiscovery, buildCandidate, buildCpaCandidate, parseCpaEndDate, stripTags, classify, DISCOVER_URL, CPA_LIST_URL, ALIASES, discoverIfDue, noteDiscoveryRan };
+module.exports = { runDiscovery, runTeletalkDiscovery, runCpaDiscovery, buildCandidate, buildCpaCandidate, parseCpaEndDate, stripTags, classify, notifyNewCirculars, pushTextFor, DISCOVER_URL, CPA_LIST_URL, ALIASES, discoverIfDue, noteDiscoveryRan };
 
 // ---------- Throttled auto-discovery (app/website opens) ----------
 // GET /api/circulars is called on every app + website open. A sweep on

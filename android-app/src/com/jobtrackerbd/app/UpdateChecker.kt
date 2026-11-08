@@ -16,7 +16,8 @@ import kotlin.concurrent.thread
  * In-app update system — same rule as the website:
  * on every app start (and every 30 min while open) /version.json is checked.
  * When versionCode is newer, a big banner offers the update; the button
- * downloads the new APK (base64 from the site) and opens the installer.
+ * downloads the new APK (base64 parts from the site, joined in order)
+ * and opens the installer.
  * No background push while the app is closed (that needs FCM — not built).
  */
 object UpdateChecker {
@@ -37,7 +38,16 @@ object UpdateChecker {
         }
     }
 
-    /** Download /job-tracker.apk.b64, decode, save, and open the installer. */
+    /** Download the new APK and open the installer.
+     *
+     * CHUNKED delivery (v1.1.7): the single /job-tracker.apk.b64 (13 MB)
+     * is rejected by the GitHub push transport (HTTP 413), so the APK
+     * ships as ~1.9 MB parts — /job-tracker.apk.b64.part01 … .partNN.
+     * Part count comes from /version.json (apkParts, fallback 7). The
+     * parts are fetched IN ORDER and joined as base64 text, then decoded
+     * exactly as before. Any part failing (404 / no internet) aborts the
+     * whole download — nothing partial is ever installed; the caller
+     * shows the same Bengali "try again" message as before. */
     fun downloadAndInstall(activity: Activity, onStatus: (String) -> Unit) {
         if (downloading) {
             onStatus("ডাউনলোড চলছে…")
@@ -47,15 +57,27 @@ object UpdateChecker {
         onStatus("অ্যাপ ডাউনলোড হচ্ছে…")
         thread {
             try {
-                val url = URL(Api.BASE + "/job-tracker.apk.b64")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.connectTimeout = 20000
-                conn.readTimeout = 60000
-                conn.setRequestProperty("Cache-Control", "no-store")
-                if (conn.responseCode != 200) throw Exception("HTTP ${conn.responseCode}")
-                val b64 = conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-                    .replace("\\s".toRegex(), "")
-                val bytes = Base64.decode(b64, Base64.DEFAULT)
+                val parts = fetchApkParts()
+                val joined = StringBuilder()
+                for (i in 1..parts) {
+                    val part = "%02d".format(i)
+                    val url = URL(Api.BASE + "/job-tracker.apk.b64.part" + part)
+                    val conn = url.openConnection() as HttpURLConnection
+                    conn.connectTimeout = 20000
+                    conn.readTimeout = 60000
+                    conn.setRequestProperty("Cache-Control", "no-store")
+                    try {
+                        if (conn.responseCode != 200) throw Exception("HTTP ${conn.responseCode}")
+                        val text = conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                        if (text.isBlank()) throw Exception("empty part $part")
+                        joined.append(text.replace("\\s".toRegex(), ""))
+                    } finally {
+                        conn.disconnect()
+                    }
+                }
+                if (joined.isEmpty()) throw Exception("empty download")
+                val bytes = Base64.decode(joined.toString(), Base64.DEFAULT)
+                if (bytes.isEmpty()) throw Exception("empty APK")
                 val dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
                     ?: throw Exception("storage unavailable")
                 val file = File(dir, "job-tracker.apk")
@@ -72,6 +94,25 @@ object UpdateChecker {
                     Toast.makeText(activity, "ডাউনলোড হয়নি: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
+        }
+    }
+
+    /** Part count for the chunked APK, from /version.json (apkParts).
+     * Any failure (offline, old version.json without the field) falls
+     * back to 7 — the count build-apk.sh splits into. */
+    private fun fetchApkParts(): Int {
+        return try {
+            val conn = URL(Api.BASE + "/version.json").openConnection() as HttpURLConnection
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+            conn.setRequestProperty("Cache-Control", "no-store")
+            conn.connect()
+            if (conn.responseCode != HttpURLConnection.HTTP_OK) return 7
+            val text = conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            val n = org.json.JSONObject(text).optInt("apkParts", 7)
+            if (n in 1..20) n else 7
+        } catch (e: Exception) {
+            7
         }
     }
 

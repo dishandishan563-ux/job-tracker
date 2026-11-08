@@ -9,14 +9,35 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toolbar
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 
-/** Manual login / register (Gmail + name + password) + forgot password. */
+/**
+ * Manual login / register (Gmail + name + password) + forgot password
+ * + Google Sign-In (v1.1.7).
+ *
+ * Google Sign-In uses the website's existing Web OAuth client
+ * (Api.GOOGLE_WEB_CLIENT_ID, project gen-lang-client-0746409411) with
+ * requestIdToken(); the ID token is verified server-side by
+ * POST /api/auth-google, and the login then proceeds exactly like a
+ * manual login (same session token, same server data load).
+ *
+ * CODE-READY ONLY: a real sign-in also needs an Android OAuth client in
+ * the same Google Cloud project, created with this app's SHA-1. Until
+ * then Google returns ApiException 10 (DEVELOPER_ERROR) and the button
+ * shows that in Bengali — manual login keeps working either way.
+ */
 class LoginActivity : Activity() {
+
+    private val RC_GOOGLE_SIGN_IN = 9001
 
     private lateinit var emailEt: EditText
     private lateinit var nameEt: EditText
     private lateinit var passEt: EditText
     private lateinit var statusTv: TextView
+    private var googleClient: GoogleSignInClient? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +54,30 @@ class LoginActivity : Activity() {
         statusTv = findViewById(R.id.status)
 
         findViewById<Button>(R.id.loginBtn).setOnClickListener { doLogin() }
+
+        // ---------- Google Sign-In ----------
+        try {
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(Api.GOOGLE_WEB_CLIENT_ID)
+                .requestEmail()
+                .build()
+            googleClient = GoogleSignIn.getClient(this, gso)
+        } catch (e: Exception) {
+            googleClient = null
+        }
+        findViewById<Button>(R.id.googleBtn).setOnClickListener {
+            val client = googleClient
+            if (client == null) {
+                statusTv.text = "Google লগইন এই ফোনে চালু হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
+                return@setOnClickListener
+            }
+            statusTv.text = "Google অ্যাকাউন্ট বাছুন…"
+            try {
+                startActivityForResult(client.signInIntent, RC_GOOGLE_SIGN_IN)
+            } catch (e: Exception) {
+                statusTv.text = "Google লগইন শুরু হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
+            }
+        }
 
         val forgotPanel = findViewById<LinearLayout>(R.id.forgotPanel)
         findViewById<TextView>(R.id.forgotLink).setOnClickListener {
@@ -110,19 +155,68 @@ class LoginActivity : Activity() {
             val token = r.json.optString("token", "")
             val created = r.json.optBoolean("created", false)
             val serverName = r.json.optString("name", name)
-            Store.token = token
-            Store.email = email
-            Store.name = serverName.ifBlank { name }
-            // Pull the user's saved data from the server.
-            Api.loadUserData { data ->
-                if (data != null) Store.cachedData = data
-                Ui.toast(
-                    this,
-                    if (created) "অ্যাকাউন্ট তৈরি হয়েছে — স্বাগতম!" else "লগইন হয়েছে।"
-                )
-                setResult(RESULT_OK, Intent())
-                finish()
+            finishLogin(email, serverName.ifBlank { name }, token, created)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != RC_GOOGLE_SIGN_IN) return
+        val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+        val account = try {
+            task.getResult(ApiException::class.java)
+        } catch (e: ApiException) {
+            statusTv.text = when (e.statusCode) {
+                // 10 = DEVELOPER_ERROR: no Android OAuth client with this
+                // app's SHA-1 in Google Cloud yet — the remaining console
+                // step, not a user error. Manual login still works.
+                10 -> "Google লগইন এখনো চালু হয়নি (Android ক্লায়েন্ট বাকি আছে) — ম্যানুয়াল লগইন ব্যবহার করুন।"
+                12501 -> "Google লগইন বাতিল হয়েছে।"
+                7 -> "ইন্টারনেট সংযোগ নেই — আবার চেষ্টা করুন।"
+                else -> "Google লগইন হয়নি (${e.statusCode}) — ম্যানুয়াল লগইন ব্যবহার করুন।"
             }
+            return
+        }
+        val idToken = account?.idToken
+        val email = account?.email ?: ""
+        if (idToken.isNullOrBlank() || email.isBlank()) {
+            statusTv.text = "Google থেকে লগইন তথ্য মেলেনি — ম্যানুয়াল লগইন ব্যবহার করুন।"
+            return
+        }
+        statusTv.text = "Google যাচাই হচ্ছে…"
+        Api.loginGoogle(idToken) { r ->
+            if (!r.ok || r.json == null) {
+                statusTv.text = when {
+                    r.error.isNotEmpty() -> r.error
+                    else -> "Google লগইন হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
+                }
+                return@loginGoogle
+            }
+            finishLogin(
+                email,
+                r.json.optString("name", account.displayName ?: "").ifBlank { email },
+                r.json.optString("token", ""),
+                false
+            )
+        }
+    }
+
+    /** Shared by manual + Google login: store the session, pull the
+     * user's saved data from the server, then close with RESULT_OK. */
+    private fun finishLogin(email: String, name: String, token: String, created: Boolean) {
+        Store.token = token
+        Store.email = email
+        Store.name = name
+        Api.loadUserData { data ->
+            if (data != null) Store.cachedData = data
+            // A push token may have arrived while logged out — send it now.
+            PushHelper.flushPendingToken(this)
+            Ui.toast(
+                this,
+                if (created) "অ্যাকাউন্ট তৈরি হয়েছে — স্বাগতম!" else "লগইন হয়েছে।"
+            )
+            setResult(RESULT_OK, Intent())
+            finish()
         }
     }
 

@@ -12,8 +12,22 @@ import kotlin.concurrent.thread
 /** Minimal HTTP client for the existing Job Tracker Vercel APIs. No new endpoints. */
 object Api {
     const val BASE = "https://job-tracker-official-68.vercel.app"
-    const val APP_VERSION_NAME = "1.1.6"
-    const val APP_VERSION_CODE = 8
+    const val APP_VERSION_NAME = "1.1.7"
+    const val APP_VERSION_CODE = 9
+
+    /**
+     * Google OAuth Web client ID for project gen-lang-client-0746409411
+     * (client 'Job Tracker') — the SAME client the website uses (it comes
+     * from the public GET /api/config). A client ID is a public identifier,
+     * not a secret; the secret stays server-side in Vercel only.
+     * Used for requestIdToken() in Google Sign-In; the ID token is verified
+     * server-side by /api/auth-google (aud must equal this ID).
+     * NOTE: real sign-in also needs an Android OAuth client in the same
+     * Google Cloud project with this app's SHA-1 — until then Google
+     * sign-in fails with ApiException 10 (DEVELOPER_ERROR).
+     */
+    const val GOOGLE_WEB_CLIENT_ID =
+        "298466691834-c0f8h98ijbugklo6f37he9l9qaid2haf.apps.googleusercontent.com"
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -109,6 +123,15 @@ object Api {
     /** GET /version.json */
     fun fetchVersion(cb: (JSONObject?) -> Unit) {
         get("/version.json") { r -> cb(if (r.ok) r.json else null) }
+    }
+
+    /** POST /api/auth-google { credential: idToken } — the server verifies
+     * the ID token with Google's tokeninfo endpoint (aud must equal the
+     * Web client ID) and returns { email, name, token } exactly like the
+     * manual login does. No client secret is ever in the app. */
+    fun loginGoogle(idToken: String, cb: (Result) -> Unit) {
+        val body = JSONObject().apply { put("credential", idToken) }
+        post("/api/auth-google", body, null, cb)
     }
 
     /** POST /api/auth-manual { email, name?, hash } — hash = SHA-256("email:password"). */

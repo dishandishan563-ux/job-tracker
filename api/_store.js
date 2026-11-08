@@ -325,4 +325,80 @@ async function saveCreator(creator) {
   return true;
 }
 
-module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, allKeys, mergeCirculars, getCirculars, saveCirculars, EXPIRE_GRACE_MS, deadlineMs, isExpired, isPastGrace, DELETED_CIRCULARS_KEY, getDeletedKeys, addDeletedKeys, LAST_DISCOVERY_KEY, getLastDiscovery, setLastDiscovery, CONTACT_KEY, getContact, saveContact, CREATOR_KEY, getCreator, saveCreator };
+// ---------- Owner Gmail (admin PIN reset destination) ----------
+// Where the admin PIN reset code goes. The admin sets it himself in the
+// admin portal (PIN tab) — it lives in server-side KV (jt:owner-email),
+// never in browser localStorage, so the next reset code goes to the new
+// address immediately. Fallback order: KV value -> OWNER_EMAIL env var ->
+// the original default. This is the DESTINATION of the reset code; the
+// SENDER stays jobtrackerbd@gmail.com (via _mail.js / GMAIL_USER) and is
+// never accepted as the owner email.
+const OWNER_EMAIL_KEY = 'jt:owner-email';
+const OWNER_EMAIL_DEFAULT = 'dishandishan563@gmail.com';
+const SENDER_EMAIL = 'jobtrackerbd@gmail.com';
+
+async function getOwnerEmail() {
+  if (kvAvailable()) {
+    try {
+      const v = await kvGet(OWNER_EMAIL_KEY);
+      if (typeof v === 'string' && v.trim()) return v.trim();
+    } catch {}
+  }
+  return (process.env.OWNER_EMAIL || OWNER_EMAIL_DEFAULT).trim();
+}
+
+async function saveOwnerEmail(email) {
+  if (!kvAvailable()) return false;
+  await kvSet(OWNER_EMAIL_KEY, String(email).trim());
+  return true;
+}
+
+// ---------- FCM push notifications (legacy endpoint) ----------
+// Sends a push to one Android device via Firebase Cloud Messaging, using
+// the legacy endpoint with a server key. The key comes ONLY from the
+// FCM_SERVER_KEY env var (set in Vercel — never hardcoded, never
+// committed). If the key is absent, sending is skipped silently — the
+// rest of the flow (email, discovery) keeps working, and nothing
+// sensitive is ever logged. The app registers its device token as the
+// top-level "pushToken" on the user's server record (via /api/user-data);
+// profile.pushEnabled === false opts that user out (absent = enabled).
+// Dedupe: one KV key per (user, alert) — jt:push-sent:<userHash>:<tag> —
+// so the same circular+user is never pushed twice, even across
+// serverless instances. Tags: "new:<circularId>" for a new circular,
+// "exam:<circularId>:<hash12>" for an exam/result change.
+const PUSH_SENT_PREFIX = 'jt:push-sent';
+const FCM_URL = 'https://fcm.googleapis.com/fcm/send';
+
+async function sendPush(token, title, body, data) {
+  const key = process.env.FCM_SERVER_KEY;
+  if (!key || !token || typeof token !== 'string') return { ok: false, skipped: true };
+  try {
+    const r = await fetch(FCM_URL, {
+      method: 'POST',
+      headers: { Authorization: 'key ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: token, notification: { title: String(title || ''), body: String(body || '') }, data: data || {} }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return { ok: false, error: 'fcm_' + r.status };
+    return { ok: true, messageId: (j && j.message_id) || null };
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e) };
+  }
+}
+
+function pushSentKey(userHash, tag) {
+  return `${PUSH_SENT_PREFIX}:${userHash}:${tag}`;
+}
+
+async function wasPushSent(userHash, tag) {
+  if (!kvAvailable()) return false;
+  try { return (await kvGet(pushSentKey(userHash, tag))) != null; } catch { return false; }
+}
+
+async function markPushSent(userHash, tag) {
+  if (!kvAvailable()) return false;
+  try { await kvSet(pushSentKey(userHash, tag), '1'); return true; } catch { return false; }
+}
+
+module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, allKeys, mergeCirculars, getCirculars, saveCirculars, EXPIRE_GRACE_MS, deadlineMs, isExpired, isPastGrace, DELETED_CIRCULARS_KEY, getDeletedKeys, addDeletedKeys, LAST_DISCOVERY_KEY, getLastDiscovery, setLastDiscovery, CONTACT_KEY, getContact, saveContact, CREATOR_KEY, getCreator, saveCreator, OWNER_EMAIL_KEY, OWNER_EMAIL_DEFAULT, SENDER_EMAIL, getOwnerEmail, saveOwnerEmail, sendPush, pushSentKey, wasPushSent, markPushSent };

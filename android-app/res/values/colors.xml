@@ -2,7 +2,19 @@
 <resources>
     <color name="green_dark">#14532d</color>
     <color name="green">#16a34a</color>
+    <color name="green_bright">#22c55e</color>
+    <color name="green_mid">#15803d</color>
+    <color name="green_soft">#f0fdf4</color>
     <color name="green_light">#dcfce7</color>
+    <color name="green_pill">#d1fae5</color>
+    <color name="ink">#111827</color>
+    <color name="text_muted">#6b7280</color>
+    <color name="divider">#e5e7eb</color>
+    <color name="input_border">#d8dde3</color>
+    <color name="icon_grey">#9ca3af</color>
+    <color name="amber_bg">#fffbeb</color>
+    <color name="amber_border">#fde68a</color>
+    <color name="amber_text">#92400e</color>
     <color name="bg">#f4f6f3</color>
     <color name="card">#ffffff</color>
     <color name="text_dark">#1a1a1a</color>

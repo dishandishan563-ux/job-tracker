@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Dropdown button (sort / grade): white with light outline, light tint
-     on press, 12dp rounded. The arrow is part of the button text ("▼"),
+     on press, 14dp rounded. The arrow is part of the button text ("▼"),
      never the OEM spinner chrome — spinners rendered phantom arrows and
      a stray circle. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">

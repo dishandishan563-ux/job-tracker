@@ -4,8 +4,8 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/card_bg"
-    android:elevation="2dp"
-    android:padding="12dp">
+    android:elevation="3dp"
+    android:padding="14dp">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -27,6 +27,11 @@
             android:textColor="@color/green"
             android:textStyle="bold"
             android:textSize="13sp"
+            android:background="@drawable/countdown_bg"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
             android:visibility="gone" />
     </LinearLayout>
     <TextView
@@ -59,7 +64,12 @@
         android:textColor="@color/green_dark"
         android:textSize="14sp"
         android:textStyle="bold"
-        android:layout_marginTop="2dp" />
+        android:background="@drawable/countdown_bg"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:layout_marginTop="4dp" />
     <TextView
         android:id="@+id/matchBadge"
         android:layout_width="wrap_content"
@@ -68,7 +78,12 @@
         android:textColor="@color/green"
         android:textStyle="bold"
         android:textSize="13sp"
-        android:layout_marginTop="2dp"
+        android:background="@drawable/countdown_bg"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp"
+        android:layout_marginTop="4dp"
         android:visibility="gone" />
     <TextView
         android:id="@+id/statusBadge"
@@ -77,8 +92,19 @@
         android:textColor="@color/green_dark"
         android:textStyle="bold"
         android:textSize="13sp"
-        android:layout_marginTop="2dp"
+        android:background="@drawable/countdown_bg"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp"
+        android:layout_marginTop="4dp"
         android:visibility="gone" />
+    <!-- Hairline divider: separates the circular info from the actions. -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider"
+        android:layout_marginTop="10dp" />
     <!-- Slim, balanced action row: Apply is the primary green action,
          Save is a smaller outlined secondary. Both 40dp tall — the old
          huge full-width gray blocks looked heavy and blocky. -->

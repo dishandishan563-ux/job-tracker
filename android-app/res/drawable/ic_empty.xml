@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Empty-state icon (inbox): grey stroke tray with an arrow — shown
+     above the "no circulars found" message so the empty screen does
+     not look like a blank error. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="56dp"
+    android:height="56dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#9ca3af"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M3,13h5l2,3h4l2,-3h5v5a2,2 0 0,1 -2,2H5a2,2 0 0,1 -2,-2v-5zM12,3v8M8.5,7.5L12,4l3.5,3.5" />
+</vector>

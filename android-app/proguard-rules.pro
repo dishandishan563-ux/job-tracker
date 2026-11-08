@@ -10,6 +10,12 @@
 -keep public class * extends android.app.Activity
 -keep public class * extends android.app.Application
 -keep public class * extends android.content.ContentProvider
+# v1.1.7: manifest-declared services + receivers (standalone R8 does NOT
+# read the manifest, so these need explicit keeps — otherwise the push
+# receiver / FCM service / Google sign-in revocation service would be
+# shrunk away and pushes + sign-in would silently stop working).
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
 
 # --- Framework callbacks R8 cannot see from code ---
 # (none of the app's own code uses reflection; org.json is a library)
@@ -54,3 +60,29 @@
 # Kotlin nullability annotations are compile-time only; the annotations
 # jar is not a program input, so R8 must not fail on the missing classes.
 -dontwarn org.jetbrains.annotations.**
+
+# --- v1.1.7: Firebase / Play Services / tess-two ---
+# Firebase components are loaded BY NAME from the ComponentDiscoveryService
+# meta-data in the manifest — renaming them would break FirebaseApp init.
+-keep class * implements com.google.firebase.components.ComponentRegistrar {
+    *;
+}
+# Datatransport backend factory, also loaded by name from manifest meta-data.
+-keep class com.google.android.datatransport.cct.CctBackendFactory { *; }
+# PushService callbacks are invoked by Firebase, not by app code.
+-keep class com.jobtrackerbd.app.PushService { *; }
+# tess-two: JNI resolves native methods by name; keep the whole small class.
+-keep class com.googlecode.tesseract.android.TessBaseAPI { *; }
+-keep class com.googlecode.tesseract.android.TessBaseAPI$* { *; }
+# Parcelable CREATORs (Google Sign-In account etc.) are found by reflection.
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator *;
+}
+# The vendored jars reference optional / platform classes R8 cannot see
+# (annotations, coroutines internals, GMS dynamite). Warnings only.
+-dontwarn com.google.**
+-dontwarn androidx.**
+-dontwarn com.googlecode.**
+-dontwarn kotlinx.coroutines.**
+-dontwarn com.google.android.datatransport.**
+-dontwarn javax.inject.**

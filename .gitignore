@@ -16,3 +16,10 @@ android-app/build/
 # same as the keystore (see android-app/libs/README.md)
 android-app/libs/*.jar
 android-app/assets/
+# v1.1.7 vendored libraries (Firebase / Play Services / tess-two) — local-only
+# binaries, same as PdfBox (see android-app/libs/README.md)
+android-app/libs/vendor/
+android-app/libs/aar-res/
+android-app/libs/aar-jni/
+# google-services.json (Firebase config) — local-only, never commit
+android-app/google-services.json

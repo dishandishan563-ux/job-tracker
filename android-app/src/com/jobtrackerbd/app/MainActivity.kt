@@ -183,6 +183,9 @@ class MainActivity : Activity() {
                 adapter.notifyDataSetChanged()
                 updateHero()
             }
+            // FCM token sync (no-op while FCM is dormant — see PushHelper).
+            PushHelper.syncToken(this)
+            PushHelper.flushPendingToken(this)
         }
     }
 

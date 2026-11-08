@@ -31,8 +31,9 @@ async function checkPortal(url) {
 }
 
 module.exports = async (req, res) => {
-  // নতুন সার্কুলার অটো যোগ — ব্যর্থ হলেও নিচের যাচাই চলবে।
-  const discovered = await runDiscovery().catch(() => ({ ok: false, added: 0, error: 'sweep_failed' }));
+  // নতুন সার্কুলার অটো যোগ — ব্যর্থ হলেও নিচের যাচাই চলবে। নতুন সার্কুলার
+  // এলে মিলে যাওয়া ব্যবহারকারীকে একবার পুশও যাবে (notifyNew)।
+  const discovered = await runDiscovery({ notifyNew: true }).catch(() => ({ ok: false, added: 0, error: 'sweep_failed' }));
   // সুইপ চলেছে — সময়টা সেভ করে রাখি, যাতে অ্যাপ খুললে ১ ঘণ্টার মধ্যে আবার সুইপ না চলে।
   if (discovered && discovered.ok) await noteDiscoveryRan().catch(() => {});
   let circulars = null;
@@ -56,6 +57,7 @@ module.exports = async (req, res) => {
     live: liveCount,
     unknown: unknownCount,
     discovered,
+    push: discovered && discovered.push ? discovered.push : null,
     results,
   });
 };

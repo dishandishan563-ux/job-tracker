@@ -1,5 +1,5 @@
 // GET /api/config — public client config.
-//   { googleClientId, contact, creator, reminderOptions }
+//   { googleClientId, contact, creator, ownerEmail, reminderOptions }
 // - googleClientId: Google OAuth client ID only, never the secret.
 // - contact: the admin-set WhatsApp / Telegram links (KV jt:contact), shown
 //   to every visitor in the menu as "আবেদন করতে চাইলে যোগাযোগ করুন".
@@ -8,6 +8,12 @@
 //   name, photo, WhatsApp / Facebook / Telegram links. Shown to every
 //   visitor on the website home and in the app (home footer + About).
 //   Empty when the admin has set nothing — then the section stays hidden.
+// - ownerEmail: the admin-set Gmail that receives the admin PIN reset code
+//   (KV jt:owner-email). The admin changes it himself in the admin portal
+//   (PIN tab); the next reset code goes to the new address. Falls back to
+//   OWNER_EMAIL env, then the original default, when nothing is stored.
+//   It is the DESTINATION of the reset code — the sender stays
+//   jobtrackerbd@gmail.com and is never accepted as the owner email.
 // - reminderOptions: the circular-type + qualification options for the
 //   reminder-preference section in Settings (single source of truth; the
 //   client falls back to a built-in copy if this fetch fails).
@@ -17,7 +23,11 @@
 // 2) { pinHash, creator: { name, photo, whatsapp, facebook, telegram } } —
 //    saves the Made-by profile. The photo is a URL or a small base64 data
 //    URL (200 KB max — the server rejects anything bigger).
-// 3) { pinHash, action: 'add' | 'update' | 'delete' | 'sync-seed', ... } —
+// 3) { pinHash, ownerEmail: 'you@gmail.com' } — saves the Gmail that
+//    receives the admin PIN reset code. Must be a valid Gmail address;
+//    the sender Gmail (jobtrackerbd@gmail.com) is rejected — it is the
+//    address the code is sent FROM, never the destination.
+// 4) { pinHash, action: 'add' | 'update' | 'delete' | 'sync-seed', ... } —
 //    server-side circulars writes (KV jt:circulars), so every user sees the
 //    change. Before this, admin add/delete only wrote to the admin's own
 //    browser localStorage (jt_admin_circulars / jt_deleted_circulars) —
@@ -48,7 +58,7 @@
 //           Skips anything already present, anything the admin deleted,
 //           and any seed entry whose deadline already passed (expired seed
 //           entries never come back to the live list).
-const { kvAvailable, getContact, saveContact, getCreator, saveCreator, getCirculars, saveCirculars, allKeys, dedupeKey, getDeletedKeys, addDeletedKeys, isExpired } = require('./_store');
+const { kvAvailable, getContact, saveContact, getCreator, saveCreator, getOwnerEmail, saveOwnerEmail, SENDER_EMAIL, getCirculars, saveCirculars, allKeys, dedupeKey, getDeletedKeys, addDeletedKeys, isExpired } = require('./_store');
 const { TYPE_OPTIONS, QUAL_OPTIONS } = require('./_prefs');
 const seedCirculars = require('../data/circulars.json');
 
@@ -117,6 +127,17 @@ function cleanCreator(input) {
       telegram: normTelegram(input && input.telegram),
     },
   };
+}
+
+// Validate the owner Gmail (admin PIN reset destination). Must be a real
+// Gmail address. The sender Gmail is rejected — the reset code is sent
+// FROM jobtrackerbd@gmail.com, so it can never be the destination.
+function cleanOwnerEmail(input) {
+  const email = String(input || '').trim().toLowerCase();
+  if (!email) return { ok: false, error: 'মালিকের Gmail দিন।' };
+  if (email === SENDER_EMAIL) return { ok: false, error: 'এটা সেন্ডার Gmail — মালিকের Gmail আলাদা হতে হবে (যে Gmail-এ আপনি কোড পাবেন)।' };
+  if (!/^[a-z0-9._%+-]+@gmail\.com$/.test(email)) return { ok: false, error: 'সঠিক Gmail ঠিকানা দিন (যেমন: you@gmail.com)।' };
+  return { ok: true, email };
 }
 
 // Validate + clean one circular from the admin form. Only allowlisted
@@ -253,16 +274,19 @@ module.exports = async (req, res) => {
     try { contact = await getContact(); } catch {}
     let creator = { name: '', photo: '', whatsapp: '', facebook: '', telegram: '' };
     try { creator = await getCreator(); } catch {}
+    let ownerEmail = '';
+    try { ownerEmail = await getOwnerEmail(); } catch {}
     return res.status(200).json({
       googleClientId: process.env.GOOGLE_CLIENT_ID || '',
       contact,
       creator,
+      ownerEmail,
       reminderOptions: { types: TYPE_OPTIONS, quals: QUAL_OPTIONS },
     });
   }
   if (req.method === 'POST') {
     try {
-      const { pinHash, contact, creator, action } = req.body || {};
+      const { pinHash, contact, creator, ownerEmail, action } = req.body || {};
       if (process.env.ADMIN_PIN_HASH && pinHash !== process.env.ADMIN_PIN_HASH) {
         return res.status(401).json({ ok: false, error: 'ভুল PIN।' });
       }
@@ -278,6 +302,12 @@ module.exports = async (req, res) => {
         if (!cleaned.ok) return res.status(400).json({ ok: false, error: cleaned.error });
         await saveCreator(cleaned.creator);
         return res.status(200).json({ ok: true, creator: cleaned.creator });
+      }
+      if (typeof ownerEmail !== 'undefined') {
+        const cleaned = cleanOwnerEmail(ownerEmail);
+        if (!cleaned.ok) return res.status(400).json({ ok: false, error: cleaned.error });
+        await saveOwnerEmail(cleaned.email);
+        return res.status(200).json({ ok: true, ownerEmail: cleaned.email });
       }
       if (!contact || typeof contact !== 'object') {
         return res.status(400).json({ ok: false, error: 'contact দিতে হবে।' });

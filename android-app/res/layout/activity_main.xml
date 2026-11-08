@@ -10,7 +10,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?android:attr/actionBarSize"
-        android:background="@color/green_dark"
+        android:background="@drawable/toolbar_bg"
         android:titleTextColor="#ffffff"
         android:titleTextAppearance="@style/ToolbarTitle"
         android:title="@string/app_name" />
@@ -20,7 +20,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="@color/warn_bg"
+        android:background="@drawable/banner_bg"
+        android:layout_margin="8dp"
         android:padding="10dp"
         android:visibility="gone">
         <TextView
@@ -64,8 +65,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@color/green_dark"
-        android:padding="10dp">
+        android:background="@drawable/hero_bg"
+        android:padding="12dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -116,8 +117,10 @@
         android:inputType="text"
         android:textSize="14sp"
         android:layout_margin="8dp"
-        android:background="@drawable/card_bg"
-        android:padding="10dp" />
+        android:background="@drawable/search_bg"
+        android:drawableStart="@drawable/ic_search"
+        android:drawablePadding="8dp"
+        android:padding="12dp" />
 
     <HorizontalScrollView
         android:layout_width="match_parent"
@@ -227,6 +230,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:indeterminateTint="@color/green"
             android:visibility="gone" />
 
         <TextView
@@ -235,8 +239,11 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:gravity="center"
+            android:drawableTop="@drawable/ic_empty"
+            android:drawablePadding="12dp"
             android:padding="24dp"
             android:text="কোনো সার্কুলার পাওয়া যায়নি।"
+            android:textColor="@color/text_grey"
             android:textSize="14sp"
             android:visibility="gone" />
     </FrameLayout>

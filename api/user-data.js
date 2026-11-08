@@ -26,6 +26,12 @@
 //   shortlist: [circularId, ...]
 //   status:   { circularId: 'applied', ... }
 //   fontSize: 'small' | 'medium' | 'large' | 'xl'
+//   pushToken: the Android app's FCM device token (top level, string) —
+//     kept as-is so the server can push new-circular / exam alerts to
+//     that device. profile.pushEnabled (boolean, absent = true) opts
+//     the user out of pushes. A save that omits pushToken does NOT wipe
+//     the stored one (the website's shortlist/status saves never carry
+//     a token) — the previous value is carried over, see the handler.
 // A profile photo stored as a data URL is capped at ~200 KB — bigger photos
 // stay in the browser only, so one huge image cannot blow the KV value limit.
 const { keyFor, kvAvailable, kvGet, kvSet, kvSAdd } = require('./_store');
@@ -56,6 +62,9 @@ function sanitizeData(data) {
       for (const [k, v] of Object.entries(data.status).slice(0, 500)) if (typeof k === 'string' && typeof v === 'string') out.status[k] = v;
     }
     if (typeof data.fontSize === 'string') out.fontSize = data.fontSize;
+    // FCM ডিভাইস টোকেন (অ্যাপ থেকে আসে) — টপ-লেভেল স্ট্রিং, সর্বোচ্চ
+    // ~১০০০ অক্ষর। খালি/অ-স্ট্রিং মান বাদ যায়, কখনো লগ হয় না।
+    if (typeof data.pushToken === 'string' && data.pushToken.trim()) out.pushToken = data.pushToken.trim().slice(0, 1000);
   }
   return out;
 }
@@ -78,6 +87,17 @@ module.exports = async (req, res) => {
     }
     if (body.action === 'save') {
       const data = sanitizeData(body.data || {});
+      // আগের সেভে থাকা pushToken / pushEnabled মুছবে না — ওয়েবসাইটের
+      // শর্টলিস্ট/স্ট্যাটাস সেভে টোকেন থাকে না, তাই না থাকলে আগেরটাই রাখি।
+      // (না হলে অ্যাপের টোকেন ওয়েবসাইটের একটা সেভেই মুছে যেত।)
+      try {
+        const prev = await kvGet(keyFor('jt:user', email));
+        const prevData = prev && prev.data;
+        if (prevData) {
+          if (data.pushToken === undefined && typeof prevData.pushToken === 'string' && prevData.pushToken) data.pushToken = prevData.pushToken;
+          if (data.profile && prevData.profile && data.profile.pushEnabled === undefined && prevData.profile.pushEnabled !== undefined) data.profile.pushEnabled = prevData.profile.pushEnabled;
+        }
+      } catch {}
       const rec = { data, email, updatedAt: new Date().toISOString() };
       await kvSet(keyFor('jt:user', email), rec);
       // রিমাইন্ডার ইমেইলের প্রাপক হিসেবেও নথিভুক্ত করুন।

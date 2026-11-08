@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -27,6 +28,8 @@ class DetailActivity : Activity() {
             tickHandler.postDelayed(this, 1000)
         }
     }
+
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,7 +77,15 @@ class DetailActivity : Activity() {
             t.setLineSpacing(0f, 1.15f)
             postsBox.addView(t)
         } else {
-            for (p in circular.posts) {
+            for ((index, p) in circular.posts.withIndex()) {
+                // Hairline divider between post rows (not before the first).
+                if (index > 0) {
+                    val div = View(this)
+                    div.layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
+                    div.setBackgroundColor(getColor(R.color.divider))
+                    postsBox.addView(div)
+                }
                 val t = TextView(this)
                 t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
                 t.setLineSpacing(0f, 1.15f)
@@ -141,8 +152,33 @@ class DetailActivity : Activity() {
                 Ui.openUrl(this, circular.applyUrl)
             }
         }
+        findViewById<Button>(R.id.shareBtn).setOnClickListener {
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, shareText(circular))
+            }
+            startActivity(Intent.createChooser(send, "শেয়ার করুন (Share)"))
+        }
         Ui.applyTextScale(findViewById(android.R.id.content))
         tickHandler.post(tickRunnable)
+    }
+
+    companion object {
+        /** Share sheet text: org, post title(s), deadline in Bangla, site link. */
+        fun shareText(c: Circular): String {
+            val posts = if (c.posts.isEmpty()) {
+                if (c.totalPosts > 0) "মোট ${Util.bn(c.totalPosts)}টি পদ" else ""
+            } else {
+                c.posts.joinToString(", ") { it.title }
+            }
+            val lines = mutableListOf(c.org)
+            if (posts.isNotBlank()) lines.add("পদ: $posts")
+            if (c.deadline.isNotBlank()) {
+                lines.add("শেষ তারিখ: ${Util.formatDeadlineBn(c.deadline)}")
+            }
+            lines.add("আবেদন করুন: ${Api.BASE}/")
+            return lines.joinToString("\n")
+        }
     }
 
     private fun refreshStatus() {

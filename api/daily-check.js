@@ -1,9 +1,25 @@
 // GET /api/daily-check — Vercel Cron target (vercel.json: "0 2 * * *" = 08:00 Asia/Dhaka).
 // 1) Runs the auto-discovery sweep (api/_discover.js): new government
 //    circulars from Teletalk's own live list are added to the KV list.
+//    New circulars also trigger ONE FCM push per matching user
+//    (notifyNew — same category rules as the emails; see _discover.js).
 // 2) Checks the circulars (KV list, seeded from data/circulars.json) for
 //    deadlines 3 days / 1 day away, admit/exam and result updates, and
 //    emails every registered recipient from the official sender Gmail.
+// 3) Exam / result alerts: for circulars a user saved/shortlisted or
+//    marked applied, the circular's exam/result link is checked for a
+//    newly published exam date or result. NOTE on the schema: no circular
+//    currently carries an examUrl/resultUrl field (checked — the only
+//    link is applyUrl), so the apply portal page itself is checked, and
+//    an examUrl/resultUrl is used first if one is ever added. A change
+//    is detected from a stored page hash (KV jt:exam-state:<id>); the
+//    first sighting only stores a baseline and never alerts. An alert
+//    goes out ONLY when the page changed AND the new text mentions an
+//    exam/result (পরীক্ষা/ফলাফল/admit/exam/result) — a fetch or parse
+//    failure is skipped silently, and no date is ever invented: the
+//    alert says the portal changed and links to it. Alerts respect the
+//    user's selected reminder categories, the master reminder toggle,
+//    and pushEnabled; they go by email AND push (when enabled).
 // Dedupe: a fingerprint (recipient + circular + alert type + date) is kept
 // in /tmp/digest-sent.json on the function instance; for production, replace
 // the store with Vercel KV / Postgres — see README. No human action is needed.
@@ -11,8 +27,9 @@
 // existing list.
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { sendMail } = require('./_mail');
-const { kvAvailable, kvSMembers, logSentEmail, getCirculars } = require('./_store');
+const { kvAvailable, kvSMembers, kvGet, kvSet, keyFor, logSentEmail, getCirculars, isExpired, sendPush, wasPushSent, markPushSent } = require('./_store');
 const { getUserPrefs, circularMatchesPrefs, remindersEnabled } = require('./_prefs');
 const { runDiscovery, noteDiscoveryRan } = require('./_discover');
 const seedCirculars = require('../data/circulars.json');
@@ -37,6 +54,130 @@ async function checkPortals(circulars) {
 
 function bn(n) { return String(n).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[+d]); }
 
+// ---------- Exam / result alerts (saved + applied circulars only) ----------
+// Conservative by design: fetch fails / unparseable page / no exam keyword
+// in the new text = no alert, ever. The stored state is a hash of the
+// cleaned page text — no date is extracted or claimed.
+const EXAM_KEYWORDS = /পরীক্ষা|ফলাফল|এডমিট|প্রবেশপত্র|admit|exam|result/i;
+const EXAM_STATE_PREFIX = 'jt:exam-state';
+const EXAM_MAX_URLS = 25;
+const EXAM_TIMEOUT_MS = 6000;
+
+function pageText(html) {
+  return String(html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function pageHash(text) {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
+// Check URLs for one circular, in priority order: a dedicated exam/result
+// link first when one exists (none do today), else the apply portal.
+function checkUrlsFor(c) {
+  return [...new Set([c.examUrl, c.resultUrl, c.applyUrl].filter(u => typeof u === 'string' && u.trim()))];
+}
+
+async function checkExamUpdates(recipients, circulars, prefsByEmail, enabledByEmail, sent) {
+  const out = { checked: 0, alerts: 0, errors: [] };
+  if (!kvAvailable() || !recipients.length) return out;
+  const byId = new Map(circulars.map(c => [c.id, c]));
+  // Per user: what they saved / applied, plus their push token.
+  const watchByEmail = new Map();
+  for (const to of recipients) {
+    if (!enabledByEmail.get(to)) continue;
+    let rec = null;
+    try { rec = await kvGet(keyFor('jt:user', to)); } catch { continue; }
+    const data = rec && rec.data;
+    if (!data) continue;
+    const ids = new Set([
+      ...(Array.isArray(data.shortlist) ? data.shortlist : []),
+      ...Object.entries(data.status || {}).filter(([, v]) => v === 'applied').map(([k]) => k),
+    ]);
+    const watched = [...ids].map(id => byId.get(id)).filter(c => c && !isExpired(c));
+    if (!watched.length) continue;
+    watchByEmail.set(to, {
+      watched,
+      pushToken: (typeof data.pushToken === 'string' && data.pushToken) ? data.pushToken : null,
+      pushEnabled: !(data.profile && data.profile.pushEnabled === false),
+    });
+  }
+  if (!watchByEmail.size) return out;
+  // One fetch per distinct check URL (capped), in parallel.
+  const urlToCircular = new Map(); // url -> first circular that uses it
+  for (const { watched } of watchByEmail.values()) {
+    for (const c of watched) for (const u of checkUrlsFor(c)) if (!urlToCircular.has(u)) urlToCircular.set(u, c);
+  }
+  const urls = [...urlToCircular.keys()].slice(0, EXAM_MAX_URLS);
+  const fetched = new Map(); // url -> { text, hash } (only on success)
+  await Promise.all(urls.map(async (url) => {
+    try {
+      const r = await fetch(url, { method: 'GET', redirect: 'follow', headers: { 'User-Agent': 'JobTracker-ExamCheck/1.0', 'Accept': 'text/html,*/*' }, signal: AbortSignal.timeout(EXAM_TIMEOUT_MS) });
+      if (!r.ok) return;
+      const text = pageText(await r.text());
+      if (text.length < 20) return; // empty / bot shell — not a real page
+      fetched.set(url, { text, hash: pageHash(text) });
+    } catch { /* skip silently — never alert on a failed fetch */ }
+  }));
+  out.checked = fetched.size;
+  // Per circular: compare with the stored baseline, decide changed+keyword.
+  const changed = new Map(); // circularId -> { c, hash }
+  for (const { watched } of watchByEmail.values()) {
+    for (const c of watched) {
+      if (changed.has(c.id)) continue;
+      const hit = checkUrlsFor(c).map(u => fetched.get(u)).find(Boolean);
+      if (!hit) continue;
+      let prev = null;
+      try { prev = await kvGet(`${EXAM_STATE_PREFIX}:${c.id}`); } catch {}
+      const prevHash = prev && prev.hash;
+      if (!prevHash) {
+        // First sighting — store the baseline, never alert.
+        try { await kvSet(`${EXAM_STATE_PREFIX}:${c.id}`, { hash: hit.hash, seenAt: new Date().toISOString(), url: checkUrlsFor(c)[0] || '' }); } catch {}
+        continue;
+      }
+      if (prevHash === hit.hash) continue;
+      // Page changed — move the baseline forward either way, so one
+      // non-exam change cannot trigger a stale alert later.
+      try { await kvSet(`${EXAM_STATE_PREFIX}:${c.id}`, { hash: hit.hash, seenAt: new Date().toISOString(), url: checkUrlsFor(c)[0] || '' }); } catch {}
+      if (!EXAM_KEYWORDS.test(hit.text)) continue;
+      changed.set(c.id, { c, hash: hit.hash });
+    }
+  }
+  if (!changed.size) return out;
+  // Alert every watcher of a changed circular (category-filtered).
+  const today = new Date().toISOString().slice(0, 10);
+  for (const [to, info] of watchByEmail) {
+    for (const c of info.watched) {
+      const ch = changed.get(c.id);
+      if (!ch) continue;
+      if (!circularMatchesPrefs(c, prefsByEmail.get(to))) continue;
+      const hash12 = ch.hash.slice(0, 12);
+      const emailKey = `${to}|${c.id}|exam|${hash12}`;
+      if (!sent[emailKey]) {
+        const subject = `Job Tracker — ${c.org}: পরীক্ষা/ফলাফল আপডেট`;
+        const text = `নমস্কার / আসসালামু আলাইকুম,\n\n${c.org} — আপনার সেভ করা / আবেদন করা সার্কুলারের পোর্টালে পরীক্ষা বা ফলাফল সংক্রান্ত তথ্য বদলেছে বলে মনে হচ্ছে।\nতারিখ এখানে দেওয়া হয়নি — অফিসিয়াল পোর্টালে যাচাই করুন: ${c.applyUrl}\n\nদ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।\n— Job Tracker (jobtrackerbd@gmail.com)`;
+        try { await sendMail({ subject, text, to }); sent[emailKey] = today; out.alerts++; await logSentEmail(to, subject, 'daily-exam'); }
+        catch (e) { out.errors.push(`${to}: ${e.message}`); }
+      }
+      if (info.pushToken && info.pushEnabled) {
+        const userHash = keyFor('jt:user', to).split(':').pop();
+        const tag = `exam:${c.id}:${hash12}`;
+        try {
+          if (!(await wasPushSent(userHash, tag))) {
+            const r = await sendPush(info.pushToken, `পরীক্ষা/ফলাফল আপডেট: ${c.org}`, 'সেভ করা সার্কুলারের পোর্টালে নতুন তথ্য — অফিসিয়াল পোর্টালে দেখুন।', { circularId: String(c.id || ''), org: String(c.org || ''), type: 'exam_update', url: String(c.applyUrl || '') });
+            if (r && r.ok) { try { await markPushSent(userHash, tag); } catch {} }
+          }
+        } catch {}
+      }
+    }
+  }
+  return out;
+}
+
 module.exports = async (req, res) => {
   // Vercel Cron sends Authorization: Bearer <CRON_SECRET> when configured.
   if (process.env.CRON_SECRET) {
@@ -48,8 +189,9 @@ module.exports = async (req, res) => {
     // সার্ভারে সেভ থাকা প্রাপকরা (লগইন করা ব্যবহারকারীরা) — KV চালু থাকলে।
     ...(kvAvailable() ? await kvSMembers('jt:recipients').catch(() => []) : []),
   ].map(s => String(s).trim().toLowerCase()).filter(Boolean))];
-  // নতুন সার্কুলার অটো যোগ — ব্যর্থ হলেও রিমাইন্ডার চলবে।
-  const discovered = await runDiscovery().catch(() => ({ ok: false, added: 0, error: 'sweep_failed' }));
+  // নতুন সার্কুলার অটো যোগ — ব্যর্থ হলেও রিমাইন্ডার চলবে। নতুন সার্কুলার
+  // এলে মিলে যাওয়া ব্যবহারকারীকে একবার পুশও যাবে (notifyNew)।
+  const discovered = await runDiscovery({ notifyNew: true }).catch(() => ({ ok: false, added: 0, error: 'sweep_failed' }));
   // সুইপ চলেছে — সময়টা সেভ করে রাখি, যাতে অ্যাপ খুললে ১ ঘণ্টার মধ্যে আবার সুইপ না চলে।
   if (discovered && discovered.ok) await noteDiscoveryRan().catch(() => {});
   // রিমাইন্ডার KV তালিকা (সদ্য যোগ হওয়া সার্কুলারসহ) থেকে চলে; KV না
@@ -92,6 +234,16 @@ module.exports = async (req, res) => {
       catch (e) { errors.push(`${to}: ${e.message}`); }
     }
   }
+  // পরীক্ষা/ফলাফল অ্যালার্ট — সেভ করা বা আবেদন করা সার্কুলারের পোর্টাল
+  // বদলেছে কি না দেখা হয়; ব্যর্থ হলে রিমাইন্ডার বাঁচে, অ্যালার্ট শুধু বাদ যায়।
+  let exam = { checked: 0, alerts: 0, errors: [] };
+  try { exam = await checkExamUpdates(recipients, circulars, prefsByEmail, enabledByEmail, sent); } catch (e) { exam.errors.push(String((e && e.message) || e)); }
+  errors.push(...(exam.errors || []));
   saveSent(sent);
-  return res.status(200).json({ errors, ok: true, sent: sentCount, discovered, portals: portalSummary });
+  return res.status(200).json({ errors, ok: true, sent: sentCount, exam, discovered, portals: portalSummary });
 };
+
+// Mock-test hooks (no new file): the handler stays the default export.
+module.exports.checkExamUpdates = checkExamUpdates;
+module.exports.pageText = pageText;
+module.exports.pageHash = pageHash;

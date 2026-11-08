@@ -13,8 +13,9 @@ import java.util.zip.Inflater
  * exact same way the website upload does. Field names match the website
  * profile (name, phone, email, dob, district, edu, typeBn, typeEn,
  * address, permAddress, fatherName, motherName, skills, experience,
- * languages). Image CVs cannot be read on-device (no OCR in the app),
- * same honest limit as the website's fallback.
+ * languages). Image CVs are read on-device via OcrHelper (tess-two,
+ * eng+ben) in SettingsActivity — extractText() below still returns null
+ * for raw image bytes, because OCR needs a decoded Bitmap, not bytes.
  */
 object CvParse {
 
@@ -561,8 +562,8 @@ object CvParse {
     }
 
     /** Picked file bytes → readable text, or null when the file cannot be
-        read on-device (image CVs need OCR, which the app does not ship —
-        use a PDF or text CV instead). */
+        read from bytes alone (image CVs need OCR on a decoded Bitmap —
+        see OcrHelper, used by SettingsActivity). */
     fun extractText(bytes: ByteArray, mime: String?, fileName: String?): String? {
         val m = (mime ?: "").lowercase()
         return when {

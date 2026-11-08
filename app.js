@@ -137,12 +137,50 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
+// ---------- সার্কুলার শেয়ার ----------
+// লগইন ছাড়াই চলে — শেয়ার করা পাবলিক তথ্য। navigator.share থাকলে
+// সিস্টেম শেয়ার শিট খোলে, না থাকলে লিংকসহ লেখাটা ক্লিপবোর্ডে কপি হয়।
+const SITE_URL = 'https://job-tracker-official-68.vercel.app/';
+function shareTextFor(c) {
+  const posts = (c.posts || []).map(p => p.title).filter(Boolean).join(', ');
+  const total = c.totalPosts == null ? 'উল্লেখ নেই' : bn(c.totalPosts) + 'টি';
+  return `${c.org}${posts ? ' — ' + posts : ''}\nমোট পদ: ${total} • শেষ: ${fmtDate(c.deadline)}\n${SITE_URL}`;
+}
+async function shareCircular(c) {
+  const text = shareTextFor(c);
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Job Tracker', text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      toast('✓ শেয়ার লেখা কপি হয়েছে।');
+      return;
+    }
+  } catch {}
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); toast('✓ শেয়ার লেখা কপি হয়েছে।'); }
+  catch { toast('কপি হয়নি — লিংক: ' + SITE_URL); }
+  document.body.removeChild(ta);
+}
+
 // ---------- অ্যান্ড্রয়েড অ্যাপ (APK) ডাউনলোড ও আপডেট ----------
 // অ্যাপটি লাইভ সাইটের wrapper — সাইটের সব কনটেন্ট এমনিতেই লাইভ
 // আপডেট হয়, APK ফাইল নিজে বদলায় শুধু wrapper বদলালে।
 // GitHub-এ বাইনারি ফাইল পাঠানো যায় না, তাই APK base64 লেখা হিসেবে
-// /job-tracker.apk.b64-এ থাকে; ডাউনলোডের সময় ব্রাউজারেই (বা অ্যাপের
-// ভেতরে নেটিভভাবে) APK-তে ফিরিয়ে নেওয়া হয়।
+// থাকে; ডাউনলোডের সময় ব্রাউজারেই (বা অ্যাপের ভেতরে নেটিভভাবে)
+// APK-তে ফিরিয়ে নেওয়া হয়। CHUNKED delivery (v1.1.7): একক
+// /job-tracker.apk.b64 (১৩ MB) GitHub push transport-এ আটকায় (HTTP
+// 413), তাই APK এখন ~১.৯ MB-র পার্টে থাকে — /job-tracker.apk.b64
+// .part01 … .partNN। পার্টের সংখ্যা /version.json-এর apkParts থেকে
+// আসে (না থাকলে ৭)। পার্টগুলো ক্রমে নামিয়ে জোড়া লাগিয়ে তারপর আগের
+// মতোই decode / ডাউনলোড হয় — এক চাপে একটাই ফাইল, ব্যবহারকারীর
+// কাছে কিছুই বদলায়নি। কোনো পার্ট না পেলে ডাউনলোড বাতিল — আধা ফাইল
+// কখনো ডাউনলোড হয় না।
 // আপডেট চেকের নিয়ম: ফোনে ইনস্টল করা অ্যাপের সংস্করণ আসে তার
 // User-Agent থেকে (অ্যাপ UA-এর শেষে "JobTrackerApp/1.0.0" যোগ করে)।
 // /version.json-এর versionName তার চেয়ে নতুন হলেই হোমের উপরে বড়
@@ -153,7 +191,7 @@ function toast(msg) {
 // চেক না হলে (নেট নেই) চুপচাপ থাকে। সত্যি কথা: অ্যাপ বন্ধ থাকলে
 // ব্যাকগ্রাউন্ডে নোটিফিকেশন আসে না (সেটা FCM লাগে, এতে নেই) —
 // নোটিফিকেশন আসে অ্যাপ খোলার পর, পরের বার খুললেই।
-const APP_APK_B64_URL = '/job-tracker.apk.b64';
+const APP_APK_PARTS_URL = '/job-tracker.apk.b64.part';
 const APP_APK_FILE_NAME = 'job-tracker.apk';
 function installedAppVersion() {
   const m = (navigator.userAgent || '').match(/JobTrackerApp\/([\d.]+)/);
@@ -174,9 +212,22 @@ async function downloadAppApk() {
   apkDownloading = true;
   toast('অ্যাপ ডাউনলোড হচ্ছে…');
   try {
-    const r = await fetch(APP_APK_B64_URL, { cache: 'no-store' });
-    if (!r.ok) throw new Error('apk missing');
-    const b64 = (await r.text()).replace(/\s/g, '');
+    // পার্টের সংখ্যা version.json থেকে (apkParts, না থাকলে ৭)।
+    let parts = 7;
+    try {
+      const vr = await fetch('/version.json', { cache: 'no-store' });
+      if (vr.ok) { const v = await vr.json(); if (v && v.apkParts > 0) parts = v.apkParts; }
+    } catch (e) { /* পুরনো version.json-এ apkParts নেই — fallback ৭ */ }
+    let b64 = '';
+    for (let i = 1; i <= parts; i++) {
+      const part = String(i).padStart(2, '0');
+      const r = await fetch(APP_APK_PARTS_URL + part, { cache: 'no-store' });
+      if (!r.ok) throw new Error('apk part missing');
+      const text = (await r.text()).replace(/\s/g, '');
+      if (!text) throw new Error('apk part empty');
+      b64 += text;
+    }
+    if (!b64) throw new Error('apk empty');
     // অ্যাপের ভেতরে থাকলে নেটিভ ইনস্টল পথ (PackageInstaller) ব্যবহার হয়।
     if (window.JobTrackerApp && typeof window.JobTrackerApp.downloadApk === 'function') {
       window.JobTrackerApp.downloadApk(b64);
@@ -473,6 +524,7 @@ async function initHome() {
           <button class="btn green small" data-act="apply">আবেদন করুন ↗</button>
           <button class="btn outline small" data-act="status">আবেদন করেছি</button>
           <button class="btn outline small" data-act="details">বিস্তারিত ▾</button>
+          <button class="btn outline small" data-act="share">শেয়ার ↗</button>
         </div>
         <div class="details" style="display:none">
           <table>${c.posts.map(p => `<tr><td>${p.title}</td><td>${p.count == null ? '—' : '<span class="num">' + bn(p.count) + '</span>টি'}</td><td>${p.grade == null ? '—' : 'গ্রেড <span class="num">' + bn(p.grade) + '</span>'}</td><td>${p.qualification || '—'}</td><td>${p.typingBn || p.typingEn ? 'টাইপিং: বাংলা <span class="num">' + bn(p.typingBn || 0) + '</span> / ইংরেজি <span class="num">' + bn(p.typingEn || 0) + '</span>' : ''}</td></tr>`).join('')}</table>
@@ -484,9 +536,10 @@ async function initHome() {
       card.querySelector('[data-act=apply]').onclick = () => { if (!requireLogin()) return; window.open(c.applyUrl, '_blank'); };
       card.querySelector('[data-act=status]').onclick = () => { if (!requireLogin()) return; const s = read('jt_status', {}); s[c.id] = 'applied'; store('jt_status', s); syncToServer(); render(); };
       card.querySelector('[data-act=details]').onclick = (e) => { if (!requireLogin()) return; const d = card.querySelector('.details'); d.style.display = d.style.display === 'none' ? 'block' : 'none'; };
+      card.querySelector('[data-act=share]').onclick = () => { shareCircular(c); };
       if (shortlist.includes(c.id)) card.querySelector('[data-act=shortlist]').textContent = '★ শর্টলিস্টে আছে';
       if (status[c.id] === 'applied') card.querySelector('[data-act=status]').textContent = '✓ আবেদন করেছি';
-      if (!isLoggedIn()) card.querySelectorAll('[data-act]').forEach(b => b.classList.add('locked'));
+      if (!isLoggedIn()) card.querySelectorAll('[data-act]:not([data-act=share])').forEach(b => b.classList.add('locked'));
       card.style.animationDelay = Math.min(i * 60, 480) + 'ms';
       jobsEl.appendChild(card);
     });

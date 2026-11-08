@@ -244,6 +244,10 @@ data class Profile(
     var remindersEnabled: Boolean = true,
     var remTypes: List<String> = emptyList(),
     var remQuals: List<String> = emptyList(),
+    // Push notification on/off (v1.1.7) — default on. Same name as the
+    // website profile: the server worker reads profile.pushEnabled to
+    // decide whether to send a push to this user.
+    var pushEnabled: Boolean = true,
     // Extra fields a CV has (same names as the website profile).
     var email: String = "",
     var permAddress: String = "",
@@ -271,6 +275,7 @@ data class Profile(
             put("notes", notes)
             put("remindersEnabled", remindersEnabled)
             put("reminders", rem)
+            put("pushEnabled", pushEnabled)
             put("email", email)
             put("permAddress", permAddress)
             put("fatherName", fatherName)
@@ -308,6 +313,7 @@ data class Profile(
                 remindersEnabled = o.optBoolean("remindersEnabled", true),
                 remTypes = types,
                 remQuals = quals,
+                pushEnabled = o.optBoolean("pushEnabled", true),
                 email = o.optString("email", ""),
                 permAddress = o.optString("permAddress", ""),
                 fatherName = o.optString("fatherName", ""),
@@ -325,7 +331,11 @@ data class UserData(
     var profile: Profile = Profile(),
     var shortlist: MutableSet<String> = mutableSetOf(),
     var status: MutableMap<String, String> = mutableMapOf(),
-    var fontSize: String = "medium"
+    var fontSize: String = "medium",
+    // FCM push token (v1.1.7) — TOP LEVEL of the saved user data, field
+    // "pushToken", exactly as the server worker expects. Empty = no token
+    // yet (FCM not set up, or the user never opened the app after setup).
+    var pushToken: String = ""
 ) {
     fun toJson(): JSONObject {
         return JSONObject().apply {
@@ -335,6 +345,7 @@ data class UserData(
             for ((k, v) in status) st.put(k, v)
             put("status", st)
             put("fontSize", fontSize)
+            put("pushToken", pushToken)
         }
     }
 
@@ -357,7 +368,8 @@ data class UserData(
                 profile = Profile.fromJson(o.optJSONObject("profile")),
                 shortlist = short,
                 status = st,
-                fontSize = o.optString("fontSize", "medium")
+                fontSize = o.optString("fontSize", "medium"),
+                pushToken = o.optString("pushToken", "")
             )
         }
     }

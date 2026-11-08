@@ -1,7 +1,9 @@
 {
   "apkFileName": "job-tracker.apk",
+  "apkParts": 7,
   "apkUrl": "/job-tracker.apk.b64",
-  "changelogBn": "অ্যাপে “তৈরি করেছেন” সেকশন যোগ হয়েছে — কে বানিয়েছে এখন অ্যাপেও দেখাবে।",
-  "versionCode": 8,
-  "versionName": "1.1.6"
+  "changelogBn": "নতুন: Google দিয়ে লগইন, ছবির CV পড়া (OCR), সার্কুলার শেয়ার, আর পুশ নোটিফিকেশনের সেটিং — পুশ চালু হতে Firebase সেটআপ বাকি আছে।",
+  "engParts": 3,
+  "versionCode": 9,
+  "versionName": "1.1.7"
 }

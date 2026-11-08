@@ -29,6 +29,12 @@ object Store {
         get() = prefs.getString("jt_font_size", "medium") ?: "medium"
         set(v) = prefs.edit().putString("jt_font_size", v).apply()
 
+    /** FCM token that arrived while logged out (PushService.onNewToken) —
+     * flushed to the server by PushHelper right after the next login. */
+    var pendingPushToken: String
+        get() = prefs.getString("jt_pending_push_token", "") ?: ""
+        set(v) = prefs.edit().putString("jt_pending_push_token", v).apply()
+
     val isLoggedIn: Boolean get() = !token.isNullOrBlank()
 
     fun logout() {

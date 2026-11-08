@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Push notifications (v1.1.7): Android 13+ runtime permission, asked
+         only when the user switches push on in Settings. No other new
+         permission: WAKE_LOCK / c2dm RECEIVE from the Firebase AARs are
+         deliberately NOT declared (see PushHelper / README). -->
 
     <!-- targetSdkVersion সেট করা বাধ্যতামূলক: না থাকলে Android পুরনো
          অ্যাপ ধরে নিয়ে নিজে থেকে বাড়তি পারমিশন বসায় (ফোনের
@@ -53,5 +58,92 @@
             android:authorities="com.jobtrackerbd.app.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true" />
+
+        <!-- ===== v1.1.7: Google Sign-In (play-services-auth/base AARs) =====
+             SignInHubActivity hosts the Google account picker; GoogleApiActivity
+             is the internal helper for GoogleApi calls; RevocationBoundService
+             lets Google revoke the sign-in. All copied from the AAR manifests
+             (no Gradle manifest merger in this manual build). -->
+        <activity
+            android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <service
+            android:name="com.google.android.gms.auth.api.signin.RevocationBoundService"
+            android:exported="true"
+            android:permission="com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION" />
+
+        <!-- ===== v1.1.7: Firebase Cloud Messaging (firebase-messaging AAR) =====
+             FirebaseInstanceIdReceiver is the delivery entry point for pushes
+             (the system only calls it once FCM is set up); PushService is the
+             app's own receiver (tap opens home). FirebaseInitProvider is
+             DELIBERATELY NOT declared: Firebase is initialised manually and
+             gated by PushHelper, so the app runs fine with no
+             google-services.json. ComponentDiscoveryService carries the
+             registrar list FirebaseApp init needs (merged from the
+             firebase-common / messaging / installations / datatransport AARs). -->
+        <receiver
+            android:name="com.google.firebase.iid.FirebaseInstanceIdReceiver"
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+            </intent-filter>
+            <meta-data
+                android:name="com.google.android.gms.cloudmessaging.FINISHED_AFTER_HANDLED"
+                android:value="true" />
+        </receiver>
+        <service
+            android:name=".PushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="com.google.firebase.components.ComponentDiscoveryService"
+            android:exported="false">
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.FirebaseCommonKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.datatransport.TransportRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+        </service>
+
+        <!-- Firebase datatransport upload scheduling (transport-runtime /
+             transport-backend-cct AARs) — only used for FCM delivery
+             telemetry once FCM is live; harmless while dormant. -->
+        <service
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <receiver
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+            android:exported="false" />
+        <service
+            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+            android:exported="false">
+            <meta-data
+                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+                android:value="cct" />
+        </service>
     </application>
 </manifest>

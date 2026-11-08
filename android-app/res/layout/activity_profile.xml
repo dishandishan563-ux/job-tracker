@@ -10,7 +10,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?android:attr/actionBarSize"
-        android:background="@color/green_dark"
+        android:background="@drawable/toolbar_bg"
         android:titleTextColor="#ffffff"
         android:titleTextAppearance="@style/ToolbarTitle"
         android:title="@string/profile_title" />
@@ -23,15 +23,25 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp"
+            android:padding="12dp"
             android:paddingBottom="32dp">
+            <!-- Photo card: circular photo + chooser button. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_bg"
+                android:elevation="3dp"
+                android:padding="14dp">
             <ImageView
                 android:id="@+id/photoPreview"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
                 android:layout_gravity="center"
                 android:layout_marginTop="12dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/photo_circle"
+                android:clipToOutline="true"
+                android:scaleType="centerCrop"
                 android:visibility="gone" />
             <Button
                 android:id="@+id/photoBtn"
@@ -45,6 +55,17 @@
                 android:background="@drawable/btn_ghost"
                 android:textColor="@color/text_dark"
             />
+            </LinearLayout>
+
+            <!-- Personal fields card. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_bg"
+                android:elevation="3dp"
+                android:padding="14dp"
+                android:layout_marginTop="12dp">
             <EditText
                 android:id="@+id/pName"
                 android:layout_width="match_parent"
@@ -52,7 +73,7 @@
                 android:hint="নাম"
                 android:textSize="14sp"
                 android:layout_marginTop="12dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pPhone"
@@ -62,7 +83,7 @@
                 android:inputType="phone"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pDistrict"
@@ -71,7 +92,7 @@
                 android:hint="জেলা (যেমন: ঢাকা)"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pDob"
@@ -81,7 +102,7 @@
                 android:inputType="date"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <TextView
                 android:layout_width="wrap_content"
@@ -111,7 +132,7 @@
                 android:inputType="number"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pTypeEn"
@@ -121,7 +142,7 @@
                 android:inputType="number"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pAddress"
@@ -130,7 +151,7 @@
                 android:hint="বর্তমান ঠিকানা"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <!-- Extra CV fields: the website profile has every field a CV
                  has, so the app profile does too. CV upload fills these. -->
@@ -142,7 +163,7 @@
                 android:inputType="textEmailAddress"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pPermAddress"
@@ -151,7 +172,7 @@
                 android:hint="স্থায়ী ঠিকানা (Permanent Address)"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pFatherName"
@@ -160,7 +181,7 @@
                 android:hint="পিতার নাম (Father's Name)"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pMotherName"
@@ -169,7 +190,7 @@
                 android:hint="মাতার নাম (Mother's Name)"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pSkills"
@@ -178,7 +199,7 @@
                 android:hint="দক্ষতা (Skills)"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pExperience"
@@ -187,7 +208,7 @@
                 android:hint="অভিজ্ঞতা (Experience)"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pLanguages"
@@ -196,7 +217,7 @@
                 android:hint="ভাষা (Languages)"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
             <EditText
                 android:id="@+id/pNotes"
@@ -205,16 +226,25 @@
                 android:hint="অন্যান্য তথ্য (ঐচ্ছিক)"
                 android:textSize="14sp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/card_bg"
+                android:background="@drawable/input_bg"
                 android:padding="12dp" />
+            </LinearLayout>
 
+            <!-- Reminder preferences card. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_bg"
+                android:elevation="3dp"
+                android:padding="14dp"
+                android:layout_marginTop="12dp">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="🔔 রিমাইন্ডার পছন্দ (Reminder)"
                 android:textStyle="bold"
-                android:textSize="15sp"
-                android:layout_marginTop="18dp" />
+                android:textSize="15sp" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -294,17 +324,24 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal" />
             </HorizontalScrollView>
+            </LinearLayout>
 
-            <!-- My CV (same as the website's profile page): shows the
-                 uploaded CV and lets it be removed from here too. -->
+            <!-- My CV card. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_bg"
+                android:elevation="3dp"
+                android:padding="14dp"
+                android:layout_marginTop="12dp">
             <TextView
                 android:id="@+id/cvInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="📄 আমার CV — এখনো কোনো CV আপলোড করা হয়নি।"
                 android:textSize="14sp"
-                android:textColor="@color/text_grey"
-                android:layout_marginTop="18dp" />
+                android:textColor="@color/text_grey" />
             <Button
                 android:id="@+id/removeCvBtnProfile"
                 android:layout_width="match_parent"
@@ -316,6 +353,7 @@
                 android:textSize="14sp"
                 android:layout_marginTop="8dp"
                 android:visibility="gone" />
+            </LinearLayout>
 
             <Button
                 android:id="@+id/saveProfileBtn"

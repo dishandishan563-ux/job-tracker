@@ -64,6 +64,13 @@
 <div class="field"><label>বর্তমান PIN</label><input id="oldPin" type="password"></div>
 <div class="field"><label>নতুন PIN</label><input id="newPin" type="password"></div>
 <button class="btn green" id="changePinBtn">PIN বদলান</button>
+<div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
+<p><b>মালিকের Gmail</b> — PIN ভুলে গেলে রিসেটের ৬ অঙ্কের কোড এই Gmail-এ যাবে।</p>
+<div class="field"><label>মালিকের Gmail</label><input id="oeEmail" type="email" placeholder="you@gmail.com"></div>
+<button class="btn green" id="oeSaveBtn">Gmail সেভ করুন</button>
+<p id="oeStatus" style="font-size:14px;margin-top:8px"></p>
+<p style="font-size:13px;color:var(--muted)">সেন্ডার Gmail (jobtrackerbd@gmail.com) এখানে বসাবেন না — কোড পাঠানো হয় ওই ঠিকানা থেকে, কোড যায় আপনার এই Gmail-এ।</p>
+</div>
 </div>
 <div id="tab-creator" style="display:none">
 <div class="field"><label>নাম</label><input id="crName" placeholder="যেমন: ASHISH"></div>
@@ -133,5 +140,31 @@
 
 <script src="data.js"></script>
 <script src="app.js?v=20261108c"></script>
+<script>
+// মালিকের Gmail (PIN রিসেট কোড যাবে) — অ্যাডমিন পোর্টালের PIN ট্যাবের ফিল্ড।
+// app.js ছোঁয়া হয়নি; এই ছোট স্ক্রিপ্টটাই ফিল্ডটি চালায়: সার্ভার থেকে
+// বর্তমান ঠিকানা আনে, আর সেভ PIN-গেটেড /api/config দিয়ে করে।
+(function () {
+  var input = document.getElementById('oeEmail');
+  var btn = document.getElementById('oeSaveBtn');
+  var st = document.getElementById('oeStatus');
+  if (!input || !btn || !st) return;
+  fetch('api/config', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.ownerEmail) input.value = d.ownerEmail;
+  }).catch(function () {});
+  btn.onclick = async function () {
+    var email = input.value.trim();
+    if (!email) { st.textContent = 'মালিকের Gmail দিন।'; return; }
+    st.textContent = 'সেভ হচ্ছে…';
+    try {
+      var r = await fetch('api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pinHash: sessionStorage.getItem('jt_admin_hash') || '', ownerEmail: email }) });
+      var data = await r.json().catch(function () { return {}; });
+      if (!data.ok) { st.textContent = '✗ ' + (data.error || 'সেভ হয়নি।'); return; }
+      if (data.ownerEmail) input.value = data.ownerEmail;
+      st.textContent = '✓ সেভ হয়েছে — এখন থেকে PIN রিসেটের কোড ' + (data.ownerEmail || email) + '-এ যাবে।';
+    } catch (e) { st.textContent = '✗ সেভ হয়নি — নেটওয়ার্ক/সার্ভার দেখুন।'; }
+  };
+})();
+</script>
 </body>
 </html>
