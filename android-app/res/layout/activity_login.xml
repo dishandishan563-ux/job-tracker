@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg">
+
+    <android.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?android:attr/actionBarSize"
+        android:background="@color/green_dark"
+        android:titleTextColor="#ffffff"
+        android:title="@string/login_title" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Gmail দিয়ে লগইন করুন — প্রথমবার লগইন করলেই অ্যাকাউন্ট তৈরি হবে।"
+                android:textSize="14sp"
+                android:textColor="@color/text_grey" />
+            <EditText
+                android:id="@+id/email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Gmail ঠিকানা"
+                android:inputType="textEmailAddress"
+                android:layout_marginTop="16dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="আপনার নাম"
+                android:inputType="textPersonName"
+                android:layout_marginTop="10dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="পাসওয়ার্ড"
+                android:inputType="textPassword"
+                android:layout_marginTop="10dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <Button
+                android:id="@+id/loginBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="লগইন / রেজিস্টার করুন"
+                android:layout_marginTop="16dp" />
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/danger" />
+            <TextView
+                android:id="@+id/forgotLink"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="পাসওয়ার্ড ভুলে গেছেন?"
+                android:textColor="@color/green_dark"
+                android:textStyle="bold"
+                android:layout_marginTop="18dp"
+                android:padding="6dp" />
+
+            <LinearLayout
+                android:id="@+id/forgotPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:background="@color/card"
+                android:padding="12dp"
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gmail-এ ৬ সংখ্যার কোড যাবে (১৫ মিনিট কার্যকর)।"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_grey" />
+                <EditText
+                    android:id="@+id/fpCode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="৬ সংখ্যার কোড"
+                    android:inputType="number"
+                    android:layout_marginTop="10dp"
+                    android:background="@color/bg"
+                    android:padding="10dp" />
+                <EditText
+                    android:id="@+id/fpNewPass"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="নতুন পাসওয়ার্ড (কমপক্ষে ৪ অক্ষর)"
+                    android:inputType="textPassword"
+                    android:layout_marginTop="10dp"
+                    android:background="@color/bg"
+                    android:padding="10dp" />
+                <Button
+                    android:id="@+id/fpSendBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="কোড পাঠান"
+                    android:layout_marginTop="10dp" />
+                <Button
+                    android:id="@+id/fpVerifyBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="কোড দিয়ে পাসওয়ার্ড বদলান"
+                    android:layout_marginTop="8dp" />
+                <TextView
+                    android:id="@+id/fpStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

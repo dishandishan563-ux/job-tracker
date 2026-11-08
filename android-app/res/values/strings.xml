@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Job Tracker</string>
+    <string name="home_title">সব ধরনের সরকারি চাকরির সার্কুলার</string>
+    <string name="search_hint">প্রতিষ্ঠান বা পদের নাম লিখে খুঁজুন…</string>
+    <string name="refresh_now">⟳ এখনই নতুন সার্কুলার খুঁজুন</string>
+    <string name="apply">আবেদন করুন</string>
+    <string name="save">সংরক্ষণ করুন</string>
+    <string name="saved">★ সংরক্ষিত</string>
+    <string name="save_shortlist">☆ সংরক্ষণ</string>
+    <string name="clear_filters">ফিল্টার পরিষ্কার করুন</string>
+    <string name="my_list">★ আমার তালিকা</string>
+    <string name="all_types">সব ধরনের</string>
+    <string name="all_quals">সব যোগ্যতা</string>
+    <string name="all_grades">সব গ্রেড</string>
+    <string name="sort_deadline">ডেডলাইন অনুযায়ী</string>
+    <string name="sort_posts">পদ বেশি → কম</string>
+    <string name="sort_name">নাম অনুযায়ী (A–Z)</string>
+    <string name="login_title">লগইন / রেজিস্টার</string>
+    <string name="profile_title">আমার প্রোফাইল</string>
+    <string name="settings_title">সেটিংস</string>
+    <string name="detail_title">সার্কুলারের বিস্তারিত</string>
+    <string name="menu_profile">👤 আমার প্রোফাইল</string>
+    <string name="menu_settings">⚙️ সেটিংস</string>
+    <string name="menu_contact">📞 আবেদন করতে চাইলে যোগাযোগ করুন</string>
+    <string name="menu_login">🔑 লগইন করুন</string>
+    <string name="menu_logout">🚪 লগআউট</string>
+    <string name="menu_refresh">⟳ তালিকা রিফ্রেশ করুন</string>
+    <string name="menu_about">ℹ️ অ্যাপ সম্পর্কে</string>
+</resources>

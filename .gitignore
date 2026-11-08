@@ -5,3 +5,9 @@ node_modules
 .env.production
 *.log
 .DS_Store
+
+# Android release keystore — never commit
+android-keystore/
+
+# Native app build outputs (contain the binary APK)
+android-app/build/

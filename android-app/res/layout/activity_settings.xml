@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg">
+
+    <android.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?android:attr/actionBarSize"
+        android:background="@color/green_dark"
+        android:titleTextColor="#ffffff"
+        android:title="@string/settings_title" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="লেখার সাইজ"
+                android:textStyle="bold"
+                android:textSize="16sp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+                <Button
+                    android:id="@+id/sizeSmall"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="A-" />
+                <Button
+                    android:id="@+id/sizeMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="A"
+                    android:layout_marginLeft="6dp" />
+                <Button
+                    android:id="@+id/sizeLarge"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="A+"
+                    android:layout_marginLeft="6dp" />
+                <Button
+                    android:id="@+id/sizeXl"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="A++"
+                    android:layout_marginLeft="6dp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CV আপলোড"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginTop="20dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CV থেকে জেলা খুঁজে প্রোফাইলে বসানো হবে।"
+                android:textSize="13sp"
+                android:textColor="@color/text_grey" />
+            <Button
+                android:id="@+id/cvBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="CV ফাইল বেছে নিন"
+                android:layout_marginTop="8dp" />
+            <TextView
+                android:id="@+id/cvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="অ্যাপ"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginTop="20dp" />
+            <TextView
+                android:id="@+id/versionText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" />
+            <Button
+                android:id="@+id/checkUpdateBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="আপডেট চেক করুন"
+                android:layout_marginTop="8dp" />
+            <TextView
+                android:id="@+id/updateStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="যোগাযোগ"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginTop="20dp" />
+            <Button
+                android:id="@+id/whatsappBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📱 WhatsApp-এ যোগাযোগ করুন"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+            <Button
+                android:id="@+id/telegramBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="✈️ Telegram-এ যোগাযোগ করুন"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/contactEmpty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="অ্যাডমিন এখনো যোগাযোগের তথ্য দেননি।"
+                android:textColor="@color/text_grey"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

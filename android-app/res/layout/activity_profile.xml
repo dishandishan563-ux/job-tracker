@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg">
+
+    <android.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?android:attr/actionBarSize"
+        android:background="@color/green_dark"
+        android:titleTextColor="#ffffff"
+        android:title="@string/profile_title" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="নাম, ঠিকানা ও ছবি দিন — আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।"
+                android:textSize="14sp"
+                android:textColor="@color/text_grey" />
+            <ImageView
+                android:id="@+id/photoPreview"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="12dp"
+                android:background="@color/card"
+                android:visibility="gone" />
+            <Button
+                android:id="@+id/photoBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="ছবি বেছে নিন"
+                android:layout_marginTop="8dp" />
+            <EditText
+                android:id="@+id/pName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="নাম"
+                android:layout_marginTop="12dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pPhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="মোবাইল নম্বর"
+                android:inputType="phone"
+                android:layout_marginTop="10dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pDistrict"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="জেলা (যেমন: ঢাকা)"
+                android:layout_marginTop="10dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pDob"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="জন্ম তারিখ (যেমন: 2000-01-15)"
+                android:inputType="date"
+                android:layout_marginTop="10dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="শিক্ষাগত যোগ্যতা"
+                android:layout_marginTop="12dp"
+                android:textStyle="bold" />
+            <Spinner
+                android:id="@+id/pEdu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <EditText
+                android:id="@+id/pTypeBn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="টাইপিং — বাংলা (শব্দ/মিনিট)"
+                android:inputType="number"
+                android:layout_marginTop="10dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pTypeEn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="টাইপিং — ইংরেজি (শব্দ/মিনিট)"
+                android:inputType="number"
+                android:layout_marginTop="10dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="বর্তমান ঠিকানা"
+                android:layout_marginTop="10dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+            <EditText
+                android:id="@+id/pNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="অন্যান্য তথ্য (ঐচ্ছিক)"
+                android:layout_marginTop="10dp"
+                android:background="@color/card"
+                android:padding="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔔 রিমাইন্ডার পছন্দ"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginTop="18dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="আপনি কি চাকরির রিমাইন্ডার পেতে চান?"
+                android:layout_marginTop="8dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp">
+                <ToggleButton
+                    android:id="@+id/remYes"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textOn="✅ হ্যাঁ, পেতে চাই"
+                    android:textOff="✅ হ্যাঁ, পেতে চাই"
+                    android:text="✅ হ্যাঁ, পেতে চাই" />
+                <ToggleButton
+                    android:id="@+id/remNo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textOn="❌ না, চাই না"
+                    android:textOff="❌ না, চাই না"
+                    android:text="❌ না, চাই না"
+                    android:layout_marginLeft="8dp" />
+            </LinearLayout>
+            <TextView
+                android:id="@+id/remNote"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_grey"
+                android:textSize="13sp"
+                android:layout_marginTop="4dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="কোন ধরনের সার্কুলারের রিমাইন্ডার চান?"
+                android:layout_marginTop="12dp"
+                android:textStyle="bold" />
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:layout_marginTop="4dp">
+                <LinearLayout
+                    android:id="@+id/prefTypes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="কোন যোগ্যতার পদের রিমাইন্ডার চান?"
+                android:layout_marginTop="10dp"
+                android:textStyle="bold" />
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:layout_marginTop="4dp">
+                <LinearLayout
+                    android:id="@+id/prefQuals"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+
+            <Button
+                android:id="@+id/saveProfileBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="প্রোফাইল সেভ করুন"
+                android:layout_marginTop="18dp" />
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
