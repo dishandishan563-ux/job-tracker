@@ -206,6 +206,41 @@ async function saveCirculars(list) {
   return true;
 }
 
+// ---------- Admin-deleted circulars (server-side) ----------
+// When the admin deletes a circular from the portal, its identity keys
+// (dedupe key + id|deadline) go into this KV SET. The auto-discovery sweep
+// (api/_discover.js) skips any candidate matching it — otherwise the next
+// sweep would silently re-add a Teletalk circular the admin just deleted.
+// The one-shot seed sync (api/config.js action sync-seed) respects it too.
+const DELETED_CIRCULARS_KEY = 'jt:deleted-circulars';
+
+async function getDeletedKeys() {
+  if (!kvAvailable()) return [];
+  try { return await kvSMembers(DELETED_CIRCULARS_KEY); } catch { return []; }
+}
+
+async function addDeletedKeys(keys) {
+  if (!kvAvailable()) return;
+  for (const k of keys || []) { try { await kvSAdd(DELETED_CIRCULARS_KEY, String(k)); } catch {} }
+}
+
+// ---------- Last auto-discovery run (throttle) ----------
+// The app + website call GET /api/circulars on every open; that endpoint
+// triggers a discovery sweep only if the last sweep (from any trigger —
+// open, manual refresh, daily cron) is more than ~1 hour old. The
+// timestamp lives here in KV so every serverless instance agrees.
+const LAST_DISCOVERY_KEY = 'jt:last-discovery';
+
+async function getLastDiscovery() {
+  if (!kvAvailable()) return null;
+  try { return await kvGet(LAST_DISCOVERY_KEY); } catch { return null; }
+}
+
+async function setLastDiscovery(iso) {
+  if (!kvAvailable()) return false;
+  try { await kvSet(LAST_DISCOVERY_KEY, String(iso)); return true; } catch { return false; }
+}
+
 // ---------- Admin contact (WhatsApp / Telegram) ----------
 // Shown in the slide menu as "আবেদন করতে চাইলে যোগাযোগ করুন" for EVERY
 // visitor — so it must live in server-side KV, never browser localStorage
@@ -227,4 +262,4 @@ async function saveContact(contact) {
   return true;
 }
 
-module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, mergeCirculars, getCirculars, saveCirculars, CONTACT_KEY, getContact, saveContact };
+module.exports = { keyFor, kvAvailable, kvFetch, kvGet, kvSet, kvSAdd, kvSMembers, logSentEmail, getSentEmails, CIRCULARS_KEY, normalizeOrg, hostOf, dhakaDate, dedupeKey, dedupeList, allKeys, mergeCirculars, getCirculars, saveCirculars, DELETED_CIRCULARS_KEY, getDeletedKeys, addDeletedKeys, LAST_DISCOVERY_KEY, getLastDiscovery, setLastDiscovery, CONTACT_KEY, getContact, saveContact };

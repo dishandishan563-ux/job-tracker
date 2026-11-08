@@ -14,7 +14,7 @@ const path = require('path');
 const { sendMail } = require('./_mail');
 const { kvAvailable, kvSMembers, logSentEmail, getCirculars } = require('./_store');
 const { getUserPrefs, circularMatchesPrefs, remindersEnabled } = require('./_prefs');
-const { runDiscovery } = require('./_discover');
+const { runDiscovery, noteDiscoveryRan } = require('./_discover');
 const seedCirculars = require('../data/circulars.json');
 
 const SENT_FILE = '/tmp/job-tracker-sent.json';
@@ -50,6 +50,8 @@ module.exports = async (req, res) => {
   ].map(s => String(s).trim().toLowerCase()).filter(Boolean))];
   // নতুন সার্কুলার অটো যোগ — ব্যর্থ হলেও রিমাইন্ডার চলবে।
   const discovered = await runDiscovery().catch(() => ({ ok: false, added: 0, error: 'sweep_failed' }));
+  // সুইপ চলেছে — সময়টা সেভ করে রাখি, যাতে অ্যাপ খুললে ১ ঘণ্টার মধ্যে আবার সুইপ না চলে।
+  if (discovered && discovered.ok) await noteDiscoveryRan().catch(() => {});
   // রিমাইন্ডার KV তালিকা (সদ্য যোগ হওয়া সার্কুলারসহ) থেকে চলে; KV না
   // থাকলে সিড করা JSON ফাইল থেকে।
   let circulars = null;

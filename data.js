@@ -4,9 +4,11 @@
 //    new circulars from Teletalk's live list). New circulars reach every
 //    visitor as soon as the sweep adds them.
 // 2) Fallback: local data/circulars.json if the API is unreachable.
-// Admin edits are stored in localStorage (jt_admin_circulars) and merged over
-// the online list on the client. A production deployment should move this
-// to a database (Vercel KV / Postgres) — see README.
+// Admin edits (add / correct / delete) now save to the server too
+// (api/config.js, PIN-gated) — every user sees them. localStorage
+// (jt_admin_circulars / jt_deleted_circulars) is only a fallback for when
+// the server save fails; a successful server save clears the local copy,
+// so a stale local copy never shadows the fresh server copy.
 async function loadCirculars() {
   try {
     const r = await fetch('api/circulars', { cache: 'no-store' });

@@ -12,7 +12,7 @@
 // ডিসকভারি ব্যর্থ হলেও (সূত্র ডাউন থাকলে) পোর্টাল যাচাই চলবে — সুইপ কখনো
 // এই এন্ডপয়েন্ট ভাঙে না।
 const { getCirculars } = require('./_store');
-const { runDiscovery } = require('./_discover');
+const { runDiscovery, noteDiscoveryRan } = require('./_discover');
 const seedCirculars = require('../data/circulars.json');
 
 async function checkPortal(url) {
@@ -33,6 +33,8 @@ async function checkPortal(url) {
 module.exports = async (req, res) => {
   // নতুন সার্কুলার অটো যোগ — ব্যর্থ হলেও নিচের যাচাই চলবে।
   const discovered = await runDiscovery().catch(() => ({ ok: false, added: 0, error: 'sweep_failed' }));
+  // সুইপ চলেছে — সময়টা সেভ করে রাখি, যাতে অ্যাপ খুললে ১ ঘণ্টার মধ্যে আবার সুইপ না চলে।
+  if (discovered && discovered.ok) await noteDiscoveryRan().catch(() => {});
   let circulars = null;
   try { circulars = await getCirculars(); } catch {}
   if (!Array.isArray(circulars) || !circulars.length) circulars = seedCirculars;

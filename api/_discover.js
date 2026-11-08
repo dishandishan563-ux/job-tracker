@@ -24,7 +24,7 @@
 // a reCAPTCHA bot check (unfetchable from a serverless function) and
 // chakri.com returns a Cloudflare error. Teletalk's own API is the one
 // reliable, structured source.
-const { getCirculars, saveCirculars, mergeCirculars, dhakaDate } = require('./_store');
+const { getCirculars, saveCirculars, mergeCirculars, dhakaDate, allKeys, getDeletedKeys, getLastDiscovery, setLastDiscovery } = require('./_store');
 
 const DISCOVER_URL = 'https://alljobs.teletalk.com.bd/api/v1/govt-jobs/list?skipLimit=YES';
 const DISCOVER_TIMEOUT_MS = 8000;
@@ -125,9 +125,14 @@ async function runDiscovery() {
     const candidates = [];
     const shortByCandidate = new Map();
     let skipped = 0;
+    // অ্যাডমিন সার্ভার থেকে মুছে ফেলা সার্কুলার আর ফিরবে না — মুছে ফেলার
+    // চাবিগুলো (host+তারিখ / id+তারিখ) KV-তে jt:deleted-circulars-এ থাকে।
+    let deletedKeys = new Set();
+    try { deletedKeys = new Set(await getDeletedKeys()); } catch {}
     for (const js of groups.values()) {
       const c = buildCandidate(js);
       if (!c || new Date(c.deadline) < now) { skipped++; continue; }
+      if (allKeys(c).some(k => deletedKeys.has(k))) { skipped++; continue; }
       shortByCandidate.set(c, c._short);
       delete c._short;
       candidates.push(c);
@@ -145,4 +150,32 @@ async function runDiscovery() {
   }
 }
 
-module.exports = { runDiscovery, buildCandidate, classify, DISCOVER_URL, ALIASES };
+module.exports = { runDiscovery, buildCandidate, classify, DISCOVER_URL, ALIASES, discoverIfDue, noteDiscoveryRan };
+
+// ---------- Throttled auto-discovery (app/website opens) ----------
+// GET /api/circulars is called on every app + website open. A sweep on
+// every open would hammer Teletalk's API, so this runs one only when the
+// last sweep (from any trigger) is more than ~1 hour old. The timestamp
+// is shared in KV (jt:last-discovery), so all triggers agree.
+// Returns the sweep result, or { ok:true, throttled:true } when skipped.
+// A failed sweep does NOT stamp the time — the next open retries.
+const DISCOVER_THROTTLE_MS = 60 * 60 * 1000;
+
+async function discoverIfDue() {
+  try {
+    const last = await getLastDiscovery();
+    if (last && !isNaN(Date.parse(last)) && (Date.now() - Date.parse(last)) < DISCOVER_THROTTLE_MS) {
+      return { ok: true, throttled: true, added: 0, skipped: 0, total: 0 };
+    }
+  } catch {}
+  const r = await runDiscovery();
+  if (r && r.ok) { try { await setLastDiscovery(new Date().toISOString()); } catch {} }
+  return r;
+}
+
+// The manual refresh button and the daily cron run the sweep unconditionally
+// (the user / the schedule explicitly asked) — they only stamp the shared
+// time afterwards, so a later app open does not re-run it within the hour.
+async function noteDiscoveryRan() {
+  try { await setLastDiscovery(new Date().toISOString()); } catch {}
+}
