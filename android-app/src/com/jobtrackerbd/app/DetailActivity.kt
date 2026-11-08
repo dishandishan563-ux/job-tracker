@@ -109,12 +109,14 @@ class DetailActivity : Activity() {
         val bFee = findViewById<Button>(R.id.statusFee)
         val bAdmit = findViewById<Button>(R.id.statusAdmit)
         val setStatus = { s: String ->
-            val data = Store.cachedData
-            if (data.status[circular.id] == s) data.status.remove(circular.id)
-            else data.status[circular.id] = s
-            Store.cachedData = data
-            Api.saveUserData(data)
-            refreshStatus()
+            // Fresh server copy first — see Api.updateUserData: saving the
+            // stale local cache whole would overwrite a newer profile
+            // saved from the website. refreshStatus runs in the callback:
+            // updateUserData is async (it refreshes first).
+            Api.updateUserData({ data ->
+                if (data.status[circular.id] == s) data.status.remove(circular.id)
+                else data.status[circular.id] = s
+            }) { refreshStatus() }
         }
         bApplied.setOnClickListener { setStatus("applied") }
         bFee.setOnClickListener { setStatus("fee_paid") }
@@ -123,12 +125,12 @@ class DetailActivity : Activity() {
 
         shortlistBtn = findViewById(R.id.shortlistBtn)
         shortlistBtn.setOnClickListener {
-            val data = Store.cachedData
-            if (data.shortlist.contains(circular.id)) data.shortlist.remove(circular.id)
-            else data.shortlist.add(circular.id)
-            Store.cachedData = data
-            Api.saveUserData(data)
-            refreshShortlist()
+            // Fresh server copy first (see Api.updateUserData), and
+            // refreshShortlist runs in the callback — async.
+            Api.updateUserData({ data ->
+                if (data.shortlist.contains(circular.id)) data.shortlist.remove(circular.id)
+                else data.shortlist.add(circular.id)
+            }) { refreshShortlist() }
         }
         refreshShortlist()
 

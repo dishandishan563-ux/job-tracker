@@ -67,10 +67,10 @@ class SettingsActivity : Activity() {
         for ((k, b) in sizeBtns) {
             b.setOnClickListener {
                 Store.fontSize = k
-                val data = Store.cachedData
-                data.fontSize = k
-                Store.cachedData = data
-                if (Store.isLoggedIn) Api.saveUserData(data)
+                // Fresh server copy first (see Api.updateUserData): saving
+                // the stale local cache whole would overwrite a newer
+                // profile saved from the website.
+                Api.updateUserData({ data -> data.fontSize = k })
                 markSize()
                 Ui.applyTextScale(findViewById(android.R.id.content))
                 Ui.toast(this, "লেখার সাইজ বদলে গেছে।")
@@ -86,6 +86,10 @@ class SettingsActivity : Activity() {
         // why PDF upload did not work from the app.
         cvRemoveBtn = findViewById(R.id.cvRemoveBtn)
         refreshCvState()
+        // The CV may have been uploaded from the website since this app
+        // last fetched it — refresh from the server so the status here
+        // shows the real CV, not a stale local cache.
+        if (Store.isLoggedIn) Api.refreshUserData { refreshCvState() }
         findViewById<Button>(R.id.cvBtn).setOnClickListener {
             if (!Store.isLoggedIn) {
                 Ui.toast(this, "CV আপলোড করতে আগে লগইন করুন।")
@@ -113,11 +117,14 @@ class SettingsActivity : Activity() {
             }
             removeArmed = false
             cvRemoveBtn.text = getString(R.string.cv_remove)
-            val d = Store.cachedData
-            val snap = d.profile.cv?.fields ?: emptyMap()
-            d.profile = CvParse.removeCvFields(d.profile, snap)
-            Store.cachedData = d
-            Api.saveUserData(d)
+            // Fresh server copy first (see Api.updateUserData): the CV
+            // snapshot to remove may live only on the server (uploaded
+            // from the website) — removing from a stale local cache
+            // would do nothing, or wipe the wrong fields.
+            Api.updateUserData({ d ->
+                val snap = d.profile.cv?.fields ?: emptyMap()
+                d.profile = CvParse.removeCvFields(d.profile, snap)
+            })
             cvStatus.text = "CV মুছে ফেলা হয়েছে — প্রোফাইল থেকে CV-র তথ্য সরানো হয়েছে।"
             refreshCvState()
         }
@@ -217,29 +224,40 @@ class SettingsActivity : Activity() {
                     return
                 }
                 val fields = CvParse.parseCvText(text)
-                val d = Store.cachedData
-                // CV-ই শেষ কথা: CV-তে যা আছে তা-ই প্রোফাইলে বসবে, আগের মান
-                // থাকলেও CV-র মান জিতবে (ওয়েবসাইটের applyCvFieldsToProfile
-                // এখন overwriteCvFields ব্যবহার করে)।
-                val (merged, filled) = CvParse.overwriteCvFields(d.profile, fields)
-                val fieldsStr = fields.mapValues { it.value.toString() }
-                merged.cv = CvInfo(
-                    name = name,
-                    size = bytes.size.toLong(),
-                    uploadedAt = System.currentTimeMillis(),
-                    text = text.take(4000),
-                    fields = fieldsStr
-                )
-                d.profile = merged
-                Store.cachedData = d
-                Api.saveUserData(d)
-                refreshCvState()
-                cvStatus.setTextColor(getColor(R.color.green_dark))
-                cvStatus.text = if (filled.isEmpty()) {
-                    "CV আপলোড হয়েছে — কোনো তথ্য মেলেনি, প্রোফাইলে নিজে বসান।"
-                } else {
-                    val labels = filled.mapNotNull { CvParse.FIELD_LABELS[it] }
-                    "CV আপলোড হয়েছে — প্রোফাইলে বসেছে: ${labels.joinToString(", ")}।"
+                // Fresh server copy first (see Api.updateUserData): the CV
+                // fields must land on the newest profile (e.g. one filled
+                // on the website), not on a stale local cache — otherwise
+                // this save would wipe the website's profile.
+                Api.refreshUserData {
+                    if (!Store.isLoggedIn) {
+                        cvStatus.setTextColor(getColor(R.color.danger))
+                        cvStatus.text = "লগইন মেয়াদ শেষ — আবার লগইন করে CV আপলোড করুন।"
+                        return@refreshUserData
+                    }
+                    val d = Store.cachedData
+                    // CV-ই শেষ কথা: CV-তে যা আছে তা-ই প্রোফাইলে বসবে, আগের মান
+                    // থাকলেও CV-র মান জিতবে (ওয়েবসাইটের applyCvFieldsToProfile
+                    // এখন overwriteCvFields ব্যবহার করে)।
+                    val (merged, filled) = CvParse.overwriteCvFields(d.profile, fields)
+                    val fieldsStr = fields.mapValues { it.value.toString() }
+                    merged.cv = CvInfo(
+                        name = name,
+                        size = bytes.size.toLong(),
+                        uploadedAt = System.currentTimeMillis(),
+                        text = text.take(4000),
+                        fields = fieldsStr
+                    )
+                    d.profile = merged
+                    Store.cachedData = d
+                    Api.saveUserData(d)
+                    refreshCvState()
+                    cvStatus.setTextColor(getColor(R.color.green_dark))
+                    cvStatus.text = if (filled.isEmpty()) {
+                        "CV আপলোড হয়েছে — কোনো তথ্য মেলেনি, প্রোফাইলে নিজে বসান।"
+                    } else {
+                        val labels = filled.mapNotNull { CvParse.FIELD_LABELS[it] }
+                        "CV আপলোড হয়েছে — প্রোফাইলে বসেছে: ${labels.joinToString(", ")}।"
+                    }
                 }
             } catch (e: Exception) {
                 cvStatus.setTextColor(getColor(R.color.danger))

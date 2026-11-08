@@ -148,6 +148,17 @@ class MainActivity : Activity() {
         updateHero()
         invalidateOptionsMenu()
         checkUpdate()
+        // Sync with the server on every return to home: the profile/CV may
+        // have been changed on the website (same Gmail) since this app
+        // last fetched it — without this the home list kept showing the
+        // stale local cache forever (no CV, no CV-match badge) until the
+        // user logged in again. Offline the cache is kept as-is.
+        if (Store.isLoggedIn) {
+            Api.refreshUserData {
+                adapter.notifyDataSetChanged()
+                updateHero()
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -589,13 +600,18 @@ class MainActivity : Activity() {
 
     private fun onShortlist(c: Circular) {
         if (!requireLogin()) return
-        val data = Store.cachedData
-        if (data.shortlist.contains(c.id)) data.shortlist.remove(c.id)
-        else data.shortlist.add(c.id)
-        Store.cachedData = data
-        Api.saveUserData(data)
-        adapter.notifyDataSetChanged()
-        Ui.toast(this, if (data.shortlist.contains(c.id)) "সংরক্ষণ করা হয়েছে।" else "সংরক্ষণ তুলে নেওয়া হয়েছে।")
+        // Load the fresh server copy first: saving the stale local cache
+        // whole would overwrite a newer profile saved from the website.
+        // The toast reads the cache in the callback — updateUserData is
+        // async (it refreshes first), so reading it here would be stale.
+        Api.updateUserData({ data ->
+            if (data.shortlist.contains(c.id)) data.shortlist.remove(c.id)
+            else data.shortlist.add(c.id)
+        }) {
+            val saved = Store.cachedData.shortlist.contains(c.id)
+            adapter.notifyDataSetChanged()
+            Ui.toast(this, if (saved) "সংরক্ষণ করা হয়েছে।" else "সংরক্ষণ তুলে নেওয়া হয়েছে।")
+        }
     }
 
     private fun openDetail(c: Circular) {

@@ -1,1 +1,7 @@
-{"apkFileName":"job-tracker.apk","apkUrl":"/job-tracker.apk.b64","changelogBn":"PDF CV থেকে লেখা পড়া ঠিক করা হয়েছে। ড্রয়ার ও সব বাটন আরও প্রিমিয়াম লুকে সাজানো হয়েছে, আর অটো-যোগ সার্কুলারের তারিখ/কাউন্টডাউন ঠিক করা হয়েছে।","versionCode":6,"versionName":"1.1.4"}
+{
+  "apkFileName": "job-tracker.apk",
+  "apkUrl": "/job-tracker.apk.b64",
+  "changelogBn": "ওয়েবসাইটে আপলোড করা CV এখন অ্যাপেও দেখাবে — প্রোফাইল সিঙ্ক ঠিক করা হয়েছে।",
+  "versionCode": 7,
+  "versionName": "1.1.5"
+}

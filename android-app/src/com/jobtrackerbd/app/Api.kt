@@ -12,8 +12,8 @@ import kotlin.concurrent.thread
 /** Minimal HTTP client for the existing Job Tracker Vercel APIs. No new endpoints. */
 object Api {
     const val BASE = "https://job-tracker-official-68.vercel.app"
-    const val APP_VERSION_NAME = "1.1.4"
-    const val APP_VERSION_CODE = 6
+    const val APP_VERSION_NAME = "1.1.5"
+    const val APP_VERSION_CODE = 7
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -150,19 +150,63 @@ object Api {
         )
     }
 
-    /** POST /api/user-data { action: 'load' } */
-    fun loadUserData(cb: (UserData?) -> Unit) {
-        val token = Store.token ?: run { cb(null); return }
+    /** POST /api/user-data { action: 'load' } — server copy replaces the local cache. */
+    fun loadUserData(cb: (UserData?) -> Unit) = refreshUserData(cb)
+
+    /**
+     * Fetch the server copy of the logged-in user's data and replace the
+     * local cache with it (the server copy is the truth shared across
+     * devices). On failure (offline / server error) the local cache is
+     * kept as-is and cb gets null — never blanked. A 401 means the
+     * session token is dead (expired): the user is logged out so the app
+     * stops showing stale data as if it were still logged in.
+     */
+    fun refreshUserData(cb: ((UserData?) -> Unit)? = null) {
+        val token = Store.token ?: run { cb?.invoke(null); return }
         post(
             "/api/user-data",
             JSONObject().apply { put("action", "load") },
             token
         ) { r ->
-            if (r.json?.optBoolean("ok") == true && r.json.optBoolean("exists")) {
-                cb(UserData.fromJson(r.json.optJSONObject("data")))
-            } else {
-                cb(null)
+            if (r.httpCode == 401) {
+                Store.logout()
+                cb?.invoke(null)
+                return@post
             }
+            val data = if (r.json?.optBoolean("ok") == true && r.json.optBoolean("exists")) {
+                UserData.fromJson(r.json.optJSONObject("data"))
+            } else {
+                null
+            }
+            if (data != null) Store.cachedData = data
+            cb?.invoke(data)
+        }
+    }
+
+    /**
+     * Change the user's data safely: load the fresh server copy first,
+     * apply the small change on top of it, then save it back. Without
+     * this, a shortlist/status/font-size tap made from a stale local
+     * cache would upload that stale copy whole and overwrite a newer
+     * profile saved from the website (e.g. a CV uploaded there) with
+     * the old empty one. If the fresh load fails (offline), the change
+     * is applied to the local cache and the save is attempted as before.
+     */
+    fun updateUserData(mutator: (UserData) -> Unit, cb: ((Boolean) -> Unit)? = null) {
+        if (!Store.isLoggedIn) {
+            cb?.invoke(false)
+            return
+        }
+        refreshUserData { fresh ->
+            if (!Store.isLoggedIn) {
+                // Token was dead (401 inside refresh): logged out already.
+                cb?.invoke(false)
+                return@refreshUserData
+            }
+            val data = fresh ?: Store.cachedData
+            mutator(data)
+            Store.cachedData = data
+            saveUserData(data, cb)
         }
     }
 

@@ -114,12 +114,16 @@ class ProfileActivity : Activity() {
             }
             cvRemoveArmed = false
             removeCvBtnProfile.text = "🗑️ CV মুছুন (Remove CV)"
-            val d = Store.cachedData
-            val snap = d.profile.cv?.fields ?: emptyMap()
-            d.profile = CvParse.removeCvFields(d.profile, snap)
-            Store.cachedData = d
-            Api.saveUserData(d)
-            fillFromProfile(d.profile)
+            // Fresh server copy first (see Api.updateUserData): the CV
+            // snapshot may live only on the server (uploaded from the
+            // website) — removing from a stale local cache would do
+            // nothing, or wipe the wrong fields.
+            // fillFromProfile runs in the callback: updateUserData is
+            // async (it refreshes first).
+            Api.updateUserData({ d ->
+                val snap = d.profile.cv?.fields ?: emptyMap()
+                d.profile = CvParse.removeCvFields(d.profile, snap)
+            }) { fillFromProfile(Store.cachedData.profile) }
             Ui.toast(this, "CV মুছে ফেলা হয়েছে।")
         }
 
@@ -138,11 +142,12 @@ class ProfileActivity : Activity() {
             }
             resetArmed = false
             resetProfileBtn.text = "↺ প্রোফাইল রিসেট করুন (Reset Profile)"
-            val data = Store.cachedData
-            data.profile = Profile()
-            Store.cachedData = data
-            Api.saveUserData(data)
-            fillFromProfile(data.profile)
+            // Fresh server copy first (see Api.updateUserData) so the
+            // reset only clears the profile — shortlist/status stay,
+            // and a stale cache cannot resurrect old values.
+            Api.updateUserData({ data -> data.profile = Profile() }) {
+                fillFromProfile(Store.cachedData.profile)
+            }
             Ui.toast(this, "প্রোফাইল রিসেট হয়েছে।")
         }
 
@@ -281,6 +286,19 @@ class ProfileActivity : Activity() {
     }
 
     private fun saveProfile() {
+        // Fresh server copy first (see Api.updateUserData): the form
+        // values must land on the newest profile (e.g. a CV filled on
+        // the website), not on a stale local cache.
+        Api.refreshUserData {
+            if (!Store.isLoggedIn) {
+                statusTv.text = "লগইন মেয়াদ শেষ — আবার লগইন করে সেভ করুন।"
+                return@refreshUserData
+            }
+            saveProfileOnFreshCache()
+        }
+    }
+
+    private fun saveProfileOnFreshCache() {
         // copy() keeps the saved CV snapshot (p.cv) — rebuilding a fresh
         // Profile here would wipe the CV on every profile save.
         val p = Store.cachedData.profile.copy(

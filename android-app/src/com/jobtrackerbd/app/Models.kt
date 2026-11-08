@@ -161,13 +161,41 @@ data class CvInfo(
                     f[k] = fo.optString(k, "")
                 }
             }
+            // uploadedAt: the app writes epoch millis (Long), the website
+            // writes an ISO string — accept both, so a website-uploaded CV
+            // keeps its date through an app save instead of becoming 0.
+            val uploadedAt = when (val v = o.opt("uploadedAt")) {
+                is Number -> v.toLong()
+                is String -> parseIsoMillis(v)
+                else -> 0L
+            }
             return CvInfo(
                 name = o.optString("name", ""),
                 size = o.optLong("size", 0),
-                uploadedAt = o.optLong("uploadedAt", 0),
+                uploadedAt = uploadedAt,
                 text = o.optString("text", ""),
                 fields = f
             )
+        }
+
+        private fun parseIsoMillis(s: String): Long {
+            val fmts = listOf(
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+                "yyyy-MM-dd'T'HH:mm:ssXXX"
+            )
+            for (f in fmts) {
+                try {
+                    val sdf = java.text.SimpleDateFormat(f, java.util.Locale.US)
+                    sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    val d = sdf.parse(s) ?: continue
+                    return d.time
+                } catch (e: Exception) {
+                    // try the next format
+                }
+            }
+            return 0L
         }
     }
 }
