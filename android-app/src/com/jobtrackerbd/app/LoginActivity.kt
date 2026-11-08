@@ -86,6 +86,13 @@ class LoginActivity : Activity() {
             statusTv.text = "সঠিক Gmail ঠিকানা দিন।"
             return
         }
+        // The server stores a blank name as-is on registration, so a
+        // nameless account would be created — the name field is shown
+        // on this screen, so require it here.
+        if (name.isBlank()) {
+            statusTv.text = "আপনার নাম দিন।"
+            return
+        }
         if (pass.length < 4) {
             statusTv.text = "পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।"
             return

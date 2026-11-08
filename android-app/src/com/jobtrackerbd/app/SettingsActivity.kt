@@ -48,12 +48,19 @@ class SettingsActivity : Activity() {
         )
         val markSize = {
             for ((k, b) in sizeBtns) {
+                val active = Store.fontSize == k
                 b.text = when (k) {
-                    "small" -> if (Store.fontSize == k) "✓ A-" else "A-"
-                    "medium" -> if (Store.fontSize == k) "✓ A" else "A"
-                    "large" -> if (Store.fontSize == k) "✓ A+" else "A+"
-                    else -> if (Store.fontSize == k) "✓ A++" else "A++"
+                    "small" -> if (active) "✓ A-" else "A-"
+                    "medium" -> if (active) "✓ A" else "A"
+                    "large" -> if (active) "✓ A+" else "A+"
+                    else -> if (active) "✓ A++" else "A++"
                 }
+                // Intentional selected state: green pill + green text.
+                // Inactive pills stay quiet white — never a gray wash.
+                b.background = getDrawable(
+                    if (active) R.drawable.btn_ghost_selected else R.drawable.btn_ghost)
+                b.setTextColor(getColor(
+                    if (active) R.color.green_dark else R.color.text_dark))
             }
         }
         markSize()
@@ -149,6 +156,7 @@ class SettingsActivity : Activity() {
     private fun refreshCvState() {
         val cv = Store.cachedData.profile.cv
         if (cv != null && cv.name.isNotBlank()) {
+            cvStatus.setTextColor(getColor(R.color.text_dark))
             cvStatus.text = "CV আপলোড করা আছে: ${cv.name}।"
             cvRemoveBtn.visibility = View.VISIBLE
         } else {
@@ -175,15 +183,36 @@ class SettingsActivity : Activity() {
             val uri = data?.data ?: return
             try {
                 val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                    ?: run { cvStatus.text = "CV পড়া যায়নি — অন্য ফাইল চেষ্টা করুন।"; return }
+                    ?: run {
+                        cvStatus.setTextColor(getColor(R.color.danger))
+                        cvStatus.text = "CV পড়া যায়নি — অন্য ফাইল চেষ্টা করুন।"
+                        return
+                    }
                 val mime = contentResolver.getType(uri)
                 val name = displayName(uri) ?: "cv"
-                val text = CvParse.extractText(bytes, mime, name)
+                val isPdf = mime == "application/pdf" || name.lowercase().endsWith(".pdf")
+                val text: String?
+                if (isPdf) {
+                    // PdfBox-Android দিয়ে পড়া (Word-এর PDF, ASCII85+Flate,
+                    // hex-string/ToUnicode — সব পারে); লেখার লেয়ার না থাকলে
+                    // (স্ক্যান করা ছবির PDF) আলাদা বার্তা দেখাই।
+                    val (pdfText, status) = CvParse.extractPdf(bytes, this)
+                    if (status == CvParse.PdfStatus.NO_TEXT_LAYER) {
+                        cvStatus.setTextColor(getColor(R.color.danger))
+                        cvStatus.text = "এই PDF-এ লেখার লেয়ার নেই (স্ক্যান করা ছবি) — টেক্সট PDF ব্যবহার করুন, অথবা ওয়েবসাইট দিয়ে আপলোড করুন (ওয়েবসাইট ছবির CV পড়তে পারে)।"
+                        return
+                    }
+                    text = pdfText
+                } else {
+                    text = CvParse.extractText(bytes, mime, name)
+                }
                 if (text == null) {
+                    cvStatus.setTextColor(getColor(R.color.danger))
                     cvStatus.text = "ছবির CV থেকে লেখা পড়া যায়নি — PDF বা টেক্সট CV দিন।"
                     return
                 }
                 if (text.isBlank()) {
+                    cvStatus.setTextColor(getColor(R.color.danger))
                     cvStatus.text = "CV থেকে লেখা পাওয়া যায়নি — অন্য ফাইল চেষ্টা করুন।"
                     return
                 }
@@ -205,6 +234,7 @@ class SettingsActivity : Activity() {
                 Store.cachedData = d
                 Api.saveUserData(d)
                 refreshCvState()
+                cvStatus.setTextColor(getColor(R.color.green_dark))
                 cvStatus.text = if (filled.isEmpty()) {
                     "CV আপলোড হয়েছে — কোনো তথ্য মেলেনি, প্রোফাইলে নিজে বসান।"
                 } else {
@@ -212,6 +242,7 @@ class SettingsActivity : Activity() {
                     "CV আপলোড হয়েছে — প্রোফাইলে বসেছে: ${labels.joinToString(", ")}।"
                 }
             } catch (e: Exception) {
+                cvStatus.setTextColor(getColor(R.color.danger))
                 cvStatus.text = "CV পড়া যায়নি — অন্য ফাইল চেষ্টা করুন।"
             }
         }

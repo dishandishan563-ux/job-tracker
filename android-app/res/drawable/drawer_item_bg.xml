@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Drawer item background: selected = green pill, pressed = green ripple.
+     No gray state exists anywhere in the drawer. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true" android:drawable="@drawable/drawer_item_selected" />
+    <item android:drawable="@drawable/drawer_item_ripple" />
+</selector>

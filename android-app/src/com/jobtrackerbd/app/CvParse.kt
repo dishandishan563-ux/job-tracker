@@ -1,5 +1,9 @@
 package com.jobtrackerbd.app
 
+import android.content.Context
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.text.PDFTextStripper
 import java.io.ByteArrayOutputStream
 import java.util.zip.Inflater
 
@@ -314,7 +318,16 @@ object CvParse {
         if (skIdx >= 0) {
             val v = if (lines[skIdx].contains(":")) lines[skIdx].split(":").drop(1).joinToString(":").trim() else ""
             val rest = sectionLines(lines, skIdx, 5)
-            val joined = (listOf(v) + rest).filter { it.isNotEmpty() }.joinToString(", ")
+            var joined = (listOf(v) + rest).filter { it.isNotEmpty() }.joinToString(", ")
+            if (joined.isEmpty()) {
+                // "Skills" শিরোনামের পরেই "Computer Skills: ..." লাইন থাকলে
+                // sectionLines সেটাকে শিরোনাম ভেবে থেমে যায় — সেই লাইনের
+                // মানটাই দক্ষতা (Word-এর CV-তে খুব সাধারণ লেআউট)।
+                val nx = lines.getOrNull(skIdx + 1)
+                if (nx != null && Regex("^(technical skills|computer skills)", RegexOption.IGNORE_CASE).containsMatchIn(nx.trim()) && nx.contains(":")) {
+                    joined = nx.substringAfter(":").trim()
+                }
+            }
             if (joined.isNotEmpty()) out["skills"] = joined
         }
 
@@ -331,7 +344,16 @@ object CvParse {
 
         // ---- ভাষা ----
         val lg = afterLabel(lines, listOf("languages", "language", "ভাষা"))
-        if (lg != null && lg.first.isNotEmpty()) out["languages"] = lg.first
+        if (lg != null) {
+            var v = lg.first
+            if (v.isEmpty() && lg.second + 1 < lines.size) {
+                // "Languages" শিরোনামের পরের লাইনে মান থাকে
+                // ("Languages: Bangla, English") — সেটাই নিই।
+                val nx = lines[lg.second + 1]
+                v = if (nx.contains(":")) nx.substringAfter(":").trim() else nx
+            }
+            if (v.isNotEmpty()) out["languages"] = v
+        }
 
         return out
     }
@@ -501,6 +523,41 @@ object CvParse {
         return parts.joinToString("\n").split("\n")
             .map { it.replace(Regex("[ \t]+"), " ").trim() }
             .filter { it.isNotEmpty() }.joinToString("\n")
+    }
+
+    /** PDF পড়ার ফল — স্ক্যান করা (ছবি) PDF-এ লেখার লেয়ারই থাকে না,
+        সেটা আলাদা করে জানা দরকার যাতে UI সঠিক বার্তা দেখাতে পারে। */
+    enum class PdfStatus { OK, NO_TEXT_LAYER, FAILED }
+
+    /** PDF bytes → (text, status). Primary: PdfBox-Android — filter chain
+        (ASCII85+Flate), hex-string text, ToUnicode CMap, xref/object
+        stream — হাতে লেখা raw extractor যা পারে না, সব পারে। PdfBox না
+        পারলে raw extractor fallback; সেটাও না পারলে FAILED। লেখার
+        লেয়ারই নেই (স্ক্যান করা ছবির PDF) — NO_TEXT_LAYER। */
+    fun extractPdf(bytes: ByteArray, context: Context?): Pair<String?, PdfStatus> {
+        try {
+            if (context != null) {
+                try {
+                    if (!PDFBoxResourceLoader.isReady()) PDFBoxResourceLoader.init(context)
+                } catch (_: Exception) {
+                    // init না হলেও PdfBox classpath resource দিয়ে চেষ্টা করবে
+                }
+            }
+            PDDocument.load(bytes).use { doc ->
+                val stripper = PDFTextStripper()
+                stripper.sortByPosition = true
+                val text = stripper.getText(doc)
+                if (text.isBlank()) {
+                    return if (doc.numberOfPages > 0) null to PdfStatus.NO_TEXT_LAYER
+                    else null to PdfStatus.FAILED
+                }
+                return text to PdfStatus.OK
+            }
+        } catch (_: Exception) {
+            // নিচে raw fallback
+        }
+        val raw = extractPdfText(bytes)
+        return if (raw.isNotBlank()) raw to PdfStatus.OK else null to PdfStatus.FAILED
     }
 
     /** Picked file bytes → readable text, or null when the file cannot be

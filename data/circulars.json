@@ -280,30 +280,63 @@
     "typeBn": "মন্ত্রণালয় / অধিদপ্তর"
   },
   {
-    "age": "১৮–৩২ বছর",
+    "age": "১৮–৩২ বছর (২০২৬-১১-০১ অনুযায়ী)",
     "applyUrl": "https://dmp.teletalk.com.bd",
     "deadline": "2026-11-30T17:00:00+06:00",
     "districts": "সব জেলা",
     "fee": 112,
-    "grade": 16,
-    "hscPosts": 10,
+    "grade": null,
+    "hscPosts": 8,
     "id": "dmp",
     "org": "ঢাকা মেট্রোপলিটন পুলিশ (ডিএমপি)",
-    "orgEn": "DMP",
+    "orgEn": "Dhaka Metropolitan Police (DMP)",
     "posts": [
       {
-        "count": 10,
+        "count": 1,
+        "grade": 13,
+        "qualification": "স্নাতক",
+        "title": "সাঁটলিপিকার কাম-কম্পিউটার অপারেটর",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 6,
+        "grade": 13,
+        "qualification": "স্নাতক",
+        "title": "কম্পিউটার অপারেটর",
+        "typingBn": 0,
+        "typingEn": 0,
+        "note": "বিজ্ঞান বিভাগে স্নাতক (সম্মান)"
+      },
+      {
+        "count": 3,
+        "grade": 14,
+        "qualification": "স্নাতক",
+        "title": "সাঁটমুদ্রাক্ষরিক কাম-কম্পিউটার অপারেটর",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 8,
         "grade": 16,
         "qualification": "HSC",
-        "title": "অফিস সহকারী-কাম-কম্পিউটার টাইপিস্ট",
-        "typingBn": 20,
-        "typingEn": 20
+        "title": "অফিস সহকারী কাম-কম্পিউটার মুদ্রাক্ষরিক",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 2,
+        "grade": 20,
+        "qualification": "SSC",
+        "title": "অফিস সহায়ক",
+        "typingBn": 0,
+        "typingEn": 0
       }
     ],
-    "salary": "২১,৯০০–৫২,৯০০ টাকা",
+    "salary": "পদভেদে ২০,০০০–৫৬,০০০ টাকা",
     "source": "secondary",
-    "sourceNote": "দ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।",
-    "totalPosts": 10,
+    "sourceNote": "দ্বিতীয় সূত্রের তথ্য — ০৫ নভেম্বর ২০২৬-এর সার্কুলার (স্মারক ডিএমপি/এ-৮৪-২০২৬/২০৫৯); আবেদন শুরু ১২ নভেম্বর ২০২৬ সকাল ১০টা। ফি পদভেদে ৫৬–১১২ টাকা। আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।",
+    "totalPosts": 20,
     "type": "police",
     "typeBn": "পুলিশ / প্রতিরক্ষা"
   },
@@ -738,5 +771,355 @@
         "typingEn": 0
       }
     ]
+  },
+  {
+    "age": "২১–৩২ বছর (২০২৬-০৭-০১ অনুযায়ী)",
+    "applyUrl": "https://erecruitment.bb.org.bd/",
+    "deadline": "2026-11-10T23:59:00+06:00",
+    "districts": "সব জেলা",
+    "fee": 200,
+    "grade": 9,
+    "hscPosts": 0,
+    "id": "bscs-so-1017",
+    "org": "বাংলাদেশ ব্যাংক — ব্যাংকার্স সিলেকশন কমিটি (বিএসসিএস)",
+    "orgEn": "Bangladesh Bank — Bankers' Selection Committee (BSCS)",
+    "posts": [
+      {
+        "count": 1017,
+        "grade": 9,
+        "qualification": "স্নাতক",
+        "title": "সিনিয়র অফিসার (সাধারণ)",
+        "typingBn": 0,
+        "typingEn": 0,
+        "note": "স্নাতকোত্তর অথবা ৪ বছর মেয়াদী স্নাতক (সম্মান); ৯ ব্যাংক + ২ আর্থিক প্রতিষ্ঠান"
+      }
+    ],
+    "salary": "২২,০০০–৫৩,০৬০ টাকা",
+    "source": "secondary",
+    "sourceNote": "দ্বিতীয় সূত্রের তথ্য (দ্য ডেইলি স্টার) — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন। ফি মোবাইল ব্যাংকিংয়ে ২০০ টাকা।",
+    "totalPosts": 1017,
+    "type": "bank",
+    "typeBn": "ব্যাংক"
+  },
+  {
+    "age": "পদভেদে সর্বোচ্চ ৩২–৪০ বছর (২০২৬-১০-০১ অনুযায়ী)",
+    "applyUrl": "https://bpsc.teletalk.com.bd",
+    "deadline": "2026-11-30T18:00:00+06:00",
+    "districts": "সব জেলা",
+    "fee": 200,
+    "grade": null,
+    "hscPosts": 0,
+    "id": "bpsc-non-cadre-147",
+    "org": "বাংলাদেশ সরকারি কর্ম কমিশন (বিপিএসসি) — নন-ক্যাডার",
+    "orgEn": "Bangladesh Public Service Commission (BPSC) — Non-Cadre",
+    "posts": [
+      {
+        "count": 3,
+        "grade": 5,
+        "qualification": "স্নাতক",
+        "title": "সিস্টেম অ্যানালিস্ট",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 6,
+        "qualification": "স্নাতক",
+        "title": "রক্ষণাবেক্ষণ প্রকৌশলী",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 2,
+        "grade": 6,
+        "qualification": "স্নাতক",
+        "title": "সহকারী প্রধান স্থপতি",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 6,
+        "qualification": "স্নাতক",
+        "title": "প্রোগ্রামার",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 5,
+        "grade": 6,
+        "qualification": "স্নাতক",
+        "title": "জুনিয়র কনসালট্যান্ট (মেডিসিন)",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 9,
+        "qualification": "স্নাতক",
+        "title": "আইন কর্মকর্তা",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 2,
+        "grade": 9,
+        "qualification": "স্নাতক",
+        "title": "বয়লার পরিদর্শক",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 9,
+        "qualification": "স্নাতক",
+        "title": "সহকারী রেফ্রিজারেশন প্রকৌশলী",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 9,
+        "qualification": "স্নাতক",
+        "title": "গবেষণা কর্মকর্তা",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 84,
+        "grade": 9,
+        "qualification": "স্নাতক",
+        "title": "সাব-রেজিস্ট্রার",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 10,
+        "qualification": "স্নাতক",
+        "title": "প্রটোকল অফিসার",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 7,
+        "grade": 10,
+        "qualification": "স্নাতক",
+        "title": "উপসহকারী রক্ষণাবেক্ষণ প্রকৌশলী",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 10,
+        "qualification": "স্নাতক",
+        "title": "সহকারী প্রটোকল অফিসার",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 3,
+        "grade": 10,
+        "qualification": "স্নাতক",
+        "title": "ফটো টেকনিশিয়ান",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 9,
+        "grade": 11,
+        "qualification": "স্নাতক",
+        "title": "সহকারী প্রশিক্ষক",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 2,
+        "grade": 11,
+        "qualification": "স্নাতক",
+        "title": "সিনিয়র ইনস্ট্রাক্টর (ক্রাফট)",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 2,
+        "grade": 11,
+        "qualification": "স্নাতক",
+        "title": "সিনিয়র ইনস্ট্রাক্টর (ক্রাফট)",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 2,
+        "grade": 11,
+        "qualification": "স্নাতক",
+        "title": "সিনিয়র ইনস্ট্রাক্টর (হোম সায়েন্স)",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 19,
+        "grade": 12,
+        "qualification": "স্নাতক",
+        "title": "নার্স মিডওয়াইফ",
+        "typingBn": 0,
+        "typingEn": 0
+      }
+    ],
+    "salary": "২৪,৩০০–১,৩৯,৭০০ টাকা (পদভেদে, ২০২৬ বেতন স্কেল)",
+    "source": "secondary",
+    "sourceNote": "দ্বিতীয় সূত্রের তথ্য (দ্য ডেইলি ক্যাম্পাস) — বিজ্ঞপ্তি ৭৮–৯৬/২০২৬, ১৯ অক্টোবর ২০২৬। ফি ১–১৪ নং পদে ২০০ টাকা, ১৫–১৯ নং পদে ১৫০ টাকা। প্রতিটি পদের বিষয়ভিত্তিক যোগ্যতা অফিসিয়াল সার্কুলারে দেখুন।",
+    "totalPosts": 147,
+    "type": "ministry",
+    "typeBn": "মন্ত্রণালয় / অধিদপ্তর"
+  },
+  {
+    "age": "১৮–৬০ বছর (২০২৬-১১-১২ অনুযায়ী)",
+    "applyUrl": "https://niport.gov.bd",
+    "deadline": "2026-11-12T17:00:00+06:00",
+    "districts": "সব জেলা",
+    "fee": null,
+    "grade": null,
+    "hscPosts": 0,
+    "id": "niport-3",
+    "org": "জাতীয় জনসংখ্যা গবেষণা ও প্রশিক্ষণ ইনস্টিটিউট (নিপোর্ট)",
+    "orgEn": "National Institute of Population Research and Training (NIPORT)",
+    "posts": [
+      {
+        "count": 1,
+        "grade": null,
+        "qualification": "স্নাতক",
+        "title": "আইটি সেবা",
+        "typingBn": 0,
+        "typingEn": 0,
+        "note": "কম্পিউটার সায়েন্স/সিএসই/ইইই/আইসিটি বিষয়ে স্নাতক (সম্মান); ৪২,৯৭৮ টাকা"
+      },
+      {
+        "count": 2,
+        "grade": null,
+        "qualification": "স্নাতক",
+        "title": "কম্পিউটিং সেবা",
+        "typingBn": 30,
+        "typingEn": 40,
+        "note": "২০,২১২ টাকা"
+      }
+    ],
+    "salary": "২০,২১২–৪২,৯৭৮ টাকা (আউটসোর্সিং)",
+    "source": "secondary",
+    "sourceNote": "দ্বিতীয় সূত্রের তথ্য — আউটসোর্সিং/প্রকল্পভিত্তিক অস্থায়ী নিয়োগ, স্থায়ী রাজস্ব পদ নয়; আবেদন ডাকযোগে/সরাসরি, কোনো ফি নেই; ১২ নভেম্বরের মধ্যে আবেদন পৌঁছাতে হবে। অফিসিয়াল সার্কুলার যাচাই করুন।",
+    "totalPosts": 3,
+    "type": "health",
+    "typeBn": "স্বাস্থ্য"
+  },
+  {
+    "age": "১৮–৩২ বছর (২০২৬-১১-০১ অনুযায়ী)",
+    "applyUrl": "https://fri.teletalk.com.bd/",
+    "deadline": "2026-12-10T17:00:00+06:00",
+    "districts": "সব জেলা",
+    "fee": null,
+    "grade": null,
+    "hscPosts": 1,
+    "id": "auto-1171-2026-12-10",
+    "org": "বাংলাদেশ মৎস্য গবেষণা ইনস্টিটিউট (এফআরআই)",
+    "orgEn": "Bangladesh Fisheries Research Institute (FRI)",
+    "posts": [
+      {
+        "count": 50,
+        "grade": 9,
+        "qualification": "স্নাতকোত্তর",
+        "title": "বৈজ্ঞানিক কর্মকর্তা",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 9,
+        "qualification": "স্নাতকোত্তর",
+        "title": "গ্রন্থাগারিক",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 5,
+        "grade": 10,
+        "qualification": "ডিপ্লোমা",
+        "title": "উপ-সহকারী প্রকৌশলী (পুরকৌশল)",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 11,
+        "qualification": "HSC",
+        "title": "ফটোগ্রাফার",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 5,
+        "grade": 13,
+        "qualification": "স্নাতক",
+        "title": "কম্পিউটার অপারেটর",
+        "typingBn": 25,
+        "typingEn": 30,
+        "note": "বিজ্ঞান বিভাগে স্নাতক (সম্মান); Standard Aptitude Test"
+      },
+      {
+        "count": 2,
+        "grade": 14,
+        "qualification": "স্নাতক",
+        "title": "হিসাবরক্ষক",
+        "typingBn": 0,
+        "typingEn": 0,
+        "note": "বাণিজ্য বিভাগে স্নাতক"
+      },
+      {
+        "count": 1,
+        "grade": 14,
+        "qualification": "স্নাতক",
+        "title": "ক্যাশিয়ার",
+        "typingBn": 0,
+        "typingEn": 0,
+        "note": "বাণিজ্য বিভাগে স্নাতক"
+      },
+      {
+        "count": 3,
+        "grade": 15,
+        "qualification": "JSC",
+        "title": "মটর চালক (ভারী)",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 2,
+        "grade": 15,
+        "qualification": "JSC",
+        "title": "মটর চালক (হালকা)",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 1,
+        "grade": 15,
+        "qualification": "JSC",
+        "title": "স্পীডবোট চালক",
+        "typingBn": 0,
+        "typingEn": 0
+      },
+      {
+        "count": 10,
+        "grade": 20,
+        "qualification": "SSC",
+        "title": "অফিস সহায়ক",
+        "typingBn": 0,
+        "typingEn": 0
+      }
+    ],
+    "salary": "পদভেদে ২০,০০০–১,০৫,৯০০ টাকা (২০২৬ বেতন স্কেল)",
+    "source": "secondary",
+    "sourceNote": "দ্বিতীয় সূত্রের তথ্য — অফিসিয়াল সার্কুলার (০৫.১১.২০২৬) থেকে যোগ্যতা যাচাই করা হয়েছে। আবেদন শুরু ১০ নভেম্বর ২০২৬ সকাল ১০টা। ফি পদভেদে ৫৬–২২৩ টাকা। HSC পদ শুধু ফটোগ্রাফার ১টি।",
+    "totalPosts": 81,
+    "type": "ministry",
+    "typeBn": "মন্ত্রণালয় / অধিদপ্তর"
   }
 ]

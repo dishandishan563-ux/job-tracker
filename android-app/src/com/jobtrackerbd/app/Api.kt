@@ -12,8 +12,8 @@ import kotlin.concurrent.thread
 /** Minimal HTTP client for the existing Job Tracker Vercel APIs. No new endpoints. */
 object Api {
     const val BASE = "https://job-tracker-official-68.vercel.app"
-    const val APP_VERSION_NAME = "1.1.3"
-    const val APP_VERSION_CODE = 5
+    const val APP_VERSION_NAME = "1.1.4"
+    const val APP_VERSION_CODE = 6
 
     private val mainHandler = Handler(Looper.getMainLooper())
 

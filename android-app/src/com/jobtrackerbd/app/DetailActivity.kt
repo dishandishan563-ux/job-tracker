@@ -86,7 +86,19 @@ class DetailActivity : Activity() {
                         append(" — শর্টহ্যান্ড বাংলা ${Util.bn(p.shorthandBn)} + ইংরেজি ${Util.bn(p.shorthandEn)}")
                     }
                 }
-                t.text = "• ${p.title} — ${Util.bn(p.count)}টি (${p.qualification}, গ্রেড ${Util.bn(p.grade)})$typing"
+                // Auto-added circulars have no qualification/grade data
+                // (null in the API): show only the parts that exist, so
+                // the line never reads "• মালী — ১টি (, গ্রেড ০)".
+                t.text = buildString {
+                    append("• ${p.title}")
+                    if (p.count > 0) append(" — ${Util.bn(p.count)}টি")
+                    val inner = listOf(
+                        p.qualification,
+                        if (p.grade > 0) "গ্রেড ${Util.bn(p.grade)}" else ""
+                    ).filter { it.isNotBlank() }.joinToString(", ")
+                    if (inner.isNotBlank()) append(" ($inner)")
+                    append(typing)
+                }
                 t.setPadding(0, 6, 0, 6)
                 postsBox.addView(t)
             }
@@ -134,6 +146,19 @@ class DetailActivity : Activity() {
     private fun refreshStatus() {
         val st = Store.cachedData.status[circular.id]
         statusText.text = Ui.statusLabel(st).ifBlank { "এখনো আবেদন করেননি।" }
+        // Selected status button shows the intentional green pill; the
+        // others stay quiet white — never a gray wash.
+        val mark = { id: Int, active: Boolean ->
+            findViewById<Button>(id).apply {
+                background = getDrawable(
+                    if (active) R.drawable.btn_ghost_selected else R.drawable.btn_ghost)
+                setTextColor(getColor(
+                    if (active) R.color.green_dark else R.color.text_dark))
+            }
+        }
+        mark(R.id.statusApplied, st == "applied")
+        mark(R.id.statusFee, st == "fee_paid")
+        mark(R.id.statusAdmit, st == "admit")
     }
 
     private fun refreshShortlist() {

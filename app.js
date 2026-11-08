@@ -332,7 +332,8 @@ async function initHome() {
   document.getElementById('q').oninput = e => { state.q = e.target.value; render(); };
   document.getElementById('gradeSel').onchange = e => { state.grade = e.target.value.replace(/\d/g, d => BN[+d]); render(); };
   document.getElementById('sortSel').onchange = e => { state.sort = e.target.value; render(); };
-  document.getElementById('shortlistOnlyBtn').onclick = () => { state.shortlistOnly = !state.shortlistOnly; render(); };
+  const slBtn = document.getElementById('shortlistOnlyBtn');
+  slBtn.onclick = () => { state.shortlistOnly = !state.shortlistOnly; slBtn.classList.toggle('active', state.shortlistOnly); render(); };
   document.getElementById('clearFiltersBtn').onclick = () => location.reload();
   document.getElementById('refreshBtn').onclick = async (e) => {
     const b = e.currentTarget; b.disabled = true; b.innerHTML = '<span class="spin">⟳</span> অনলাইনে যাচাই হচ্ছে…';
@@ -384,15 +385,19 @@ async function initHome() {
     heroTick(); setInterval(heroTick, 1000);
   }
   if (open.length) {
+    document.getElementById('deadlineBox').style.display = '';
     document.getElementById('deadlineList').innerHTML = open.filter(c => daysLeft(c.deadline) <= 3)
       .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
       .map(c => `<p><b>${daysLeft(c.deadline) === 0 ? 'আজই শেষ' : daysLeft(c.deadline) === 1 ? 'আগামীকাল শেষ' : 'আর ' + bn(daysLeft(c.deadline)) + ' দিন বাকি'}</b> — ${c.org} (<span class="num">${fmtDate(c.deadline)}</span>) • <span style="color:var(--red);font-weight:700">এখনো আবেদন করেননি</span></p>`).join('') || '<p>শেষ ৩ দিনের মধ্যে কোনো ডেডলাইন নেই।</p>';
+  } else {
+    document.getElementById('deadlineBox').style.display = 'none';
   }
   function render() {
     const shortlist = read('jt_shortlist', []);
     const status = read('jt_status', {});
+    const q = state.q.toLowerCase();
     let list = circulars.filter(c => {
-      if (state.q && !(c.org + ' ' + c.posts.map(p => p.title).join(' ')).includes(state.q)) return false;
+      if (q && !(c.org + ' ' + c.posts.map(p => p.title).join(' ')).toLowerCase().includes(q)) return false;
       if (state.type && c.type !== state.type) return false;
       if (state.qual && !c.posts.some(p => p.qualification === state.qual)) return false;
       if (state.grade && !c.posts.some(p => bn(p.grade) === state.grade)) return false;
@@ -922,8 +927,6 @@ function initSettings() {
 
 // ---------- ADMIN ----------
 async function initAdmin() {
-  const setupNote = document.getElementById('adminSetupNote');
-  setupNote.textContent = '';
   document.getElementById('adminLoginBtn').onclick = async () => {
     const pin = document.getElementById('adminPin').value;
     if (pin.length < 4) { toast('কমপক্ষে ৪ অঙ্কের PIN দিন।'); return; }
@@ -1117,11 +1120,17 @@ async function initAdmin() {
       const dl = daysLeft(c.deadline);
       return `<div class="admin-row"><div class="info"><h4>${c.org}</h4><p>মোট পদ: ${c.totalPosts == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.totalPosts) + '</span>টি'} • শেষ: <span class="num">${fmtDate(c.deadline)}</span> • <span class="pill ${dl < 0 ? 'grey' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : 'চলমান'}</span></p></div><button class="btn outline small" onclick="confirmDeleteCircular(this,'${c.id}')">মুছুন</button></div>`;
     }).join('') +
-      `<h4 style="margin:14px 0 4px">নতুন সার্কুলার যোগ করুন</h4><div class="field"><label>প্রতিষ্ঠান</label><input id="newOrg" placeholder="প্রতিষ্ঠানের নাম"></div><div class="field"><label>মোট পদ</label><input id="newPosts" type="number"></div><div class="field"><label>শেষ তারিখ</label><input id="newDeadline" type="date"></div><button class="btn green" id="addCircularBtn">যোগ করুন</button>`;
+      `<h4 style="margin:14px 0 4px">নতুন সার্কুলার যোগ করুন</h4><div class="field"><label>প্রতিষ্ঠান</label><input id="newOrg" placeholder="প্রতিষ্ঠানের নাম"></div><div class="field"><label>আবেদনের লিংক</label><input id="newApplyUrl" placeholder="https://…teletalk.com.bd"></div><div class="field"><label>ধরণ</label><select id="newType"><option value="govt">সরকারি</option><option value="ministry" selected>মন্ত্রণালয় / অধিদপ্তর</option><option value="bank">ব্যাংক</option><option value="police">পুলিশ / সেনা / প্রতিরক্ষা</option><option value="teacher">শিক্ষক / শিক্ষা</option><option value="health">স্বাস্থ্য</option><option value="railway">রেলওয়ে</option><option value="district">জেলা প্রশাসন</option><option value="tax">কর / রাজস্ব / অডিট</option><option value="court">আদালত</option><option value="private">বেসরকারি</option><option value="ngo">এনজিও</option><option value="other">অন্যান্য</option></select></div><div class="field"><label>মোট পদ</label><input id="newPosts" type="number"></div><div class="field"><label>HSC পদ</label><input id="newHsc" type="number"></div><div class="field"><label>ফি (টাকা)</label><input id="newFee" type="number"></div><div class="field"><label>বেতন</label><input id="newSalary" placeholder="যেমন: ২১,৯০০–৫২,৯০০ টাকা"></div><div class="field"><label>বয়স</label><input id="newAge" placeholder="যেমন: ১৮–৩২ বছর"></div><div class="field"><label>জেলা</label><input id="newDistricts" placeholder="যেমন: সব জেলা"></div><div class="field"><label>পদের নাম</label><input id="newPostTitle" placeholder="যেমন: অফিস সহকারী কাম কম্পিউটার মুদ্রাক্ষরিক"></div><div class="field"><label>ওই পদের সংখ্যা</label><input id="newPostCount" type="number"></div><div class="field"><label>ওই পদের যোগ্যতা</label><select id="newPostQual"><option>HSC</option><option>SSC</option><option>স্নাতক</option><option>JSC</option></select></div><div class="field"><label>শেষ তারিখ</label><input id="newDeadline" type="date"></div><button class="btn green" id="addCircularBtn">যোগ করুন</button>`;
     document.getElementById('addCircularBtn').onclick = () => {
-      if (!document.getElementById('newOrg').value.trim() || !document.getElementById('newDeadline').value) { toast('প্রতিষ্ঠানের নাম ও শেষ তারিখ — দুটোই দিন।'); return; }
+      const org = document.getElementById('newOrg').value.trim();
+      const applyUrl = document.getElementById('newApplyUrl').value.trim();
+      const dl = document.getElementById('newDeadline').value;
+      if (!org || !dl) { toast('প্রতিষ্ঠানের নাম ও শেষ তারিখ — দুটোই দিন।'); return; }
+      if (!applyUrl) { toast('আবেদনের লিংক দিন — নইলে আবেদন বোতাম কাজ করবে না।'); return; }
+      const typeSel = document.getElementById('newType');
+      const postTitle = document.getElementById('newPostTitle').value.trim();
       const extra = JSON.parse(localStorage.getItem('jt_admin_circulars') || '[]');
-      extra.push({ id: 'custom-' + Date.now(), org: document.getElementById('newOrg').value, totalPosts: +document.getElementById('newPosts').value || 0, hscPosts: 0, grade: 16, fee: null, deadline: document.getElementById('newDeadline').value + 'T17:00:00+06:00', posts: [], salary: '', age: '', districts: '', source: 'secondary', sourceNote: 'অ্যাডমিন যোগ করেছেন — অফিসিয়াল সার্কুলার যাচাই করুন।', type: 'ministry', typeBn: 'মন্ত্রণালয় / অধিদপ্তর', applyUrl: '#' });
+      extra.push({ id: 'custom-' + Date.now(), org, totalPosts: +document.getElementById('newPosts').value || 0, hscPosts: +document.getElementById('newHsc').value || 0, grade: 16, fee: +document.getElementById('newFee').value || null, deadline: dl + 'T17:00:00+06:00', posts: postTitle ? [{ title: postTitle, count: +document.getElementById('newPostCount').value || 0, grade: 16, qualification: document.getElementById('newPostQual').value }] : [], salary: document.getElementById('newSalary').value.trim(), age: document.getElementById('newAge').value.trim(), districts: document.getElementById('newDistricts').value.trim(), source: 'secondary', sourceNote: 'অ্যাডমিন যোগ করেছেন — অফিসিয়াল সার্কুলার যাচাই করুন।', type: typeSel.value, typeBn: typeSel.options[typeSel.selectedIndex].text, applyUrl });
       localStorage.setItem('jt_admin_circulars', JSON.stringify(extra));
       toast('✓ সার্কুলার যোগ হয়েছে।'); setTimeout(() => location.reload(), 900);
     };

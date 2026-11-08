@@ -34,16 +34,40 @@ object Util {
         return 0
     }
 
-    private val DL_RE = Regex("""(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})([+-]\d{2}):?(\d{2})?""")
+    // ISO-8601 deadline parser. Must accept every format the server
+    // actually sends: seeded circulars use "2026-11-25T16:00:00+06:00",
+    // but auto-added (Teletalk discovery) circulars use
+    // "2026-11-25T10:00:00.000Z" (millis + Z) and addedAt is the same
+    // shape. The old regex required seconds + a ±HH offset, so it
+    // returned null for ALL auto-added circulars: their deadline line
+    // showed raw ISO text, the countdown was blank, deadline-sort
+    // pushed them to the bottom, and the 🆕 badge never showed.
+    private val DL_RE =
+        Regex("""(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?\s*(Z|[+-]\d{2}:?\d{2})?)?""")
 
-    /** Parse an ISO-8601 deadline like "2026-11-07T16:00:00+06:00" to epoch ms. */
+    /** Parse an ISO-8601 deadline like "2026-11-07T16:00:00+06:00" or
+        "2026-11-25T10:00:00.000Z" to epoch ms. No zone = Dhaka-local;
+        date-only = end of that day (23:59:59). */
     fun parseDeadlineMs(iso: String?): Long? {
         if (iso.isNullOrBlank()) return null
         val m = DL_RE.find(iso.trim()) ?: return null
-        val (y, mo, d, h, mi, s, offH, offM) = m.destructured
-        val tz = TimeZone.getTimeZone("GMT$offH:${offM.ifEmpty { "00" }}")
+        val (y, mo, d, h, mi, s, zone) = m.destructured
+        val tzId = when {
+            zone == "Z" -> "GMT+00:00"
+            zone.startsWith("+") || zone.startsWith("-") -> {
+                val z = zone.replace(":", "")
+                "GMT${z.substring(0, 3)}:${z.substring(3, 5)}"
+            }
+            else -> "GMT+06:00" // no zone: server deadlines are Dhaka-local
+        }
+        val tz = TimeZone.getTimeZone(tzId)
         val cal = Calendar.getInstance(tz)
-        cal.set(y.toInt(), mo.toInt() - 1, d.toInt(), h.toInt(), mi.toInt(), s.toInt())
+        cal.set(
+            y.toInt(), mo.toInt() - 1, d.toInt(),
+            // No time at all = end of that day; time without seconds = :00.
+            h.toIntOrNull() ?: 23, mi.toIntOrNull() ?: 59,
+            s.toIntOrNull() ?: if (h.isEmpty()) 59 else 0
+        )
         cal.set(Calendar.MILLISECOND, 0)
         return cal.timeInMillis
     }

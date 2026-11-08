@@ -14,7 +14,7 @@
 </head>
 <body data-page="admin">
 <header><div class="hero">
-<div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span><button class="btn ghost menu-btn" id="menuBtn" aria-label="মেনু">☰ মেনু</button></div>
+<div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><button class="btn ghost menu-btn" id="menuBtn" aria-label="মেনু">☰ মেনু</button></div>
 <h1>অ্যাডমিন পোর্টাল</h1>
 </div></header>
 <main><div class="card">
@@ -24,7 +24,7 @@
 <button class="btn green" id="adminLoginBtn" style="width:100%">ঢুকুন</button>
 <p style="text-align:center;margin-top:10px"><a href="#" id="adminForgotLink" style="color:var(--green);font-weight:600">PIN ভুলে গেছেন?</a></p>
 <div id="adminResetPanel" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:12px">
-<p style="font-size:14px;color:var(--muted)">মালিকের নিজের Gmail-এ (dishandishan563@gmail.com) ৬ অঙ্কের রিসেট কোড যাবে — শুধু মালিকই সেই কোড পাবেন। কোড দিয়ে নতুন PIN সেট করুন। পুরনো PIN ফেরত দেওয়া যায় না।</p>
+<p style="font-size:14px;color:var(--muted)">মালিকের Gmail-এ ৬ অঙ্কের কোড যাবে — কোড দিয়ে নতুন PIN সেট করুন।</p>
 <button class="btn outline" id="aprSendBtn" style="width:100%">রিসেট কোড পাঠান</button>
 <p id="aprStatus" style="font-size:14px;margin-top:8px"></p>
 <div id="aprStep2" style="display:none">
@@ -34,7 +34,6 @@
 <p id="aprHashNote" style="font-size:13px;color:var(--muted);margin-top:8px"></p>
 </div>
 </div>
-<p id="adminSetupNote" style="font-size:14px;color:var(--muted);margin-top:8px"></p>
 </div>
 <div id="adminPanel" style="display:none">
 <div class="tabs">
@@ -48,7 +47,7 @@
 <div id="tab-dash"></div>
 <div id="tab-circulars" style="display:none"></div>
 <div id="tab-email" style="display:none">
-<p><b>অফিসিয়াল সেন্ডার Gmail:</b> <span class="num">jobtrackerbd@gmail.com</span> (শুধু এখান থেকে বদলানো যায়; অ্যাডমিন যে Google দিয়ে লগইন করুক, তাতে এর কোনো এফেক্ট পড়ে না)</p>
+<p><b>অফিসিয়াল সেন্ডার Gmail:</b> <span class="num">jobtrackerbd@gmail.com</span></p>
 <button class="btn green" id="sendNowBtn">✉️ এখনই ইমেইল পাঠান</button>
 <p id="manualSendStatus" style="font-size:14px;margin-top:8px"></p>
 <p><b>প্রাপক:</b> প্রতিটি ব্যবহারকারীর লগইন Gmail।</p>
@@ -117,7 +116,7 @@
     <button class="btn green" id="manualLoginBtn" style="width:100%">লগইন / রেজিস্টার করুন</button>
     <p style="text-align:center;margin-top:10px"><a href="#" id="forgotLink" style="color:var(--green);font-weight:600">পাসওয়ার্ড ভুলে গেছি?</a></p>
     <div id="forgotPanel" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:12px">
-      <p style="font-size:14px;color:var(--muted)">আপনার Gmail-এ ৬ অঙ্কের রিসেট কোড যাবে — সেই কোড দিয়ে নতুন পাসওয়ার্ড সেট করুন। পুরনো পাসওয়ার্ড ফেরত দেওয়া যায় না (শুধু হ্যাশ আকারে থাকে)। এই রিসেট একই ব্রাউজার/ডিভাইসে কাজ করবে যেখানে অ্যাকাউন্টটি বানানো হয়েছিল।</p>
+      <p style="font-size:14px;color:var(--muted)">Gmail-এ ৬ অঙ্কের কোড যাবে — সেই কোড দিয়ে নতুন পাসওয়ার্ড সেট করুন।</p>
       <div class="field"><label>Gmail</label><input id="fpEmail" type="email" placeholder="you@gmail.com"></div>
       <button class="btn outline" id="fpSendBtn" style="width:100%">রিসেট কোড পাঠান</button>
       <p id="fpStatus" style="font-size:14px;margin-top:8px"></p>

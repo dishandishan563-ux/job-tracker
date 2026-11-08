@@ -11,3 +11,8 @@ android-keystore/
 
 # Native app build outputs (contain the binary APK)
 android-app/build/
+
+# PdfBox-Android library jar + its resource assets — local-only binaries,
+# same as the keystore (see android-app/libs/README.md)
+android-app/libs/*.jar
+android-app/assets/

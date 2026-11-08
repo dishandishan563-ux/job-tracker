@@ -9,7 +9,6 @@ import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -208,63 +207,105 @@ class MainActivity : Activity() {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.WHITE)
-            elevation = dp(8).toFloat()
+            elevation = dp(12).toFloat()
             layoutParams = FrameLayout.LayoutParams(drawerWidth(), ViewGroup.LayoutParams.MATCH_PARENT)
                 .apply { gravity = Gravity.END }
-            setPadding(dp(8), dp(16), dp(8), dp(16))
+            // Header is full-bleed green; the items area keeps 12dp bottom.
+            setPadding(0, 0, 0, dp(12))
         }
+        // Premium brand header: green gradient, white "JT" badge + app
+        // name, and a translucent-white circular ✕ that reads as part of
+        // the header — never a flat gray pill.
         val head = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(8), 0, dp(8), dp(12))
+            background = getDrawable(R.drawable.drawer_header_bg)
+            setPadding(dp(16), dp(18), dp(12), dp(18))
         }
-        val headTitle = TextView(this).apply {
-            text = getString(R.string.drawer_menu)
-            textSize = 16f
+        val logoBadge = TextView(this).apply {
+            text = "JT"
+            textSize = 15f
             setTextColor(Color.parseColor("#14532d"))
             typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            background = getDrawable(R.drawable.drawer_logo_bg)
+            layoutParams = LinearLayout.LayoutParams(dp(44), dp(44))
+        }
+        val headTitle = TextView(this).apply {
+            text = getString(R.string.app_name)
+            textSize = 18f
+            setTextColor(Color.WHITE)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setPadding(dp(12), 0, 0, 0)
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
         val closeBtn = Button(this).apply {
             text = "✕"
-            textSize = 15f
+            textSize = 16f
             minHeight = 0
             minimumHeight = 0
-            setPadding(dp(12), dp(6), dp(12), dp(6))
-            background = getDrawable(R.drawable.btn_ghost)
-            setTextColor(Color.parseColor("#1a1a1a"))
+            minWidth = 0
+            minimumWidth = 0
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 0)
+            layoutParams = LinearLayout.LayoutParams(dp(36), dp(36))
+            background = getDrawable(R.drawable.drawer_close_bg)
+            setTextColor(Color.WHITE)
             setOnClickListener { closeDrawer() }
         }
+        head.addView(logoBadge)
         head.addView(headTitle)
         head.addView(closeBtn)
         panel.addView(head)
-        panel.addView(View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
-            setBackgroundColor(Color.parseColor("#E5E7EB"))
-        })
+
+        // Group divider: hairline with side margins, between menu groups.
+        fun divider() {
+            panel.addView(View(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
+                    .apply { setMargins(dp(16), dp(6), dp(16), dp(6)) }
+                setBackgroundColor(Color.parseColor("#E5E7EB"))
+            })
+        }
 
         fun item(label: String, onClick: () -> Unit) {
+            // Every label starts with one emoji ("👤 …", "⚙️ …"): split it
+            // into a fixed-width icon column so all text starts at the
+            // same x — aligned icons, no ragged edge. Wording unchanged.
+            val sp = label.indexOf(' ')
+            val icon = if (sp > 0) label.substring(0, sp) else ""
+            val text = if (sp > 0) label.substring(sp + 1) else label
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
                 minimumHeight = dp(56)
-                setPadding(dp(8), dp(12), dp(8), dp(12))
-                // Ripple feedback.
-                val out = TypedValue()
-                theme.resolveAttribute(android.R.attr.selectableItemBackground, out, true)
-                setBackgroundResource(out.resourceId)
+                setPadding(dp(12), dp(12), dp(12), dp(12))
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    .apply { setMargins(dp(8), dp(2), dp(8), dp(2)) }
+                // Intentional states only: pressed = green ripple,
+                // selected = green pill. No gray state exists in the
+                // drawer (the old ripple left a gray wash on Settings).
+                background = getDrawable(R.drawable.drawer_item_bg)
+                isClickable = true
                 setOnClickListener { closeDrawer(); onClick() }
             }
+            val iconView = TextView(this).apply {
+                this.text = icon
+                textSize = 18f
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(dp(28), ViewGroup.LayoutParams.WRAP_CONTENT)
+            }
             val labelView = TextView(this).apply {
-                text = label
+                this.text = text
                 textSize = 16f
                 setTextColor(Color.parseColor("#1a1a1a"))
                 maxLines = 2
                 ellipsize = null
                 layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             }
+            row.addView(iconView)
             row.addView(labelView)
             panel.addView(row)
         }
@@ -276,12 +317,14 @@ class MainActivity : Activity() {
         item(getString(R.string.menu_settings)) {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+        divider()
         val wa = contact?.optString("whatsapp", "") ?: ""
         val tg = contact?.optString("telegram", "") ?: ""
         if (wa.isNotBlank() || tg.isNotBlank()) {
             item(getString(R.string.menu_contact)) { showContactDialog() }
         }
         item(getString(R.string.menu_refresh)) { loadCirculars() }
+        divider()
         if (Store.isLoggedIn) {
             item(getString(R.string.menu_logout)) {
                 Store.logout()
@@ -293,6 +336,7 @@ class MainActivity : Activity() {
                 startActivity(Intent(this, LoginActivity::class.java))
             }
         }
+        divider()
         item(getString(R.string.menu_about)) {
             AlertDialog.Builder(this)
                 .setTitle("Job Tracker")

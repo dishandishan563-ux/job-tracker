@@ -98,9 +98,11 @@
                 android:layout_height="44dp"
                 android:text="CV ফাইল বেছে নিন (Choose CV)"
                 android:textSize="14sp"
+                android:textStyle="bold"
                 android:layout_marginTop="8dp"
                 android:minHeight="0dp"
                 android:background="@drawable/btn_primary"
+                android:elevation="2dp"
                 android:textColor="#ffffff"
             />
             <TextView

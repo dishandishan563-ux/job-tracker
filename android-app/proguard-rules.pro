@@ -35,6 +35,20 @@
 # --- ApkProvider is reached by the system via the manifest, not by code ---
 -keep class com.jobtrackerbd.app.ApkProvider { *; }
 
+# --- PdfBox-Android (tom-roush) — the AAR's own consumer rules, plus
+#     keeps for the whole library: it loads some classes by reflection
+#     (SecurityHandler) and reads its resources by path at runtime.
+#     The library is public open-source code, so keeping its code while
+#     still allowing name obfuscation is the safe trade-off; the app's
+#     own code is still shrunk + renamed as before.
+-keep,allowobfuscation class * extends com.tom_roush.pdfbox.pdmodel.encryption.SecurityHandler {
+    public <init>(...);
+}
+-keep,allowobfuscation class com.tom_roush.pdfbox.pdmodel.documentinterchange.** { *; }
+-keep,allowobfuscation class com.tom_roush.pdfbox.** { *; }
+-keep,allowobfuscation class com.tom_roush.fontbox.** { *; }
+-dontwarn com.tom_roush.**
+
 # --- org.json is a framework library; do not warn on it ---
 -dontwarn org.json.**
 # Kotlin nullability annotations are compile-time only; the annotations

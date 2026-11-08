@@ -229,9 +229,10 @@
                 <ToggleButton
                     android:id="@+id/remYes"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="48dp"
                     android:layout_weight="1"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
+                    android:maxLines="2"
                     android:textOn="✅ হ্যাঁ, পেতে চাই (Yes)"
                     android:textOff="✅ হ্যাঁ, পেতে চাই (Yes)"
                     android:text="✅ হ্যাঁ, পেতে চাই (Yes)"
@@ -243,9 +244,10 @@
                 <ToggleButton
                     android:id="@+id/remNo"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="48dp"
                     android:layout_weight="1"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
+                    android:maxLines="2"
                     android:textOn="❌ না, চাই না (No)"
                     android:textOff="❌ না, চাই না (No)"
                     android:text="❌ না, চাই না (No)"
@@ -321,9 +323,11 @@
                 android:layout_height="44dp"
                 android:text="প্রোফাইল সেভ করুন (Save Profile)"
                 android:textSize="14sp"
+                android:textStyle="bold"
                 android:layout_marginTop="18dp"
                 android:minHeight="0dp"
                 android:background="@drawable/btn_primary"
+                android:elevation="2dp"
                 android:textColor="#ffffff"
             />
             <!-- Profile reset (same as the website): only the profile + CV

@@ -61,9 +61,11 @@
                 android:layout_height="44dp"
                 android:text="লগইন / রেজিস্টার করুন (Login)"
                 android:textSize="14sp"
+                android:textStyle="bold"
                 android:layout_marginTop="16dp"
                 android:minHeight="0dp"
                 android:background="@drawable/btn_primary"
+                android:elevation="2dp"
                 android:textColor="#ffffff"
             />
             <TextView

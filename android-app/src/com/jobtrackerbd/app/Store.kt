@@ -33,6 +33,12 @@ object Store {
 
     fun logout() {
         prefs.edit().remove("jt_session").remove("jt_email").remove("jt_name").apply()
+        // Also drop the cached profile/shortlist/status: without this the
+        // home list kept showing the previous user's shortlist stars,
+        // status badges and CV-match badges after logout — and a
+        // different user logging in next saw them until the server load
+        // returned. Font size is a device setting and stays.
+        cachedData = UserData()
     }
 
     /** Cached user data (profile/shortlist/status) as one JSON string. */

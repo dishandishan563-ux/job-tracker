@@ -28,6 +28,20 @@ ZIPALIGN="$SDK/build-tools/34.0.0/zipalign"
 APKSIGNER="$SDK/build-tools/34.0.0/apksigner"
 PLATFORM_JAR="$SDK/platforms/android-34/android.jar"
 KEYSTORE="$ROOT/android-keystore/job-tracker-release.jks"
+# PdfBox-Android (text extraction for PDF CVs) — local-only jar + assets,
+# see android-app/libs/README.md. NOT committed to GitHub (binary).
+PDFBOX_JAR="$APP/libs/pdfbox-android-2.0.27.0.jar"
+if [ ! -f "$PDFBOX_JAR" ]; then
+  echo "ERROR: PdfBox-Android jar missing: $PDFBOX_JAR" >&2
+  echo "See android-app/libs/README.md for how to re-fetch it." >&2
+  exit 1
+fi
+PDFBOX_ASSETS="$APP/assets"
+if [ ! -d "$PDFBOX_ASSETS" ]; then
+  echo "ERROR: PdfBox-Android assets missing: $PDFBOX_ASSETS" >&2
+  echo "See android-app/libs/README.md for how to re-fetch them." >&2
+  exit 1
+fi
 
 # shellcheck disable=SC1091
 source "$APP/VERSION"  # sets VERSION_CODE and VERSION_NAME
@@ -67,6 +81,7 @@ cp -r "$APP/res/values" "$APP/res/layout" "$APP/res/drawable" "$APP/res/color" "
 "$AAPT2" link -o "$WORK/app-unsigned.apk" -I "$PLATFORM_JAR" \
   --manifest "$APP/AndroidManifest.xml" \
   --java "$WORK/gen" \
+  -A "$PDFBOX_ASSETS" \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" \
   "$WORK/compiled.zip"
 
@@ -76,7 +91,7 @@ cp -r "$APP/res/values" "$APP/res/layout" "$APP/res/drawable" "$APP/res/color" "
 
 # ---------- kotlin -> jar (stdlib included) ----------
 "$KOTLINC" "$APP"/src/com/jobtrackerbd/app/*.kt \
-  -cp "$PLATFORM_JAR:$WORK/classes" \
+  -cp "$PLATFORM_JAR:$WORK/classes:$PDFBOX_JAR" \
   -jvm-target 1.8 -include-runtime -d "$WORK/app.jar"
 "$JAVA_HOME/bin/jar" --create --file "$WORK/classes.jar" -C "$WORK/classes" .
 
@@ -100,7 +115,7 @@ printf -- '-printmapping %s\n' "$WORK/mapping.txt" > "$WORK/r8-args.pro"
   --min-api 24 \
   --pg-conf "$APP/proguard-rules.pro" \
   --pg-conf "$WORK/r8-args.pro" \
-  "$WORK/app.jar" "$WORK/classes.jar"
+  "$WORK/app.jar" "$WORK/classes.jar" "$PDFBOX_JAR"
 echo "R8 done: mapping at $WORK/mapping.txt (build-only, never committed)"
 ls -l "$WORK/dex"
 

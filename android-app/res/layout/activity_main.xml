@@ -34,12 +34,22 @@
             android:id="@+id/updateBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:background="@drawable/btn_primary"
+            android:elevation="2dp"
+            android:textColor="#ffffff"
             android:text="আপডেট করুন (Update)"
-            android:textSize="13sp" />
+            android:textSize="13sp"
+            android:textStyle="bold" />
         <Button
             android:id="@+id/updateDismiss"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:background="@drawable/btn_ghost"
+            android:textColor="@color/text_dark"
             android:text="✕"
             android:textSize="13sp" />
     </LinearLayout>
@@ -74,6 +84,8 @@
                 android:layout_height="wrap_content"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
+                android:background="@drawable/drawer_close_bg"
+                android:textColor="#ffffff"
                 android:text="⟳"
                 android:textSize="16sp"
                 android:contentDescription="এখনই নতুন সার্কুলার খুঁজুন (Refresh)"
@@ -191,32 +203,41 @@
             android:layout_marginLeft="8dp" />
     </LinearLayout>
 
-    <ListView
-        android:id="@+id/list"
+    <!-- List area: the spinner and the empty message are centred inside
+         this frame. Before, the ProgressBar sat after the weight-1
+         ListView in the vertical layout, so on first load it rendered
+         at the very bottom of the screen, and the empty message did too. -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:divider="@android:color/transparent"
-        android:dividerHeight="8dp"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp"
-        android:paddingBottom="16dp"
-        android:clipToPadding="false" />
+        android:layout_weight="1">
+        <ListView
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="8dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="16dp"
+            android:clipToPadding="false" />
 
-    <ProgressBar
-        android:id="@+id/loading"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="gone" />
+        <ProgressBar
+            android:id="@+id/loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/emptyView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="24dp"
-        android:text="কোনো সার্কুলার পাওয়া যায়নি।"
-        android:textSize="14sp"
-        android:visibility="gone" />
+        <TextView
+            android:id="@+id/emptyView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="24dp"
+            android:text="কোনো সার্কুলার পাওয়া যায়নি।"
+            android:textSize="14sp"
+            android:visibility="gone" />
+    </FrameLayout>
 </LinearLayout>
