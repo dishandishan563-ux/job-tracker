@@ -15,31 +15,18 @@
 <body data-page="settings">
 <header><div class="hero">
 <div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span><button class="btn ghost menu-btn" id="menuBtn" aria-label="মেনু">☰ মেনু</button></div>
-<h1>সেটিংস</h1><p>CV আপলোড ও প্রোফাইল — আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।</p>
+<h1>সেটিংস</h1><p>লেখার সাইজ ও CV — অ্যাপের সেটিংস। প্রোফাইল (নাম, ছবি, রিমাইন্ডার) আলাদা পেইজে — মেনু থেকে “আমার প্রোফাইল” দেখুন।</p>
 </div></header>
 <main><div class="card">
-<h3>👤 আমার প্রোফাইল</h3>
-<p>নাম, ঠিকানা ও ছবি দিন — প্রোফাইল ড্রয়ার মেনুতে দেখাবে, আর আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।</p>
-<div class="field"><label>নাম</label><input id="pName" type="text" placeholder="আপনার নাম"></div>
-<div class="field"><label>ঠিকানা</label><input id="pAddress" type="text" placeholder="যেমন: গ্রাম/মহল্লা, থানা, জেলা"></div>
-<div class="field"><label>মোবাইল নম্বর</label><input id="pPhone" type="tel" placeholder="01XXXXXXXXX"></div>
-<div class="field"><label>ছবি (আপলোড করুন, ৫০০ KB-এর মধ্যে)</label><input id="pPhotoFile" type="file" accept=".png,.jpg,.jpeg"></div>
-<div class="field"><label>অথবা ছবির লিংক</label><input id="pPhotoUrl" type="text" placeholder="https://…"></div>
-<img id="pPhotoPreview" class="profile-photo-preview" alt="প্রোফাইল ছবি" style="display:none">
-<div class="field"><label>অন্যান্য তথ্য</label><input id="pNotes" type="text" placeholder="যেমন: পেশা, অভিজ্ঞতা — যা জানাতে চান"></div>
-<h3 style="margin-top:16px">⚙️ CV ও যোগ্যতা</h3>
-<p>CV আপলোড করলে মিলে যাওয়া সার্কুলারে “✓ CV অনুযায়ী মিলেছে” ব্যাজ দেখাবে।</p>
+<h3>🔠 লেখার সাইজ</h3>
+<p>উপরের A- / A / A+ বোতাম, অথবা নিচের বোতাম দিয়ে লেখা বড়-ছোট করুন — পছন্দ সেভ থাকে।</p>
+<div class="field"><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span></div>
+<h3 style="margin-top:16px">📄 CV আপলোড</h3>
+<p>CV আপলোড করলে মিলে যাওয়া সার্কুলারে “✓ CV অনুযায়ী মিলেছে” ব্যাজ দেখাবে। CV থেকে জেলা পাওয়া গেলে আপনার প্রোফাইলে বসে যাবে।</p>
 <div class="field"><label>CV আপলোড (PDF / ছবি / টেক্সট)</label><input id="cvFile" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg"></div>
-<div class="field"><label>জেলা</label><input id="pDistrict" placeholder="যেমন: ঢাকা"></div>
-<div class="field"><label>জন্ম তারিখ</label><input id="pDob" type="date"></div>
-<div class="field"><label>শিক্ষা</label><select id="pEdu"><option>HSC</option><option>SSC</option><option>স্নাতক</option><option>JSC</option></select></div>
-<div class="field"><label>টাইপিং — বাংলা (শব্দ/মিনিট)</label><input id="pTypeBn" type="number" value="20"></div>
-<div class="field"><label>টাইপিং — ইংরেজি (শব্দ/মিনিট)</label><input id="pTypeEn" type="number" value="20"></div>
-<h3 style="margin-top:16px">🔔 রিমাইন্ডার পছন্দ</h3>
-<p>আপনি কোন ধরণের সার্কুলারের রিমাইন্ডার পেতে চান? নিচে বেছে নিন — কিছু না বাছলে সব ধরণের সার্কুলারের রিমাইন্ডার আপনার Gmail-এ যাবে।</p>
-<div class="field"><label>সার্কুলারের ধরণ</label><div id="prefTypes" class="chips"></div></div>
-<div class="field"><label>যোগ্যতা / পদের ধরণ</label><div id="prefQuals" class="chips"></div></div>
-<button class="btn green" id="saveProfileBtn" style="width:100%">প্রোফাইল সেভ করুন</button>
+<h3 style="margin-top:16px">👤 আমার প্রোফাইল</h3>
+<p>নাম, ছবি, ঠিকানা, জেলা, জন্ম তারিখ, শিক্ষা, টাইপিং ও রিমাইন্ডার পছন্দ বদলাতে প্রোফাইল পেইজে যান।</p>
+<a class="btn green" href="profile.html" style="width:100%;text-align:center">👤 আমার প্রোফাইল খুলুন</a>
 <button class="btn outline" id="settingsCloseBtn" style="width:100%;margin-top:8px">বন্ধ করুন</button>
 </div></main>
 <footer><p>তথ্য দ্বিতীয় সূত্রের — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।</p></footer>
@@ -49,6 +36,7 @@
   <div class="drawer-head"><h3>☰ মেনু</h3><button class="btn outline small" id="drawerCloseBtn">✕ বন্ধ</button></div>
   <div id="drawerUser"></div>
   <a class="drawer-item" href="index.html">🏠 হোম / সার্কুলার তালিকা</a>
+  <a class="drawer-item" href="profile.html">👤 আমার প্রোফাইল</a>
   <a class="drawer-item" href="settings.html">⚙️ সেটিংস</a>
   <a class="drawer-item" href="admin.html">🔒 অ্যাডমিন</a>
   <a class="drawer-item" href="privacy.html">📄 গোপনীয়তা নীতি</a>

@@ -9,7 +9,7 @@
 const fs = require('fs');
 const { sendMail } = require('./_mail');
 const { kvAvailable, kvSMembers, logSentEmail, getCirculars } = require('./_store');
-const { getUserPrefs, circularMatchesPrefs } = require('./_prefs');
+const { getUserPrefs, circularMatchesPrefs, remindersEnabled } = require('./_prefs');
 const seedCirculars = require('../data/circulars.json');
 
 const SENT_FILE = '/tmp/job-tracker-sent.json';
@@ -43,9 +43,12 @@ module.exports = async (req, res) => {
     const sent = loadSent();
     // প্রতিটি প্রাপকের রিমাইন্ডার পছন্দ — পছন্দ না থাকলে বা লোড না হলে সব
     // রিমাইন্ডার যাবে (পছন্দের ভুলে কখনো মেইল বাদ পড়বে না)।
+    // মাস্টার সুইচ: যিনি প্রোফাইলে "না" সেভ করেছেন, তাঁকে কিছুই যাবে না।
     const prefsByEmail = new Map();
+    const enabledByEmail = new Map();
     for (const to of recipients) {
       try { prefsByEmail.set(to, await getUserPrefs(to)); } catch { prefsByEmail.set(to, null); }
+      try { enabledByEmail.set(to, await remindersEnabled(to)); } catch { enabledByEmail.set(to, true); }
     }
     let sentCount = 0; const errors = [];
     for (const c of circulars) {
@@ -53,6 +56,7 @@ module.exports = async (req, res) => {
       const daysLeft = Math.ceil((deadline - now) / 86400000);
       if (daysLeft < 0 || daysLeft > 3) continue;
       for (const to of recipients) {
+        if (!enabledByEmail.get(to)) continue; // প্রোফাইলে রিমাইন্ডার "না" — কিছু যাবে না
         if (!circularMatchesPrefs(c, prefsByEmail.get(to))) continue;
         const key = `${to}|${c.id}|deadline-${daysLeft}|${today}`;
         if (sent[key]) continue; // dedupe: আজকের রিমাইন্ডার আগেই পাঠানো হয়েছে

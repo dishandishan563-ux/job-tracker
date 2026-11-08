@@ -43,6 +43,8 @@ function sanitizeData(data) {
       out.profile = { ...data.profile };
       // রিমাইন্ডার পছন্দ — শুধু চেনা অপশনের কীগুলোই সেভ হবে (জাঙ্ক বাদ)।
       if (data.profile.reminders !== undefined) out.profile.reminders = sanitizePrefs(data.profile.reminders);
+      // রিমাইন্ডার চালু/বন্ধ (হ্যাঁ/না) — শুধু স্পষ্ট false-ই বন্ধ; বাকি সব হ্যাঁ।
+      if (data.profile.remindersEnabled !== undefined) out.profile.remindersEnabled = data.profile.remindersEnabled === false ? false : true;
       // ছবি data URL হলে খুব বড় হতে পারে — ২০০ KB-এর বেশি হলে সার্ভারে
       // পাঠানো হবে না, ব্রাউজারের কপিতেই থাকবে।
       if (typeof out.profile.photo === 'string' && out.profile.photo.length > MAX_PHOTO_CHARS) delete out.profile.photo;

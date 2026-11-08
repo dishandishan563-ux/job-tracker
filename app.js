@@ -1,5 +1,5 @@
 // Job Tracker — shared client logic. Separate pages, shared state in localStorage.
-// Pages: index.html (home), login.html, settings.html, admin.html — each is its own
+// Pages: index.html (home), login.html, settings.html, profile.html, admin.html — each is its own
 // route; going into one page does not show the others. Login is a POPUP
 // (#loginModal) on home/settings/admin — it never navigates away; login.html
 // remains only as a standalone fallback page.
@@ -467,12 +467,12 @@ function showProfileGuide() {
   if (document.getElementById('profileGuide')) return;
   const g = el(`<div class="profile-guide" id="profileGuide">
     <div class="guide-arrow">➡️</div>
-    <div class="guide-text"><b>👤 প্রোফাইল সেট করুন</b><br>নাম, ঠিকানা ও ছবি দিন — আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।<br><span style="font-size:13px;opacity:.85">☰ মেনু চাপুন → সেটিংস → প্রোফাইল</span></div>
+    <div class="guide-text"><b>👤 প্রোফাইল সেট করুন</b><br>নাম, ঠিকানা ও ছবি দিন — আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।<br><span style="font-size:13px;opacity:.85">☰ মেনু চাপুন → আমার প্রোফাইল</span></div>
     <button class="btn green small" id="profileGuideGo">এখনই সেট করুন</button>
     <button class="btn outline small" id="profileGuideLater">পরে করব</button>
   </div>`);
   document.body.appendChild(g);
-  document.getElementById('profileGuideGo').onclick = () => { location.href = 'settings.html'; };
+  document.getElementById('profileGuideGo').onclick = () => { location.href = 'profile.html'; };
   document.getElementById('profileGuideLater').onclick = () => g.remove();
 }
 
@@ -621,12 +621,14 @@ async function initLoginPopup() {
 }
 async function initLogin() { initLoginPopup(); }
 
-// ---------- SETTINGS — ব্যবহারকারীর প্রোফাইল ----------
+// ---------- আমার প্রোফাইল (profile.html) ----------
 // নাম, ঠিকানা, মোবাইল, ছবি (আপলোড ≤৫০০ KB বা লিংক), জেলা, জন্ম তারিখ,
 // শিক্ষা, টাইপিং, অন্যান্য তথ্য — সব jt_profile-এ সেভ থাকে।
-// রিমাইন্ডার পছন্দ (সার্কুলারের ধরণ + যোগ্যতা/পদ) — অপশনগুলো সার্ভারের
-// /api/config থেকে আসে; ফেচ না হলে নিচের কপিটা ব্যবহার হয়। কিছু না বাছলে
-// সব ধরণের রিমাইন্ডার যাবে (সার্ভারেও একই নিয়ম)।
+// রিমাইন্ডার পছন্দ: সবার উপরে হ্যাঁ/না (remindersEnabled — না থাকলে হ্যাঁ
+// ধরা হয়, যাতে আগের ব্যবহারকারীদের মেইল বন্ধ না হয়), তার নিচে ধরণ +
+// যোগ্যতার চিপ — অপশনগুলো সার্ভারের /api/config থেকে আসে; ফেচ না হলে
+// নিচের কপিটা ব্যবহার হয়। কিছু না বাছলে সব ধরণের রিমাইন্ডার যাবে
+// (সার্ভারেও একই নিয়ম)।
 const REMINDER_OPTIONS_FALLBACK = {
   types: [
     { key: 'govt', label: 'সরকারি' }, { key: 'ministry', label: 'মন্ত্রণালয় / অধিদপ্তর' },
@@ -672,12 +674,23 @@ function collectPrefs() {
   const sel = id => [...document.querySelectorAll('#' + id + ' .chip.active')].map(b => b.dataset.key);
   return { types: sel('prefTypes'), quals: sel('prefQuals') };
 }
-function initSettings() {
+function setRemToggle(enabled) {
+  document.querySelectorAll('#remToggle .yn-btn').forEach(b => b.classList.toggle('active', (b.dataset.yn === 'yes') === !!enabled));
+  const note = document.getElementById('remToggleNote');
+  if (note) note.textContent = enabled ? 'হ্যাঁ — ডেডলাইনের রিমাইন্ডার আপনার Gmail-এ যাবে (নিচের পছন্দ অনুযায়ী)।' : 'না — কোনো রিমাইন্ডার ইমেইল যাবে না। চাইলে পরে আবার হ্যাঁ করতে পারবেন।';
+}
+function getRemindersEnabled() {
+  const yes = document.querySelector('#remToggle .yn-btn[data-yn="yes"]');
+  return !yes || yes.classList.contains('active');
+}
+function initProfile() {
   if (!requireLogin()) return;
   const p = read('jt_profile', {});
   const map = { pName: 'name', pAddress: 'address', pPhone: 'phone', pPhotoUrl: 'photo', pDistrict: 'district', pDob: 'dob', pEdu: 'edu', pTypeBn: 'typeBn', pTypeEn: 'typeEn', pNotes: 'notes' };
   Object.entries(map).forEach(([id, key]) => { const f = document.getElementById(id); if (f && p[key] !== undefined && p[key] !== '') f.value = p[key]; });
   renderPrefChips();
+  setRemToggle(p.remindersEnabled !== false);
+  document.querySelectorAll('#remToggle .yn-btn').forEach(b => b.onclick = () => setRemToggle(b.dataset.yn === 'yes'));
   const prev = document.getElementById('pPhotoPreview');
   if (prev) { prev.src = p.photo || ''; prev.style.display = p.photo ? 'block' : 'none'; }
   const photoFile = document.getElementById('pPhotoFile');
@@ -693,12 +706,6 @@ function initSettings() {
   };
   const photoUrl = document.getElementById('pPhotoUrl');
   if (photoUrl) photoUrl.oninput = () => { const pv = document.getElementById('pPhotoPreview'); if (pv) { pv.src = photoUrl.value.trim(); pv.style.display = photoUrl.value.trim() ? 'block' : 'none'; } };
-  document.getElementById('cvFile').onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = () => { let found = false; try { const t = String(r.result); const m = t.match(/(ঢাকা|চট্টগ্রাম|খুলনা|রাজশাহী|বরিশাল|সিলেট|রংপুর|ময়মনসিংহ|কুমিল্লা|নারায়ণগঞ্জ|পটুয়াখালী)/); if (m) { document.getElementById('pDistrict').value = m[1]; found = true; } } catch {} toast(found ? 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া গেছে।' : 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া যায়নি, নিজে বসান।'); };
-    r.readAsText(f);
-  };
   document.getElementById('saveProfileBtn').onclick = () => {
     store('jt_profile', {
       name: document.getElementById('pName').value.trim(),
@@ -711,13 +718,43 @@ function initSettings() {
       typeBn: +document.getElementById('pTypeBn').value,
       typeEn: +document.getElementById('pTypeEn').value,
       notes: document.getElementById('pNotes').value.trim(),
+      remindersEnabled: getRemindersEnabled(),
       reminders: collectPrefs(),
     });
     syncToServer(true);
     toast('✓ প্রোফাইল সেভ হয়েছে।');
     setTimeout(() => { location.href = 'index.html'; }, 900);
   };
-  document.getElementById('settingsCloseBtn').onclick = () => location.href = 'index.html';
+  document.getElementById('profileCloseBtn').onclick = () => location.href = 'index.html';
+}
+
+// ---------- SETTINGS (settings.html) — শুধু অ্যাপের সেটিংস ----------
+// এখানে প্রোফাইলের কিছু নেই — প্রোফাইল আলাদা পেইজ (profile.html)।
+// CV আপলোড: ফাইল থেকে জেলা খুঁজে প্রোফাইলে বসায় (প্রোফাইল পেইজের
+// জেলা ফিল্ড থাকলে); লেখার সাইজ উপরের A-/A/A+ বোতামে (bindFontSize)।
+function initSettings() {
+  if (!requireLogin()) return;
+  const cv = document.getElementById('cvFile');
+  if (cv) cv.onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      let found = false;
+      try {
+        const t = String(r.result);
+        const m = t.match(/(ঢাকা|চট্টগ্রাম|খুলনা|রাজশাহী|বরিশাল|সিলেট|রংপুর|ময়মনসিংহ|কুমিল্লা|নারায়ণগঞ্জ|পটুয়াখালী)/);
+        if (m) {
+          const p = read('jt_profile', {});
+          p.district = m[1]; store('jt_profile', p); syncToServer(true);
+          found = true;
+        }
+      } catch {}
+      toast(found ? 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া গেছে।' : 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া যায়নি, নিজে বসান।');
+    };
+    r.readAsText(f);
+  };
+  const close = document.getElementById('settingsCloseBtn');
+  if (close) close.onclick = () => location.href = 'index.html';
 }
 
 // ---------- ADMIN ----------
@@ -961,7 +998,6 @@ function renderDrawerUser() {
       ${photo ? `<img class="drawer-photo" src="${photo}" alt="" onerror="this.style.display='none'">` : '<span class="drawer-photo-fallback">👤</span>'}
       <div><b>${name}</b><br><span style="font-size:13px;color:var(--muted)">${user.email}</span>${prof.address ? `<br><span style="font-size:13px;color:var(--muted)">${prof.address}</span>` : ''}</div>
     </div>
-    <a class="drawer-item" href="settings.html">👤 আমার প্রোফাইল</a>
     <button class="drawer-item" id="drawerLogoutBtn">🚪 লগআউট</button>`;
   } else {
     // লগইন বাটন নেই — লগইন শুধু পপআপে আসে, আবেদন/বিস্তারিত/শর্টলিস্ট চাপলে।
@@ -1007,5 +1043,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (page === 'home') initHome();
   if (page === 'login') initLogin();
   if (page === 'settings') initSettings();
+  if (page === 'profile') initProfile();
   if (page === 'admin') initAdmin();
 });

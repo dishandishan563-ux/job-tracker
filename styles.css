@@ -37,6 +37,9 @@ main{max-width:1020px;margin:0 auto;padding:16px}
 .chip:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(11,61,36,.14)}
 .chip:active{transform:scale(.95)}
 .chip.active{background:var(--green);color:#fff;border-color:var(--green)}
+/* হ্যাঁ/না টগল (প্রোফাইলে রিমাইন্ডার) — চিপের মতো, না বাছলে লাল */
+.yn-toggle{display:flex;gap:8px;flex-wrap:wrap}
+.yn-btn.active[data-yn="no"]{background:#b91c1c;border-color:#b91c1c;color:#fff}
 .job{border-top:4px solid var(--green);animation:cardIn .55s cubic-bezier(.22,1,.36,1) both}
 .job:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(11,61,36,.16);border-color:#bfe3cb}
 .job.closed{border-top-color:#9aa5a0;opacity:.85}

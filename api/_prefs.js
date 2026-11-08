@@ -118,4 +118,17 @@ async function getUserPrefs(email) {
   } catch { return null; }
 }
 
-module.exports = { TYPE_OPTIONS, QUAL_OPTIONS, GOVT_TYPES, TYPE_KEYS, QUAL_KEYS, sanitizePrefs, matchesType, matchesQual, circularMatchesPrefs, getUserPrefs };
+// Master reminder on/off for one user (profile.remindersEnabled).
+// Returns false ONLY when the user explicitly saved "না" — missing,
+// true, or any load error means reminders stay ON, so existing
+// recipients never lose mail by not touching the toggle.
+async function remindersEnabled(email) {
+  if (!kvAvailable()) return true;
+  try {
+    const rec = await kvGet(keyFor('jt:user', email));
+    const v = rec && rec.data && rec.data.profile && rec.data.profile.remindersEnabled;
+    return v !== false;
+  } catch { return true; }
+}
+
+module.exports = { TYPE_OPTIONS, QUAL_OPTIONS, GOVT_TYPES, TYPE_KEYS, QUAL_KEYS, sanitizePrefs, matchesType, matchesQual, circularMatchesPrefs, getUserPrefs, remindersEnabled };
