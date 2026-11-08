@@ -64,117 +64,129 @@ class ProfileActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Store.init(this)
-        if (!Store.isLoggedIn) {
-            startActivity(Intent(this, LoginActivity::class.java))
+        // Safety net (v1.1.7 hotfix): if any step of opening this screen
+        // throws on a device, show a message and go back instead of
+        // the app being killed ("বের করে দেয়").
+        try {
+            if (!Store.isLoggedIn) {
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish()
+                return
+            }
+            setContentView(R.layout.activity_profile)
+            val toolbar = findViewById<Toolbar>(R.id.toolbar)
+            setActionBar(toolbar)
+            actionBar?.setDisplayHomeAsUpEnabled(true)
+            toolbar.setNavigationOnClickListener { finish() }
+
+            pName = findViewById(R.id.pName)
+            pPhone = findViewById(R.id.pPhone)
+            pDistrict = findViewById(R.id.pDistrict)
+            pDob = findViewById(R.id.pDob)
+            pEduBtn = findViewById(R.id.pEduBtn)
+            pTypeBn = findViewById(R.id.pTypeBn)
+            pTypeEn = findViewById(R.id.pTypeEn)
+            pAddress = findViewById(R.id.pAddress)
+            pNotes = findViewById(R.id.pNotes)
+            pEmail = findViewById(R.id.pEmail)
+            pPermAddress = findViewById(R.id.pPermAddress)
+            pFatherName = findViewById(R.id.pFatherName)
+            pMotherName = findViewById(R.id.pMotherName)
+            pSkills = findViewById(R.id.pSkills)
+            pExperience = findViewById(R.id.pExperience)
+            pLanguages = findViewById(R.id.pLanguages)
+            photoPreview = findViewById(R.id.photoPreview)
+            remYes = findViewById(R.id.remYes)
+            remNo = findViewById(R.id.remNo)
+            statusTv = findViewById(R.id.status)
+            cvInfo = findViewById(R.id.cvInfo)
+            removeCvBtnProfile = findViewById(R.id.removeCvBtnProfile)
+            resetProfileBtn = findViewById(R.id.resetProfileBtn)
+
+            // CV remove from the profile screen (same as the website's
+            // profile page): two-tap confirm, only snapshot-matching fields
+            // are cleared, hand-edited fields stay.
+            removeCvBtnProfile.setOnClickListener {
+                if (!cvRemoveArmed) {
+                    cvRemoveArmed = true
+                    removeCvBtnProfile.text = "নিশ্চিত মুছবেন?"
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        cvRemoveArmed = false
+                        removeCvBtnProfile.text = "🗑️ CV মুছুন (Remove CV)"
+                    }, 3000)
+                    return@setOnClickListener
+                }
+                cvRemoveArmed = false
+                removeCvBtnProfile.text = "🗑️ CV মুছুন (Remove CV)"
+                // Fresh server copy first (see Api.updateUserData): the CV
+                // snapshot may live only on the server (uploaded from the
+                // website) — removing from a stale local cache would do
+                // nothing, or wipe the wrong fields.
+                // fillFromProfile runs in the callback: updateUserData is
+                // async (it refreshes first).
+                Api.updateUserData({ d ->
+                    val snap = d.profile.cv?.fields ?: emptyMap()
+                    d.profile = CvParse.removeCvFields(d.profile, snap)
+                }) { fillFromProfile(Store.cachedData.profile) }
+                Ui.toast(this, "CV মুছে ফেলা হয়েছে।")
+            }
+
+            // Profile reset (same as the website's resetProfileBtn): only the
+            // profile + CV are cleared to empty defaults — login/account,
+            // shortlist and application status are never touched.
+            resetProfileBtn.setOnClickListener {
+                if (!resetArmed) {
+                    resetArmed = true
+                    resetProfileBtn.text = "নিশ্চিত রিসেট করবেন?"
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        resetArmed = false
+                        resetProfileBtn.text = "↺ প্রোফাইল রিসেট করুন (Reset Profile)"
+                    }, 3000)
+                    return@setOnClickListener
+                }
+                resetArmed = false
+                resetProfileBtn.text = "↺ প্রোফাইল রিসেট করুন (Reset Profile)"
+                // Fresh server copy first (see Api.updateUserData) so the
+                // reset only clears the profile — shortlist/status stay,
+                // and a stale cache cannot resurrect old values.
+                Api.updateUserData({ data -> data.profile = Profile() }) {
+                    fillFromProfile(Store.cachedData.profile)
+                }
+                Ui.toast(this, "প্রোফাইল রিসেট হয়েছে।")
+            }
+
+            // Education: clean dropdown button (single ▼), same as the home
+            // filter dropdowns — no OEM spinner chrome anywhere in the app.
+            pEduBtn.setOnClickListener {
+                val pm = android.widget.PopupMenu(this, pEduBtn)
+                for ((i, e) in eduOptions.withIndex()) pm.menu.add(0, i, 0, e)
+                pm.setOnMenuItemClickListener { item ->
+                    eduSelected = eduOptions[item.itemId]
+                    pEduBtn.text = "$eduSelected ▼"
+                    true
+                }
+                pm.show()
+            }
+            findViewById<Button>(R.id.photoBtn).setOnClickListener {
+                val i = Intent(Intent.ACTION_GET_CONTENT).apply { type = "image/*" }
+                try {
+                    startActivityForResult(Intent.createChooser(i, "ছবি বেছে নিন"), PICK_PHOTO)
+                } catch (t: Throwable) {
+                    Ui.toast(this, "ছবি বাছাই খোলা যায়নি।")
+                }
+            }
+
+            remYes.setOnClickListener { setRemToggle(true) }
+            remNo.setOnClickListener { setRemToggle(false) }
+
+            buildPrefChips()
+            loadProfile()
+            findViewById<Button>(R.id.saveProfileBtn).setOnClickListener { saveProfile() }
+            Ui.applyTextScale(findViewById(android.R.id.content))
+        } catch (t: Throwable) {
+            Ui.toast(this, "প্রোফাইল খোলা যায়নি — আবার চেষ্টা করুন।")
             finish()
-            return
         }
-        setContentView(R.layout.activity_profile)
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setActionBar(toolbar)
-        actionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationOnClickListener { finish() }
-
-        pName = findViewById(R.id.pName)
-        pPhone = findViewById(R.id.pPhone)
-        pDistrict = findViewById(R.id.pDistrict)
-        pDob = findViewById(R.id.pDob)
-        pEduBtn = findViewById(R.id.pEduBtn)
-        pTypeBn = findViewById(R.id.pTypeBn)
-        pTypeEn = findViewById(R.id.pTypeEn)
-        pAddress = findViewById(R.id.pAddress)
-        pNotes = findViewById(R.id.pNotes)
-        pEmail = findViewById(R.id.pEmail)
-        pPermAddress = findViewById(R.id.pPermAddress)
-        pFatherName = findViewById(R.id.pFatherName)
-        pMotherName = findViewById(R.id.pMotherName)
-        pSkills = findViewById(R.id.pSkills)
-        pExperience = findViewById(R.id.pExperience)
-        pLanguages = findViewById(R.id.pLanguages)
-        photoPreview = findViewById(R.id.photoPreview)
-        remYes = findViewById(R.id.remYes)
-        remNo = findViewById(R.id.remNo)
-        statusTv = findViewById(R.id.status)
-        cvInfo = findViewById(R.id.cvInfo)
-        removeCvBtnProfile = findViewById(R.id.removeCvBtnProfile)
-        resetProfileBtn = findViewById(R.id.resetProfileBtn)
-
-        // CV remove from the profile screen (same as the website's
-        // profile page): two-tap confirm, only snapshot-matching fields
-        // are cleared, hand-edited fields stay.
-        removeCvBtnProfile.setOnClickListener {
-            if (!cvRemoveArmed) {
-                cvRemoveArmed = true
-                removeCvBtnProfile.text = "নিশ্চিত মুছবেন?"
-                Handler(Looper.getMainLooper()).postDelayed({
-                    cvRemoveArmed = false
-                    removeCvBtnProfile.text = "🗑️ CV মুছুন (Remove CV)"
-                }, 3000)
-                return@setOnClickListener
-            }
-            cvRemoveArmed = false
-            removeCvBtnProfile.text = "🗑️ CV মুছুন (Remove CV)"
-            // Fresh server copy first (see Api.updateUserData): the CV
-            // snapshot may live only on the server (uploaded from the
-            // website) — removing from a stale local cache would do
-            // nothing, or wipe the wrong fields.
-            // fillFromProfile runs in the callback: updateUserData is
-            // async (it refreshes first).
-            Api.updateUserData({ d ->
-                val snap = d.profile.cv?.fields ?: emptyMap()
-                d.profile = CvParse.removeCvFields(d.profile, snap)
-            }) { fillFromProfile(Store.cachedData.profile) }
-            Ui.toast(this, "CV মুছে ফেলা হয়েছে।")
-        }
-
-        // Profile reset (same as the website's resetProfileBtn): only the
-        // profile + CV are cleared to empty defaults — login/account,
-        // shortlist and application status are never touched.
-        resetProfileBtn.setOnClickListener {
-            if (!resetArmed) {
-                resetArmed = true
-                resetProfileBtn.text = "নিশ্চিত রিসেট করবেন?"
-                Handler(Looper.getMainLooper()).postDelayed({
-                    resetArmed = false
-                    resetProfileBtn.text = "↺ প্রোফাইল রিসেট করুন (Reset Profile)"
-                }, 3000)
-                return@setOnClickListener
-            }
-            resetArmed = false
-            resetProfileBtn.text = "↺ প্রোফাইল রিসেট করুন (Reset Profile)"
-            // Fresh server copy first (see Api.updateUserData) so the
-            // reset only clears the profile — shortlist/status stay,
-            // and a stale cache cannot resurrect old values.
-            Api.updateUserData({ data -> data.profile = Profile() }) {
-                fillFromProfile(Store.cachedData.profile)
-            }
-            Ui.toast(this, "প্রোফাইল রিসেট হয়েছে।")
-        }
-
-        // Education: clean dropdown button (single ▼), same as the home
-        // filter dropdowns — no OEM spinner chrome anywhere in the app.
-        pEduBtn.setOnClickListener {
-            val pm = android.widget.PopupMenu(this, pEduBtn)
-            for ((i, e) in eduOptions.withIndex()) pm.menu.add(0, i, 0, e)
-            pm.setOnMenuItemClickListener { item ->
-                eduSelected = eduOptions[item.itemId]
-                pEduBtn.text = "$eduSelected ▼"
-                true
-            }
-            pm.show()
-        }
-        findViewById<Button>(R.id.photoBtn).setOnClickListener {
-            val i = Intent(Intent.ACTION_GET_CONTENT).apply { type = "image/*" }
-            startActivityForResult(Intent.createChooser(i, "ছবি বেছে নিন"), PICK_PHOTO)
-        }
-
-        remYes.setOnClickListener { setRemToggle(true) }
-        remNo.setOnClickListener { setRemToggle(false) }
-
-        buildPrefChips()
-        loadProfile()
-        findViewById<Button>(R.id.saveProfileBtn).setOnClickListener { saveProfile() }
-        Ui.applyTextScale(findViewById(android.R.id.content))
     }
 
     private fun setRemToggle(enabled: Boolean) {

@@ -42,78 +42,90 @@ class LoginActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Store.init(this)
-        setContentView(R.layout.activity_login)
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setActionBar(toolbar)
-        actionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationOnClickListener { finish() }
-
-        emailEt = findViewById(R.id.email)
-        nameEt = findViewById(R.id.name)
-        passEt = findViewById(R.id.password)
-        statusTv = findViewById(R.id.status)
-
-        findViewById<Button>(R.id.loginBtn).setOnClickListener { doLogin() }
-
-        // ---------- Google Sign-In ----------
+        // Safety net (v1.1.7 hotfix): if any step of opening this screen
+        // throws on a device, show a message and go back instead of
+        // the app being killed ("বের করে দেয়").
         try {
-            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(Api.GOOGLE_WEB_CLIENT_ID)
-                .requestEmail()
-                .build()
-            googleClient = GoogleSignIn.getClient(this, gso)
-        } catch (e: Exception) {
-            googleClient = null
-        }
-        findViewById<Button>(R.id.googleBtn).setOnClickListener {
-            val client = googleClient
-            if (client == null) {
-                statusTv.text = "Google লগইন এই ফোনে চালু হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
-                return@setOnClickListener
-            }
-            statusTv.text = "Google অ্যাকাউন্ট বাছুন…"
-            try {
-                startActivityForResult(client.signInIntent, RC_GOOGLE_SIGN_IN)
-            } catch (e: Exception) {
-                statusTv.text = "Google লগইন শুরু হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
-            }
-        }
+            setContentView(R.layout.activity_login)
+            val toolbar = findViewById<Toolbar>(R.id.toolbar)
+            setActionBar(toolbar)
+            actionBar?.setDisplayHomeAsUpEnabled(true)
+            toolbar.setNavigationOnClickListener { finish() }
 
-        val forgotPanel = findViewById<LinearLayout>(R.id.forgotPanel)
-        findViewById<TextView>(R.id.forgotLink).setOnClickListener {
-            forgotPanel.visibility =
-                if (forgotPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
-        }
-        findViewById<Button>(R.id.fpSendBtn).setOnClickListener {
-            val email = emailEt.text.toString().trim().lowercase()
-            if (!validEmail(email)) {
-                setFpStatus("সঠিক Gmail ঠিকানা দিন।")
-                return@setOnClickListener
+            emailEt = findViewById(R.id.email)
+            nameEt = findViewById(R.id.name)
+            passEt = findViewById(R.id.password)
+            statusTv = findViewById(R.id.status)
+
+            findViewById<Button>(R.id.loginBtn).setOnClickListener { doLogin() }
+
+            // ---------- Google Sign-In ----------
+            try {
+                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(Api.GOOGLE_WEB_CLIENT_ID)
+                    .requestEmail()
+                    .build()
+                googleClient = GoogleSignIn.getClient(this, gso)
+            } catch (e: Throwable) {
+                // Throwable, not just Exception: the R8-shrunk Play Services
+                // code can also throw an Error here (missing class, bad
+                // init) — that must leave Google login off, not kill the
+                // whole login screen.
+                googleClient = null
             }
-            setFpStatus("কোড পাঠানো হচ্ছে…")
-            Api.forgotRequest(email) { r ->
-                setFpStatus(if (r.ok) (r.json?.optString("note") ?: "কোড পাঠানো হয়েছে।") else r.error)
-            }
-        }
-        findViewById<Button>(R.id.fpVerifyBtn).setOnClickListener {
-            val email = emailEt.text.toString().trim().lowercase()
-            val code = findViewById<EditText>(R.id.fpCode).text.toString().trim()
-            val newPass = findViewById<EditText>(R.id.fpNewPass).text.toString()
-            if (!validEmail(email) || code.length != 6 || newPass.length < 4) {
-                setFpStatus("Gmail, ৬ সংখ্যার কোড ও নতুন পাসওয়ার্ড — সব দিন।")
-                return@setOnClickListener
-            }
-            setFpStatus("যাচাই হচ্ছে…")
-            Api.forgotVerify(email, code, newPass) { r ->
-                if (r.ok) {
-                    setFpStatus("✓ নতুন পাসওয়ার্ড সেট হয়েছে — এখন লগইন করুন।")
-                    passEt.setText(newPass)
-                } else {
-                    setFpStatus(r.error)
+            findViewById<Button>(R.id.googleBtn).setOnClickListener {
+                val client = googleClient
+                if (client == null) {
+                    statusTv.text = "Google লগইন এই ফোনে চালু হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
+                    return@setOnClickListener
+                }
+                statusTv.text = "Google অ্যাকাউন্ট বাছুন…"
+                try {
+                    startActivityForResult(client.signInIntent, RC_GOOGLE_SIGN_IN)
+                } catch (e: Throwable) {
+                    statusTv.text = "Google লগইন শুরু হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
                 }
             }
+
+            val forgotPanel = findViewById<LinearLayout>(R.id.forgotPanel)
+            findViewById<TextView>(R.id.forgotLink).setOnClickListener {
+                forgotPanel.visibility =
+                    if (forgotPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+            }
+            findViewById<Button>(R.id.fpSendBtn).setOnClickListener {
+                val email = emailEt.text.toString().trim().lowercase()
+                if (!validEmail(email)) {
+                    setFpStatus("সঠিক Gmail ঠিকানা দিন।")
+                    return@setOnClickListener
+                }
+                setFpStatus("কোড পাঠানো হচ্ছে…")
+                Api.forgotRequest(email) { r ->
+                    setFpStatus(if (r.ok) (r.json?.optString("note") ?: "কোড পাঠানো হয়েছে।") else r.error)
+                }
+            }
+            findViewById<Button>(R.id.fpVerifyBtn).setOnClickListener {
+                val email = emailEt.text.toString().trim().lowercase()
+                val code = findViewById<EditText>(R.id.fpCode).text.toString().trim()
+                val newPass = findViewById<EditText>(R.id.fpNewPass).text.toString()
+                if (!validEmail(email) || code.length != 6 || newPass.length < 4) {
+                    setFpStatus("Gmail, ৬ সংখ্যার কোড ও নতুন পাসওয়ার্ড — সব দিন।")
+                    return@setOnClickListener
+                }
+                setFpStatus("যাচাই হচ্ছে…")
+                Api.forgotVerify(email, code, newPass) { r ->
+                    if (r.ok) {
+                        setFpStatus("✓ নতুন পাসওয়ার্ড সেট হয়েছে — এখন লগইন করুন।")
+                        passEt.setText(newPass)
+                    } else {
+                        setFpStatus(r.error)
+                    }
+                }
+            }
+            Ui.applyTextScale(findViewById(android.R.id.content))
+        } catch (t: Throwable) {
+            Ui.toast(this, "লগইন খোলা যায়নি — আবার চেষ্টা করুন।")
+            finish()
         }
-        Ui.applyTextScale(findViewById(android.R.id.content))
     }
 
     private fun setFpStatus(msg: String) {
@@ -162,7 +174,15 @@ class LoginActivity : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != RC_GOOGLE_SIGN_IN) return
-        val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+        // Unprotected before: a null result intent (Back pressed on the
+        // account picker) or a Play Services Error here killed the whole
+        // login screen. Now it just shows the message instead.
+        val task = try {
+            GoogleSignIn.getSignedInAccountFromIntent(data)
+        } catch (t: Throwable) {
+            statusTv.text = "Google লগইন হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
+            return
+        }
         val account = try {
             task.getResult(ApiException::class.java)
         } catch (e: ApiException) {

@@ -38,199 +38,218 @@ class SettingsActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Store.init(this)
-        setContentView(R.layout.activity_settings)
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setActionBar(toolbar)
-        actionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationOnClickListener { finish() }
+        // Safety net (v1.1.7 hotfix): if any step of opening this screen
+        // throws on a device, show a message and go back instead of
+        // the app being killed ("বের করে দেয়").
+        try {
+            setContentView(R.layout.activity_settings)
+            val toolbar = findViewById<Toolbar>(R.id.toolbar)
+            setActionBar(toolbar)
+            actionBar?.setDisplayHomeAsUpEnabled(true)
+            toolbar.setNavigationOnClickListener { finish() }
 
-        cvStatus = findViewById(R.id.cvStatus)
-        updateStatus = findViewById(R.id.updateStatus)
-        whatsappBtn = findViewById(R.id.whatsappBtn)
-        telegramBtn = findViewById(R.id.telegramBtn)
-        contactEmpty = findViewById(R.id.contactEmpty)
+            cvStatus = findViewById(R.id.cvStatus)
+            updateStatus = findViewById(R.id.updateStatus)
+            whatsappBtn = findViewById(R.id.whatsappBtn)
+            telegramBtn = findViewById(R.id.telegramBtn)
+            contactEmpty = findViewById(R.id.contactEmpty)
 
-        // ---------- text size ----------
-        val sizeBtns = mapOf(
-            "small" to findViewById<Button>(R.id.sizeSmall),
-            "medium" to findViewById<Button>(R.id.sizeMedium),
-            "large" to findViewById<Button>(R.id.sizeLarge),
-            "xl" to findViewById<Button>(R.id.sizeXl)
-        )
-        val markSize = {
-            for ((k, b) in sizeBtns) {
-                val active = Store.fontSize == k
-                b.text = when (k) {
-                    "small" -> if (active) "✓ A-" else "A-"
-                    "medium" -> if (active) "✓ A" else "A"
-                    "large" -> if (active) "✓ A+" else "A+"
-                    else -> if (active) "✓ A++" else "A++"
+            // ---------- text size ----------
+            val sizeBtns = mapOf(
+                "small" to findViewById<Button>(R.id.sizeSmall),
+                "medium" to findViewById<Button>(R.id.sizeMedium),
+                "large" to findViewById<Button>(R.id.sizeLarge),
+                "xl" to findViewById<Button>(R.id.sizeXl)
+            )
+            val markSize = {
+                for ((k, b) in sizeBtns) {
+                    val active = Store.fontSize == k
+                    b.text = when (k) {
+                        "small" -> if (active) "✓ A-" else "A-"
+                        "medium" -> if (active) "✓ A" else "A"
+                        "large" -> if (active) "✓ A+" else "A+"
+                        else -> if (active) "✓ A++" else "A++"
+                    }
+                    // Intentional selected state: green pill + green text.
+                    // Inactive pills stay quiet white — never a gray wash.
+                    b.background = getDrawable(
+                        if (active) R.drawable.btn_ghost_selected else R.drawable.btn_ghost)
+                    b.setTextColor(getColor(
+                        if (active) R.color.green_dark else R.color.text_dark))
                 }
-                // Intentional selected state: green pill + green text.
-                // Inactive pills stay quiet white — never a gray wash.
-                b.background = getDrawable(
-                    if (active) R.drawable.btn_ghost_selected else R.drawable.btn_ghost)
-                b.setTextColor(getColor(
-                    if (active) R.color.green_dark else R.color.text_dark))
             }
-        }
-        markSize()
-        for ((k, b) in sizeBtns) {
-            b.setOnClickListener {
-                Store.fontSize = k
-                // Fresh server copy first (see Api.updateUserData): saving
-                // the stale local cache whole would overwrite a newer
-                // profile saved from the website.
-                Api.updateUserData({ data -> data.fontSize = k })
-                markSize()
-                Ui.applyTextScale(findViewById(android.R.id.content))
-                Ui.toast(this, "লেখার সাইজ বদলে গেছে।")
+            markSize()
+            for ((k, b) in sizeBtns) {
+                b.setOnClickListener {
+                    Store.fontSize = k
+                    // Fresh server copy first (see Api.updateUserData): saving
+                    // the stale local cache whole would overwrite a newer
+                    // profile saved from the website.
+                    Api.updateUserData({ data -> data.fontSize = k })
+                    markSize()
+                    Ui.applyTextScale(findViewById(android.R.id.content))
+                    Ui.toast(this, "লেখার সাইজ বদলে গেছে।")
+                }
             }
-        }
 
-        // ---------- CV upload ----------
-        // Same flow as the website: PDF, text or image file → text is read
-        // (PDF via CvParse, the port of cv-parse.js) → fields are parsed →
-        // they fill the profile and are saved with the profile to the
-        // server (api/user-data), so they show in আমার প্রোফাইল.
-        // The old picker used type "text/*", which hid every PDF — that is
-        // why PDF upload did not work from the app.
-        cvRemoveBtn = findViewById(R.id.cvRemoveBtn)
-        refreshCvState()
-        // The CV may have been uploaded from the website since this app
-        // last fetched it — refresh from the server so the status here
-        // shows the real CV, not a stale local cache.
-        if (Store.isLoggedIn) Api.refreshUserData { refreshCvState() }
-        findViewById<Button>(R.id.cvBtn).setOnClickListener {
-            if (!Store.isLoggedIn) {
-                Ui.toast(this, "CV আপলোড করতে আগে লগইন করুন।")
-                startActivity(Intent(this, LoginActivity::class.java))
-                return@setOnClickListener
-            }
-            val i = Intent(Intent.ACTION_GET_CONTENT).apply {
-                type = "*/*"
-                putExtra(
-                    Intent.EXTRA_MIME_TYPES,
-                    arrayOf("application/pdf", "text/plain", "image/*")
-                )
-            }
-            startActivityForResult(Intent.createChooser(i, "CV ফাইল বেছে নিন"), PICK_CV)
-        }
-        cvRemoveBtn.setOnClickListener {
-            if (!removeArmed) {
-                removeArmed = true
-                cvRemoveBtn.text = getString(R.string.cv_remove_confirm)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    removeArmed = false
-                    cvRemoveBtn.text = getString(R.string.cv_remove)
-                }, 3000)
-                return@setOnClickListener
-            }
-            removeArmed = false
-            cvRemoveBtn.text = getString(R.string.cv_remove)
-            // Fresh server copy first (see Api.updateUserData): the CV
-            // snapshot to remove may live only on the server (uploaded
-            // from the website) — removing from a stale local cache
-            // would do nothing, or wipe the wrong fields.
-            Api.updateUserData({ d ->
-                val snap = d.profile.cv?.fields ?: emptyMap()
-                d.profile = CvParse.removeCvFields(d.profile, snap)
-            })
-            cvStatus.text = "CV মুছে ফেলা হয়েছে — প্রোফাইল থেকে CV-র তথ্য সরানো হয়েছে।"
+            // ---------- CV upload ----------
+            // Same flow as the website: PDF, text or image file → text is read
+            // (PDF via CvParse, the port of cv-parse.js) → fields are parsed →
+            // they fill the profile and are saved with the profile to the
+            // server (api/user-data), so they show in আমার প্রোফাইল.
+            // The old picker used type "text/*", which hid every PDF — that is
+            // why PDF upload did not work from the app.
+            cvRemoveBtn = findViewById(R.id.cvRemoveBtn)
             refreshCvState()
-        }
-
-        // ---------- push notifications (v1.1.7) ----------
-        // profile.pushEnabled (default on) — the server worker only sends
-        // a push when this is on. The toggle saves even while FCM is
-        // dormant (no google-services.json yet): the choice is stored and
-        // takes effect as soon as the Firebase setup is done.
-        val pushYes = findViewById<ToggleButton>(R.id.pushYes)
-        val pushNo = findViewById<ToggleButton>(R.id.pushNo)
-        val pushStatus = findViewById<TextView>(R.id.pushStatus)
-        val markPush = { enabled: Boolean ->
-            pushYes.isChecked = enabled
-            pushNo.isChecked = !enabled
-            pushYes.background = getDrawable(
-                if (enabled) R.drawable.btn_ghost_selected else R.drawable.btn_ghost)
-            pushNo.background = getDrawable(
-                if (!enabled) R.drawable.btn_ghost_selected else R.drawable.btn_ghost)
-            pushYes.setTextColor(getColor(
-                if (enabled) R.color.green_dark else R.color.text_dark))
-            pushNo.setTextColor(getColor(
-                if (!enabled) R.color.green_dark else R.color.text_dark))
-            pushStatus.text = if (!PushHelper.isFcmConfigured(this)) {
-                "পুশ নোটিফিকেশন এখনো চালু হয়নি — Firebase সেটআপ বাকি আছে। আপনার পছন্দটি সেভ থাকবে; সেটআপ শেষ হলে নোটিফিকেশন আসবে।"
-            } else if (enabled) {
-                "পুশ নোটিফিকেশন চালু আছে — নতুন সার্কুলার ও ডেডলাইন রিমাইন্ডার ফোনে আসবে।"
-            } else {
-                "পুশ নোটিফিকেশন বন্ধ আছে।"
-            }
-        }
-        markPush(Store.cachedData.profile.pushEnabled)
-        if (Store.isLoggedIn) Api.refreshUserData { markPush(Store.cachedData.profile.pushEnabled) }
-        val setPush = { enabled: Boolean ->
-            if (!Store.isLoggedIn) {
-                Ui.toast(this, "পুশ সেটিং বদলাতে আগে লগইন করুন।")
-                startActivity(Intent(this, LoginActivity::class.java))
-            } else {
-                markPush(enabled)
-                // Android 13+: ask for the notification permission when
-                // switching push on (no popup on older Android).
-                if (enabled && !PushHelper.hasNotificationPermission(this) &&
-                    android.os.Build.VERSION.SDK_INT >= 33
-                ) {
-                    requestPermissions(
-                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                        RC_PUSH_NOTIF
+            // The CV may have been uploaded from the website since this app
+            // last fetched it — refresh from the server so the status here
+            // shows the real CV, not a stale local cache.
+            if (Store.isLoggedIn) Api.refreshUserData { refreshCvState() }
+            findViewById<Button>(R.id.cvBtn).setOnClickListener {
+                if (!Store.isLoggedIn) {
+                    Ui.toast(this, "CV আপলোড করতে আগে লগইন করুন।")
+                    safeStart(Intent(this, LoginActivity::class.java))
+                    return@setOnClickListener
+                }
+                val i = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "*/*"
+                    putExtra(
+                        Intent.EXTRA_MIME_TYPES,
+                        arrayOf("application/pdf", "text/plain", "image/*")
                     )
                 }
-                PushHelper.setPushEnabled(this, enabled) { ok ->
-                    if (!ok) {
-                        pushStatus.text = "সেভ হয়নি — ইন্টারনেট দেখে আবার চাপুন।"
-                        markPush(Store.cachedData.profile.pushEnabled)
-                    } else {
-                        Ui.toast(
-                            this,
-                            if (enabled) "পুশ নোটিফিকেশন চালু হয়েছে।"
-                            else "পুশ নোটিফিকেশন বন্ধ হয়েছে।"
+                startActivityForResult(Intent.createChooser(i, "CV ফাইল বেছে নিন"), PICK_CV)
+            }
+            cvRemoveBtn.setOnClickListener {
+                if (!removeArmed) {
+                    removeArmed = true
+                    cvRemoveBtn.text = getString(R.string.cv_remove_confirm)
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        removeArmed = false
+                        cvRemoveBtn.text = getString(R.string.cv_remove)
+                    }, 3000)
+                    return@setOnClickListener
+                }
+                removeArmed = false
+                cvRemoveBtn.text = getString(R.string.cv_remove)
+                // Fresh server copy first (see Api.updateUserData): the CV
+                // snapshot to remove may live only on the server (uploaded
+                // from the website) — removing from a stale local cache
+                // would do nothing, or wipe the wrong fields.
+                Api.updateUserData({ d ->
+                    val snap = d.profile.cv?.fields ?: emptyMap()
+                    d.profile = CvParse.removeCvFields(d.profile, snap)
+                })
+                cvStatus.text = "CV মুছে ফেলা হয়েছে — প্রোফাইল থেকে CV-র তথ্য সরানো হয়েছে।"
+                refreshCvState()
+            }
+
+            // ---------- push notifications (v1.1.7) ----------
+            // profile.pushEnabled (default on) — the server worker only sends
+            // a push when this is on. The toggle saves even while FCM is
+            // dormant (no google-services.json yet): the choice is stored and
+            // takes effect as soon as the Firebase setup is done.
+            val pushYes = findViewById<ToggleButton>(R.id.pushYes)
+            val pushNo = findViewById<ToggleButton>(R.id.pushNo)
+            val pushStatus = findViewById<TextView>(R.id.pushStatus)
+            val markPush = { enabled: Boolean ->
+                pushYes.isChecked = enabled
+                pushNo.isChecked = !enabled
+                pushYes.background = getDrawable(
+                    if (enabled) R.drawable.btn_ghost_selected else R.drawable.btn_ghost)
+                pushNo.background = getDrawable(
+                    if (!enabled) R.drawable.btn_ghost_selected else R.drawable.btn_ghost)
+                pushYes.setTextColor(getColor(
+                    if (enabled) R.color.green_dark else R.color.text_dark))
+                pushNo.setTextColor(getColor(
+                    if (!enabled) R.color.green_dark else R.color.text_dark))
+                pushStatus.text = if (!PushHelper.isFcmConfigured(this)) {
+                    "পুশ নোটিফিকেশন এখনো চালু হয়নি — Firebase সেটআপ বাকি আছে। আপনার পছন্দটি সেভ থাকবে; সেটআপ শেষ হলে নোটিফিকেশন আসবে।"
+                } else if (enabled) {
+                    "পুশ নোটিফিকেশন চালু আছে — নতুন সার্কুলার ও ডেডলাইন রিমাইন্ডার ফোনে আসবে।"
+                } else {
+                    "পুশ নোটিফিকেশন বন্ধ আছে।"
+                }
+            }
+            markPush(Store.cachedData.profile.pushEnabled)
+            if (Store.isLoggedIn) Api.refreshUserData { markPush(Store.cachedData.profile.pushEnabled) }
+            val setPush = { enabled: Boolean ->
+                if (!Store.isLoggedIn) {
+                    Ui.toast(this, "পুশ সেটিং বদলাতে আগে লগইন করুন।")
+                    safeStart(Intent(this, LoginActivity::class.java))
+                } else {
+                    markPush(enabled)
+                    // Android 13+: ask for the notification permission when
+                    // switching push on (no popup on older Android).
+                    if (enabled && !PushHelper.hasNotificationPermission(this) &&
+                        android.os.Build.VERSION.SDK_INT >= 33
+                    ) {
+                        requestPermissions(
+                            arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                            RC_PUSH_NOTIF
                         )
+                    }
+                    PushHelper.setPushEnabled(this, enabled) { ok ->
+                        if (!ok) {
+                            pushStatus.text = "সেভ হয়নি — ইন্টারনেট দেখে আবার চাপুন।"
+                            markPush(Store.cachedData.profile.pushEnabled)
+                        } else {
+                            Ui.toast(
+                                this,
+                                if (enabled) "পুশ নোটিফিকেশন চালু হয়েছে।"
+                                else "পুশ নোটিফিকেশন বন্ধ হয়েছে।"
+                            )
+                        }
                     }
                 }
             }
-        }
-        pushYes.setOnClickListener { setPush(true) }
-        pushNo.setOnClickListener { setPush(false) }
+            pushYes.setOnClickListener { setPush(true) }
+            pushNo.setOnClickListener { setPush(false) }
 
-        // ---------- app version + update ----------
-        findViewById<TextView>(R.id.versionText).text =
-            "Job Tracker v${Api.APP_VERSION_NAME} (নেটিভ অ্যাপ)"
-        findViewById<Button>(R.id.checkUpdateBtn).setOnClickListener {
-            updateStatus.text = "আপডেট চেক হচ্ছে…"
-            UpdateChecker.check(this, onNewVersion = { name, _ ->
-                updateStatus.text = "🔔 নতুন আপডেট এসেছে (v$name) — ডাউনলোড করতে হোমের ব্যানারের বোতাম চাপুন।"
-            }, onUpToDate = {
-                updateStatus.text = "✓ সর্বশেষ সংস্করণ ব্যবহার করছেন (v${Api.APP_VERSION_NAME})।"
-            })
-        }
+            // ---------- app version + update ----------
+            findViewById<TextView>(R.id.versionText).text =
+                "Job Tracker v${Api.APP_VERSION_NAME} (নেটিভ অ্যাপ)"
+            findViewById<Button>(R.id.checkUpdateBtn).setOnClickListener {
+                updateStatus.text = "আপডেট চেক হচ্ছে…"
+                UpdateChecker.check(this, onNewVersion = { name, _ ->
+                    updateStatus.text = "🔔 নতুন আপডেট এসেছে (v$name) — ডাউনলোড করতে হোমের ব্যানারের বোতাম চাপুন।"
+                }, onUpToDate = {
+                    updateStatus.text = "✓ সর্বশেষ সংস্করণ ব্যবহার করছেন (v${Api.APP_VERSION_NAME})।"
+                })
+            }
 
-        // ---------- contact ----------
-        Api.fetchConfig { json ->
-            val contact: JSONObject? = json?.optJSONObject("contact")
-            val wa = contact?.optString("whatsapp", "") ?: ""
-            val tg = contact?.optString("telegram", "") ?: ""
-            if (wa.isNotBlank()) {
-                whatsappBtn.visibility = View.VISIBLE
-                whatsappBtn.setOnClickListener { Ui.openUrl(this, wa) }
+            // ---------- contact ----------
+            Api.fetchConfig { json ->
+                val contact: JSONObject? = json?.optJSONObject("contact")
+                val wa = contact?.optString("whatsapp", "") ?: ""
+                val tg = contact?.optString("telegram", "") ?: ""
+                if (wa.isNotBlank()) {
+                    whatsappBtn.visibility = View.VISIBLE
+                    whatsappBtn.setOnClickListener { Ui.openUrl(this, wa) }
+                }
+                if (tg.isNotBlank()) {
+                    telegramBtn.visibility = View.VISIBLE
+                    telegramBtn.setOnClickListener { Ui.openUrl(this, tg) }
+                }
+                contactEmpty.visibility =
+                    if (wa.isBlank() && tg.isBlank()) View.VISIBLE else View.GONE
             }
-            if (tg.isNotBlank()) {
-                telegramBtn.visibility = View.VISIBLE
-                telegramBtn.setOnClickListener { Ui.openUrl(this, tg) }
-            }
-            contactEmpty.visibility =
-                if (wa.isBlank() && tg.isBlank()) View.VISIBLE else View.GONE
+            Ui.applyTextScale(findViewById(android.R.id.content))
+        } catch (t: Throwable) {
+            Ui.toast(this, "সেটিংস খোলা যায়নি — আবার চেষ্টা করুন।")
+            finish()
         }
-        Ui.applyTextScale(findViewById(android.R.id.content))
+    }
+
+    /** Launch a screen without ever killing the app (see MainActivity). */
+    private fun safeStart(intent: Intent): Boolean {
+        return try {
+            startActivity(intent)
+            true
+        } catch (t: Throwable) {
+            Ui.toast(this, "খোলা যায়নি — আবার চেষ্টা করুন।")
+            false
+        }
     }
 
     private fun refreshCvState() {

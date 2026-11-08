@@ -350,11 +350,11 @@ class MainActivity : Activity() {
         }
 
         item(getString(R.string.menu_profile)) {
-            if (Store.isLoggedIn) startActivity(Intent(this, ProfileActivity::class.java))
-            else startActivity(Intent(this, LoginActivity::class.java))
+            if (Store.isLoggedIn) safeStart(Intent(this, ProfileActivity::class.java))
+            else safeStart(Intent(this, LoginActivity::class.java))
         }
         item(getString(R.string.menu_settings)) {
-            startActivity(Intent(this, SettingsActivity::class.java))
+            safeStart(Intent(this, SettingsActivity::class.java))
         }
         divider()
         val wa = contact?.optString("whatsapp", "") ?: ""
@@ -372,7 +372,7 @@ class MainActivity : Activity() {
             }
         } else {
             item(getString(R.string.menu_login)) {
-                startActivity(Intent(this, LoginActivity::class.java))
+                safeStart(Intent(this, LoginActivity::class.java))
             }
         }
         divider()
@@ -816,10 +816,25 @@ class MainActivity : Activity() {
 
     // ---------- actions ----------
 
+    /**
+     * Launch a screen without ever killing the app: if the launch
+     * itself throws (missing activity, bad intent, ...), show a
+     * message and stay on home instead of "বের করে দেয়".
+     */
+    private fun safeStart(intent: Intent): Boolean {
+        return try {
+            startActivity(intent)
+            true
+        } catch (t: Throwable) {
+            Ui.toast(this, "খোলা যায়নি — আবার চেষ্টা করুন।")
+            false
+        }
+    }
+
     private fun requireLogin(): Boolean {
         if (Store.isLoggedIn) return true
         Ui.toast(this, "আগে লগইন করুন।")
-        startActivity(Intent(this, LoginActivity::class.java))
+        safeStart(Intent(this, LoginActivity::class.java))
         return false
     }
 
@@ -852,6 +867,6 @@ class MainActivity : Activity() {
         if (!requireLogin()) return
         val i = Intent(this, DetailActivity::class.java)
         i.putExtra("circular_json", c.toJson().toString())
-        startActivity(i)
+        safeStart(i)
     }
 }

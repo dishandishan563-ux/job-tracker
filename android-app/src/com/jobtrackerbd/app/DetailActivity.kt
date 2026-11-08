@@ -34,133 +34,145 @@ class DetailActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Store.init(this)
-        val raw = intent.getStringExtra("circular_json") ?: ""
-        circular = try {
-            Circular.fromJson(JSONObject(raw))
-        } catch (e: Exception) {
-            finish()
-            return
-        }
-        setContentView(R.layout.activity_detail)
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setActionBar(toolbar)
-        actionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationOnClickListener { finish() }
+        // Safety net (v1.1.7 hotfix): if any step of opening this screen
+        // throws on a device, show a message and go back instead of
+        // the app being killed ("বের করে দেয়").
+        try {
+            val raw = intent.getStringExtra("circular_json") ?: ""
+            circular = try {
+                Circular.fromJson(JSONObject(raw))
+            } catch (e: Exception) {
+                finish()
+                return
+            }
+            setContentView(R.layout.activity_detail)
+            val toolbar = findViewById<Toolbar>(R.id.toolbar)
+            setActionBar(toolbar)
+            actionBar?.setDisplayHomeAsUpEnabled(true)
+            toolbar.setNavigationOnClickListener { finish() }
 
-        findViewById<TextView>(R.id.org).text = circular.org
-        findViewById<TextView>(R.id.orgEn).text = circular.orgEn
-        findViewById<TextView>(R.id.metaLine).text = listOf(
-            circular.typeBn.ifBlank { circular.type },
-            if (circular.grade > 0) "গ্রেড ${Util.bn(circular.grade)}" else "",
-            circular.salary,
-            if (circular.fee > 0) "ফি ${Util.bn(circular.fee)} টাকা" else "",
-            circular.age,
-            circular.districts
-        ).filter { it.isNotBlank() }.joinToString(" • ")
-        findViewById<TextView>(R.id.deadlineLine).text =
-            if (circular.deadline.isNotBlank()) "শেষ: ${Util.formatDeadlineBn(circular.deadline)}" else ""
-        cdText = findViewById(R.id.cdText)
-        cdText.text = Util.countdownText(circular.deadline)
-        val note = findViewById<TextView>(R.id.sourceNote)
-        note.text = if (circular.source == "secondary") {
-            circular.sourceNote.ifBlank { "দ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।" }
-        } else "অফিসিয়াল সার্কুলার।"
-        if (circular.autoAdded) {
-            note.text = "${note.text} (Teletalk-এর সরকারি তালিকা থেকে যোগ হয়েছে।)"
-        }
+            findViewById<TextView>(R.id.org).text = circular.org
+            findViewById<TextView>(R.id.orgEn).text = circular.orgEn
+            findViewById<TextView>(R.id.metaLine).text = listOf(
+                circular.typeBn.ifBlank { circular.type },
+                if (circular.grade > 0) "গ্রেড ${Util.bn(circular.grade)}" else "",
+                circular.salary,
+                if (circular.fee > 0) "ফি ${Util.bn(circular.fee)} টাকা" else "",
+                circular.age,
+                circular.districts
+            ).filter { it.isNotBlank() }.joinToString(" • ")
+            findViewById<TextView>(R.id.deadlineLine).text =
+                if (circular.deadline.isNotBlank()) "শেষ: ${Util.formatDeadlineBn(circular.deadline)}" else ""
+            cdText = findViewById(R.id.cdText)
+            cdText.text = Util.countdownText(circular.deadline)
+            val note = findViewById<TextView>(R.id.sourceNote)
+            note.text = if (circular.source == "secondary") {
+                circular.sourceNote.ifBlank { "দ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।" }
+            } else "অফিসিয়াল সার্কুলার।"
+            if (circular.autoAdded) {
+                note.text = "${note.text} (Teletalk-এর সরকারি তালিকা থেকে যোগ হয়েছে।)"
+            }
 
-        val postsBox = findViewById<LinearLayout>(R.id.postsBox)
-        if (circular.posts.isEmpty()) {
-            val t = TextView(this)
-            t.text = "পদের বিস্তারিত তথ্য দেওয়া নেই — মোট ${Util.bn(circular.totalPosts)}টি পদ।"
-            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            t.setLineSpacing(0f, 1.15f)
-            postsBox.addView(t)
-        } else {
-            for ((index, p) in circular.posts.withIndex()) {
-                // Hairline divider between post rows (not before the first).
-                if (index > 0) {
-                    val div = View(this)
-                    div.layoutParams = LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
-                    div.setBackgroundColor(getColor(R.color.divider))
-                    postsBox.addView(div)
-                }
+            val postsBox = findViewById<LinearLayout>(R.id.postsBox)
+            if (circular.posts.isEmpty()) {
                 val t = TextView(this)
+                t.text = "পদের বিস্তারিত তথ্য দেওয়া নেই — মোট ${Util.bn(circular.totalPosts)}টি পদ।"
                 t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
                 t.setLineSpacing(0f, 1.15f)
-                val typing = buildString {
-                    if (p.typingBn > 0 || p.typingEn > 0) {
-                        append(" — টাইপিং বাংলা ${Util.bn(p.typingBn)} + ইংরেজি ${Util.bn(p.typingEn)}")
-                    }
-                    if (p.shorthandBn > 0 || p.shorthandEn > 0) {
-                        append(" — শর্টহ্যান্ড বাংলা ${Util.bn(p.shorthandBn)} + ইংরেজি ${Util.bn(p.shorthandEn)}")
-                    }
-                }
-                // Auto-added circulars have no qualification/grade data
-                // (null in the API): show only the parts that exist, so
-                // the line never reads "• মালী — ১টি (, গ্রেড ০)".
-                t.text = buildString {
-                    append("• ${p.title}")
-                    if (p.count > 0) append(" — ${Util.bn(p.count)}টি")
-                    val inner = listOf(
-                        p.qualification,
-                        if (p.grade > 0) "গ্রেড ${Util.bn(p.grade)}" else ""
-                    ).filter { it.isNotBlank() }.joinToString(", ")
-                    if (inner.isNotBlank()) append(" ($inner)")
-                    append(typing)
-                }
-                t.setPadding(0, 6, 0, 6)
                 postsBox.addView(t)
-            }
-        }
-
-        statusText = findViewById(R.id.statusText)
-        val bApplied = findViewById<Button>(R.id.statusApplied)
-        val bFee = findViewById<Button>(R.id.statusFee)
-        val bAdmit = findViewById<Button>(R.id.statusAdmit)
-        val setStatus = { s: String ->
-            // Fresh server copy first — see Api.updateUserData: saving the
-            // stale local cache whole would overwrite a newer profile
-            // saved from the website. refreshStatus runs in the callback:
-            // updateUserData is async (it refreshes first).
-            Api.updateUserData({ data ->
-                if (data.status[circular.id] == s) data.status.remove(circular.id)
-                else data.status[circular.id] = s
-            }) { refreshStatus() }
-        }
-        bApplied.setOnClickListener { setStatus("applied") }
-        bFee.setOnClickListener { setStatus("fee_paid") }
-        bAdmit.setOnClickListener { setStatus("admit") }
-        refreshStatus()
-
-        shortlistBtn = findViewById(R.id.shortlistBtn)
-        shortlistBtn.setOnClickListener {
-            // Fresh server copy first (see Api.updateUserData), and
-            // refreshShortlist runs in the callback — async.
-            Api.updateUserData({ data ->
-                if (data.shortlist.contains(circular.id)) data.shortlist.remove(circular.id)
-                else data.shortlist.add(circular.id)
-            }) { refreshShortlist() }
-        }
-        refreshShortlist()
-
-        findViewById<Button>(R.id.applyBtn).setOnClickListener {
-            if (circular.applyUrl.isBlank()) {
-                Ui.toast(this, "এই সার্কুলারের আবেদন লিংক দেওয়া নেই।")
             } else {
-                Ui.openUrl(this, circular.applyUrl)
+                for ((index, p) in circular.posts.withIndex()) {
+                    // Hairline divider between post rows (not before the first).
+                    if (index > 0) {
+                        val div = View(this)
+                        div.layoutParams = LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
+                        div.setBackgroundColor(getColor(R.color.divider))
+                        postsBox.addView(div)
+                    }
+                    val t = TextView(this)
+                    t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                    t.setLineSpacing(0f, 1.15f)
+                    val typing = buildString {
+                        if (p.typingBn > 0 || p.typingEn > 0) {
+                            append(" — টাইপিং বাংলা ${Util.bn(p.typingBn)} + ইংরেজি ${Util.bn(p.typingEn)}")
+                        }
+                        if (p.shorthandBn > 0 || p.shorthandEn > 0) {
+                            append(" — শর্টহ্যান্ড বাংলা ${Util.bn(p.shorthandBn)} + ইংরেজি ${Util.bn(p.shorthandEn)}")
+                        }
+                    }
+                    // Auto-added circulars have no qualification/grade data
+                    // (null in the API): show only the parts that exist, so
+                    // the line never reads "• মালী — ১টি (, গ্রেড ০)".
+                    t.text = buildString {
+                        append("• ${p.title}")
+                        if (p.count > 0) append(" — ${Util.bn(p.count)}টি")
+                        val inner = listOf(
+                            p.qualification,
+                            if (p.grade > 0) "গ্রেড ${Util.bn(p.grade)}" else ""
+                        ).filter { it.isNotBlank() }.joinToString(", ")
+                        if (inner.isNotBlank()) append(" ($inner)")
+                        append(typing)
+                    }
+                    t.setPadding(0, 6, 0, 6)
+                    postsBox.addView(t)
+                }
             }
-        }
-        findViewById<Button>(R.id.shareBtn).setOnClickListener {
-            val send = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, shareText(circular))
+
+            statusText = findViewById(R.id.statusText)
+            val bApplied = findViewById<Button>(R.id.statusApplied)
+            val bFee = findViewById<Button>(R.id.statusFee)
+            val bAdmit = findViewById<Button>(R.id.statusAdmit)
+            val setStatus = { s: String ->
+                // Fresh server copy first — see Api.updateUserData: saving the
+                // stale local cache whole would overwrite a newer profile
+                // saved from the website. refreshStatus runs in the callback:
+                // updateUserData is async (it refreshes first).
+                Api.updateUserData({ data ->
+                    if (data.status[circular.id] == s) data.status.remove(circular.id)
+                    else data.status[circular.id] = s
+                }) { refreshStatus() }
             }
-            startActivity(Intent.createChooser(send, "শেয়ার করুন (Share)"))
+            bApplied.setOnClickListener { setStatus("applied") }
+            bFee.setOnClickListener { setStatus("fee_paid") }
+            bAdmit.setOnClickListener { setStatus("admit") }
+            refreshStatus()
+
+            shortlistBtn = findViewById(R.id.shortlistBtn)
+            shortlistBtn.setOnClickListener {
+                // Fresh server copy first (see Api.updateUserData), and
+                // refreshShortlist runs in the callback — async.
+                Api.updateUserData({ data ->
+                    if (data.shortlist.contains(circular.id)) data.shortlist.remove(circular.id)
+                    else data.shortlist.add(circular.id)
+                }) { refreshShortlist() }
+            }
+            refreshShortlist()
+
+            findViewById<Button>(R.id.applyBtn).setOnClickListener {
+                if (circular.applyUrl.isBlank()) {
+                    Ui.toast(this, "এই সার্কুলারের আবেদন লিংক দেওয়া নেই।")
+                } else {
+                    Ui.openUrl(this, circular.applyUrl)
+                }
+            }
+            findViewById<Button>(R.id.shareBtn).setOnClickListener {
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText(circular))
+                }
+                try {
+                    startActivity(Intent.createChooser(send, "শেয়ার করুন (Share)"))
+                } catch (t: Throwable) {
+                    Ui.toast(this, "শেয়ার খোলা যায়নি।")
+                }
+            }
+            Ui.applyTextScale(findViewById(android.R.id.content))
+            tickHandler.post(tickRunnable)
+        } catch (t: Throwable) {
+            Ui.toast(this, "বিস্তারিত খোলা যায়নি — আবার চেষ্টা করুন।")
+            finish()
         }
-        Ui.applyTextScale(findViewById(android.R.id.content))
-        tickHandler.post(tickRunnable)
     }
 
     companion object {
