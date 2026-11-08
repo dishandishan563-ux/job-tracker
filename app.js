@@ -137,6 +137,105 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
+// ---------- অ্যান্ড্রয়েড অ্যাপ (APK) ডাউনলোড ও আপডেট ----------
+// অ্যাপটি লাইভ সাইটের wrapper — সাইটের সব কনটেন্ট এমনিতেই লাইভ
+// আপডেট হয়, APK ফাইল নিজে বদলায় শুধু wrapper বদলালে।
+// GitHub-এ বাইনারি ফাইল পাঠানো যায় না, তাই APK base64 লেখা হিসেবে
+// /job-tracker.apk.b64-এ থাকে; ডাউনলোডের সময় ব্রাউজারেই (বা অ্যাপের
+// ভেতরে নেটিভভাবে) APK-তে ফিরিয়ে নেওয়া হয়।
+// আপডেট চেকের নিয়ম: ফোনে ইনস্টল করা অ্যাপের সংস্করণ আসে তার
+// User-Agent থেকে (অ্যাপ UA-এর শেষে "JobTrackerApp/1.0.0" যোগ করে)।
+// /version.json-এর versionName তার চেয়ে নতুন হলেই হোমের উপরে বড়
+// ব্যানার দেখায়: "🔔 নতুন আপডেট এসেছে — আপডেট করুন" + আপডেট বোতাম।
+// ব্রাউজারে (UA-তে ওই চিহ্ন নেই) ব্যানার আসে না — ওয়েব ব্যবহারকারী
+// এমনিতেই লাইভ সাইট পায়; তাদের জন্য হোমের ডাউনলোড বোতামই আছে।
+// চেক চলে প্রতিবার পেইজ খুললে, আর অ্যাপ খোলা থাকলে প্রতি ৩০ মিনিটে।
+// চেক না হলে (নেট নেই) চুপচাপ থাকে। সত্যি কথা: অ্যাপ বন্ধ থাকলে
+// ব্যাকগ্রাউন্ডে নোটিফিকেশন আসে না (সেটা FCM লাগে, এতে নেই) —
+// নোটিফিকেশন আসে অ্যাপ খোলার পর, পরের বার খুললেই।
+const APP_APK_B64_URL = '/job-tracker.apk.b64';
+const APP_APK_FILE_NAME = 'job-tracker.apk';
+function installedAppVersion() {
+  const m = (navigator.userAgent || '').match(/JobTrackerApp\/([\d.]+)/);
+  return m ? m[1] : null;
+}
+function cmpVersion(a, b) {
+  const pa = String(a).split('.').map(x => parseInt(x, 10) || 0);
+  const pb = String(b).split('.').map(x => parseInt(x, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return d;
+  }
+  return 0;
+}
+let apkDownloading = false;
+async function downloadAppApk() {
+  if (apkDownloading) return;
+  apkDownloading = true;
+  toast('অ্যাপ ডাউনলোড হচ্ছে…');
+  try {
+    const r = await fetch(APP_APK_B64_URL, { cache: 'no-store' });
+    if (!r.ok) throw new Error('apk missing');
+    const b64 = (await r.text()).replace(/\s/g, '');
+    // অ্যাপের ভেতরে থাকলে নেটিভ ইনস্টল পথ (PackageInstaller) ব্যবহার হয়।
+    if (window.JobTrackerApp && typeof window.JobTrackerApp.downloadApk === 'function') {
+      window.JobTrackerApp.downloadApk(b64);
+      toast('ডাউনলোড হচ্ছে — শেষ হলে ইনস্টল চাপুন।');
+      apkDownloading = false;
+      return;
+    }
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/vnd.android.package-archive' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = APP_APK_FILE_NAME;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 5000);
+    toast('ডাউনলোড শুরু হয়েছে — শেষ হলে APK চাপলেই ইনস্টল হবে।');
+  } catch (e) { toast('ডাউনলোড হয়নি — ইন্টারনেট দেখে আবার চাপুন।'); }
+  apkDownloading = false;
+}
+window.downloadAppApk = downloadAppApk;
+function showUpdateBanner(v) {
+  let b = document.getElementById('jtUpdateBanner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'jtUpdateBanner';
+    document.body.insertBefore(b, document.body.firstChild); // উপরে, যাতে sticky top:0 ধরে
+  }
+  b.innerHTML = '';
+  const txt = document.createElement('span');
+  txt.textContent = '🔔 নতুন আপডেট এসেছে' + (v.versionName ? ' (v' + v.versionName + ')' : '') + ' — আপডেট করুন';
+  const btn = document.createElement('button');
+  btn.className = 'btn green small'; btn.textContent = 'আপডেট করুন';
+  btn.onclick = () => { downloadAppApk(); };
+  const x = document.createElement('button');
+  x.className = 'btn outline small'; x.textContent = '✕';
+  x.setAttribute('aria-label', 'ব্যানার বন্ধ করুন');
+  x.onclick = () => { b.remove(); try { sessionStorage.setItem('jt_update_dismissed', v.versionName); } catch (e) {} };
+  b.append(txt, btn, x);
+}
+async function checkAppUpdate() {
+  // শুধু অ্যাপের ভেতরেই ব্যানার — ব্রাউজারে নয়।
+  const installed = installedAppVersion();
+  if (!installed) return;
+  try {
+    const r = await fetch('/version.json', { cache: 'no-store' });
+    if (!r.ok) return;
+    const v = await r.json();
+    if (!v || !v.versionName || cmpVersion(v.versionName, installed) <= 0) return;
+    try { if (sessionStorage.getItem('jt_update_dismissed') === v.versionName) return; } catch (e) {}
+    showUpdateBanner(v);
+  } catch (e) { /* চুপচাপ — আপডেট চেক না হলেও সাইট চলবে */ }
+}
+function bindApkButtons() {
+  document.querySelectorAll('[data-download-apk]').forEach(el => {
+    el.addEventListener('click', e => { e.preventDefault(); downloadAppApk(); });
+  });
+}
+
 // অ্যাডমিনে সার্কুলার মোছা — দুই চাপে নিশ্চিতকরণ (প্রথম চাপে বোতাম বদলায়,
 // দ্বিতীয় চাপে মোছে; ৩ সেকেন্ডে না চাপলে আগের অবস্থায় ফেরে)।
 window.confirmDeleteCircular = function (btn, id) {
@@ -900,6 +999,10 @@ async function loadContact() {
 
 document.addEventListener('DOMContentLoaded', () => {
   applyFontSize(); bindFontSize(); bindDrawer(); loadContact();
+  bindApkButtons(); checkAppUpdate();
+  // অ্যাপ খোলা থাকলে প্রতি ৩০ মিনিটে আবার আপডেট চেক — নতুন আপডেট
+  // এলে খোলা অ্যাপেই ব্যানার দেখাবে, অ্যাপ বন্ধ করে খুলতে হবে না।
+  setInterval(checkAppUpdate, 30 * 60 * 1000);
   const page = document.body.dataset.page;
   if (page === 'home') initHome();
   if (page === 'login') initLogin();

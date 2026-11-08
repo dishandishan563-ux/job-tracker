@@ -10,6 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#14532d">
 </head>
 <body data-page="home">
 <header>
@@ -27,6 +29,8 @@
     <p id="loginNote" style="font-size:14px;opacity:.85"></p>
     <div class="countdown" id="countdown"></div>
     <div class="topbar"><button class="btn" id="refreshBtn">⟳ এখনই নতুন সার্কুলার খুঁজুন</button><span id="lastCheck" style="font-size:14px;opacity:.85"></span></div>
+    <div class="topbar" style="margin-top:10px"><button class="btn green" data-download-apk>📱 অ্যাপ ডাউনলোড করুন (APK)</button></div>
+    <p style="font-size:13px;opacity:.85;margin:6px 0 0">অ্যান্ড্রয়েড ফোনে APK ইনস্টল করতে "অজানা উৎস থেকে ইনস্টল"-এর অনুমতি দিতে হবে (Play Store থেকে নয়)।</p>
   </div>
 </header>
 <main>
@@ -66,6 +70,7 @@
   <a class="drawer-item" href="settings.html">⚙️ সেটিংস</a>
   <a class="drawer-item" href="admin.html">🔒 অ্যাডমিন</a>
   <a class="drawer-item" href="privacy.html">📄 গোপনীয়তা নীতি</a>
+  <a class="drawer-item" href="#" data-download-apk>📱 অ্যাপ ডাউনলোড করুন (APK)</a>
   <a class="drawer-item" href="#" id="drawerContactBtn" style="display:none">📞 আবেদন করতে চাইলে যোগাযোগ করুন</a>
   <div id="drawerContactBox" style="display:none;padding:4px 12px 10px"></div>
 </aside>

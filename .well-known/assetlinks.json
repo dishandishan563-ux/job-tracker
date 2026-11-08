@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.jobtrackerbd.app",
+      "sha256_cert_fingerprints": ["7C:57:BC:E4:DB:17:EB:56:4F:15:E9:E1:48:10:AB:C7:74:DE:EC:F1:D5:75:94:35:3E:E8:81:55:66:22:06:77"]
+    }
+  }
+]

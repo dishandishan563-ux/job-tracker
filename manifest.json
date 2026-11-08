@@ -1,0 +1,26 @@
+{
+  "background_color": "#14532d",
+  "description": "বাংলাদেশের সব ধরনের সরকারি চাকরির সার্কুলার এক জায়গায় — ডেডলাইন, ফিল্টার, আবেদন ট্র্যাকিং ও অটো ইমেইল রিমাইন্ডার।",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "lang": "bn",
+  "name": "Job Tracker — সরকারি চাকরির সার্কুলার",
+  "orientation": "portrait",
+  "scope": "/",
+  "short_name": "Job Tracker",
+  "start_url": "/index.html",
+  "theme_color": "#14532d"
+}
