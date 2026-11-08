@@ -15,7 +15,7 @@
 <body data-page="admin">
 <header><div class="hero">
 <div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span><button class="btn ghost menu-btn" id="menuBtn" aria-label="মেনু">☰ মেনু</button></div>
-<h1>অ্যাডমিন পোর্টাল</h1><p>শুধু মালিকের জন্য — PIN দিয়ে ঢুকুন।</p>
+<h1>অ্যাডমিন পোর্টাল</h1>
 </div></header>
 <main><div class="card">
 <h3>🔒 অ্যাডমিন পোর্টাল — শুধু মালিকের জন্য</h3>
@@ -49,8 +49,6 @@
 <div id="tab-circulars" style="display:none"></div>
 <div id="tab-email" style="display:none">
 <p><b>অফিসিয়াল সেন্ডার Gmail:</b> <span class="num">jobtrackerbd@gmail.com</span> (শুধু এখান থেকে বদলানো যায়; অ্যাডমিন যে Google দিয়ে লগইন করুক, তাতে এর কোনো এফেক্ট পড়ে না)</p>
-<p><b>অটো-ইমেইল:</b> চালু — প্রতিদিন সকাল ৮টায় (ঢাকা) যাচাইয়ের পর ডেডলাইন, অ্যাডমিট ও রেজাল্টের আপডেট নিজে থেকে পাঠানো হয়। একই ইমেইল দুবার যায় না।</p>
-<p><b>ম্যানুয়াল পাঠানো:</b> অটো-ইমেইলের পাশাপাশি এখনই পাঠাতে চাইলে নিচের বাটন চাপুন — আজকের রিমাইন্ডার (০–৩ দিনের মধ্যে শেষ) এখনই যাবে। আগেই পাঠানো থাকলে দুবার যাবে না।</p>
 <button class="btn green" id="sendNowBtn">✉️ এখনই ইমেইল পাঠান</button>
 <p id="manualSendStatus" style="font-size:14px;margin-top:8px"></p>
 <p><b>প্রাপক:</b> প্রতিটি ব্যবহারকারীর লগইন Gmail।</p>
@@ -62,7 +60,6 @@
 <button class="btn outline" id="seeSentBtn">📧 পাঠানো ইমেইল দেখুন</button>
 <div id="sentList" style="font-size:14px;margin-top:8px"></div>
 </div>
-<p style="font-size:14px;color:var(--muted)">সার্ভারে পাঠাতে Vercel-এ <span class="num">GMAIL_USER</span> ও <span class="num">GMAIL_APP_PASSWORD</span> সেট করতে হবে (README দেখুন)।</p>
 </div>
 <div id="tab-pin" style="display:none">
 <div class="field"><label>বর্তমান PIN</label><input id="oldPin" type="password"></div>
@@ -70,7 +67,6 @@
 <button class="btn green" id="changePinBtn">PIN বদলান</button>
 </div>
 <div id="tab-creator" style="display:none">
-<p style="font-size:14px;color:var(--muted)">এখানে যিনি এই জব ট্র্যাকার বানিয়েছেন তার ছবি ও যোগাযোগের লিংক বসান — হোম পেইজের নিচে “তৈরি করেছেন” সেকশনে দেখাবে। কিছু না বসালে সেকশনটি দেখাবে না।</p>
 <div class="field"><label>নাম</label><input id="crName" placeholder="যেমন: ASHISH"></div>
 <div class="field"><label>ছবির লিংক (URL)</label><input id="crPhotoUrl" placeholder="https://.../photo.jpg"></div>
 <div class="field"><label>অথবা ছবি আপলোড করুন (৫০০ KB-এর মধ্যে)</label><input id="crPhotoFile" type="file" accept="image/*"></div>
@@ -81,7 +77,6 @@
 <p id="crStatus" style="font-size:14px;margin-top:8px"></p>
 </div>
 <div id="tab-contact" style="display:none">
-<p style="font-size:14px;color:var(--muted)">এখানে WhatsApp নম্বর/লিংক ও Telegram লিংক বসান — মেনুতে “📞 আবেদন করতে চাইলে যোগাযোগ করুন” দেখাবে, সবাই দেখতে পাবে। কিছু না বসালে মেনুতে ওই লেখাটা দেখাবে না।</p>
 <div class="field"><label>WhatsApp নম্বর বা লিংক</label><input id="ctWhatsapp" placeholder="01XXXXXXXXX অথবা https://wa.me/8801XXXXXXXXX"></div>
 <div class="field"><label>Telegram লিংক বা @ইউজারনেম</label><input id="ctTelegram" placeholder="https://t.me/username অথবা @username"></div>
 <button class="btn green" id="ctSaveBtn">সেভ করুন</button>
@@ -112,8 +107,7 @@
 <div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-label="লগইন">
   <div class="box">
     <div style="display:flex;justify-content:space-between;align-items:center"><h3>লগইন করুন</h3><button class="btn outline small" id="loginModalClose">✕</button></div>
-    <p style="font-size:14px;color:var(--muted)">লগইন না করলে আবেদন, শর্টলিস্ট, বিস্তারিত বা সেটিংস করা যাবে না — শুধু তালিকা দেখা ও খোঁজা যাবে। সার্কুলার যোগ করেন শুধু অ্যাডমিন।</p>
-    <button class="btn green" id="googleConnectBtn" style="width:100%;margin:12px 0">G Google কানেক্ট করুন</button>
+        <button class="btn green" id="googleConnectBtn" style="width:100%;margin:12px 0">G Google কানেক্ট করুন</button>
     <p id="gisNote" style="font-size:14px;color:var(--muted)"></p>
     <hr style="margin:14px 0">
     <h4>অথবা ম্যানুয়ালভাবে লগইন / রেজিস্টার</h4>

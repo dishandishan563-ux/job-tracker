@@ -15,19 +15,16 @@
 <body data-page="settings">
 <header><div class="hero">
 <div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span><button class="btn ghost menu-btn" id="menuBtn" aria-label="মেনু">☰ মেনু</button></div>
-<h1>সেটিংস</h1><p>লেখার সাইজ ও CV — অ্যাপের সেটিংস। প্রোফাইল (নাম, ছবি, রিমাইন্ডার) আলাদা পেইজে — মেনু থেকে “আমার প্রোফাইল” দেখুন।</p>
+<h1>সেটিংস</h1>
 </div></header>
 <main><div class="card">
 <h3>🔠 লেখার সাইজ</h3>
-<p>উপরের A- / A / A+ বোতাম, অথবা নিচের বোতাম দিয়ে লেখা বড়-ছোট করুন — পছন্দ সেভ থাকে।</p>
 <div class="field"><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span></div>
 <h3 style="margin-top:16px">📄 CV আপলোড</h3>
-<p>CV আপলোড করলে CV থেকে নাম, মোবাইল, ইমেইল, জন্ম তারিখ, জেলা, শিক্ষা, টাইপিং, ঠিকানা, দক্ষতা ও অভিজ্ঞতা পড়ে আপনার প্রোফাইলে বসে যাবে — আর মিলে যাওয়া সার্কুলারে “✓ CV অনুযায়ী মিলেছে” ব্যাজ দেখাবে।</p>
 <div class="field"><label>CV আপলোড (PDF / ছবি / টেক্সট)</label><input id="cvFile" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg"></div>
 <p id="cvStatus" style="font-size:14px;color:var(--muted)">এখনো কোনো CV আপলোড করা হয়নি।</p>
 <button class="btn outline" id="removeCvBtn" style="display:none">🗑️ CV মুছুন</button>
 <h3 style="margin-top:16px">👤 আমার প্রোফাইল</h3>
-<p>নাম, ছবি, ঠিকানা, জেলা, জন্ম তারিখ, শিক্ষা, টাইপিং ও রিমাইন্ডার পছন্দ বদলাতে প্রোফাইল পেইজে যান।</p>
 <a class="btn green" href="profile.html" style="width:100%;text-align:center">👤 আমার প্রোফাইল খুলুন</a>
 <button class="btn outline" id="settingsCloseBtn" style="width:100%;margin-top:8px">বন্ধ করুন</button>
 </div></main>
@@ -51,8 +48,7 @@
 <div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-label="লগইন">
   <div class="box">
     <div style="display:flex;justify-content:space-between;align-items:center"><h3>লগইন করুন</h3><button class="btn outline small" id="loginModalClose">✕</button></div>
-    <p style="font-size:14px;color:var(--muted)">লগইন না করলে আবেদন, শর্টলিস্ট, বিস্তারিত বা সেটিংস করা যাবে না — শুধু তালিকা দেখা ও খোঁজা যাবে। সার্কুলার যোগ করেন শুধু অ্যাডমিন।</p>
-    <button class="btn green" id="googleConnectBtn" style="width:100%;margin:12px 0">G Google কানেক্ট করুন</button>
+        <button class="btn green" id="googleConnectBtn" style="width:100%;margin:12px 0">G Google কানেক্ট করুন</button>
     <p id="gisNote" style="font-size:14px;color:var(--muted)"></p>
     <hr style="margin:14px 0">
     <h4>অথবা ম্যানুয়ালভাবে লগইন / রেজিস্টার</h4>

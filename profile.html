@@ -15,11 +15,10 @@
 <body data-page="profile">
 <header><div class="hero">
 <div class="topbar"><a class="btn ghost" href="index.html">← হোম / সার্কুলার তালিকা</a><span style="flex:1"></span><span class="fontsize-ctl" title="লেখার সাইজ"><button data-fs="small">A-</button><button data-fs="medium" class="active">A</button><button data-fs="large">A+</button></span><button class="btn ghost menu-btn" id="menuBtn" aria-label="মেনু">☰ মেনু</button></div>
-<h1>আমার প্রোফাইল</h1><p>নাম, ছবি, জেলা ও যোগ্যতা — আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।</p>
+<h1>আমার প্রোফাইল</h1>
 </div></header>
 <main><div class="card">
 <h3>👤 আমার প্রোফাইল</h3>
-<p>নাম, ঠিকানা ও ছবি দিন — প্রোফাইল ড্রয়ার মেনুতে দেখাবে, আর আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।</p>
 <div class="field"><label>নাম</label><input id="pName" type="text" placeholder="আপনার নাম"></div>
 <div class="field"><label>ঠিকানা (বর্তমান)</label><input id="pAddress" type="text" placeholder="যেমন: গ্রাম/মহল্লা, থানা, জেলা"></div>
 <div class="field"><label>স্থায়ী ঠিকানা</label><input id="pPermAddress" type="text" placeholder="যেমন: গ্রাম/মহল্লা, থানা, জেলা"></div>
@@ -51,7 +50,6 @@
 <button type="button" class="chip yn-btn" data-yn="no">🚫 না, পেতে চাই না</button>
 </div>
 <p id="remToggleNote" style="font-size:13px;color:var(--muted)"></p></div>
-<p>নিচে বেছে নিন কোন ধরণের সার্কুলারের রিমাইন্ডার চান — কিছু না বাছলে সব ধরণের সার্কুলারের রিমাইন্ডার আপনার Gmail-এ যাবে।</p>
 <div class="field"><label>সার্কুলারের ধরণ</label><div id="prefTypes" class="chips"></div></div>
 <div class="field"><label>যোগ্যতা / পদের ধরণ</label><div id="prefQuals" class="chips"></div></div>
 <button class="btn green" id="saveProfileBtn" style="width:100%">প্রোফাইল সেভ করুন</button>
@@ -78,8 +76,7 @@
 <div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-label="লগইন">
   <div class="box">
     <div style="display:flex;justify-content:space-between;align-items:center"><h3>লগইন করুন</h3><button class="btn outline small" id="loginModalClose">✕</button></div>
-    <p style="font-size:14px;color:var(--muted)">লগইন না করলে আবেদন, শর্টলিস্ট, বিস্তারিত বা প্রোফাইল করা যাবে না — শুধু তালিকা দেখা ও খোঁজা যাবে। সার্কুলার যোগ করেন শুধু অ্যাডমিন।</p>
-    <button class="btn green" id="googleConnectBtn" style="width:100%;margin:12px 0">G Google কানেক্ট করুন</button>
+        <button class="btn green" id="googleConnectBtn" style="width:100%;margin:12px 0">G Google কানেক্ট করুন</button>
     <p id="gisNote" style="font-size:14px;color:var(--muted)"></p>
     <hr style="margin:14px 0">
     <h4>অথবা ম্যানুয়ালভাবে লগইন / রেজিস্টার</h4>
