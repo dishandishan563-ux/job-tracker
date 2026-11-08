@@ -21,8 +21,12 @@
 <h3>👤 আমার প্রোফাইল</h3>
 <p>নাম, ঠিকানা ও ছবি দিন — প্রোফাইল ড্রয়ার মেনুতে দেখাবে, আর আপনার যোগ্যতা অনুযায়ী সার্কুলার মিলবে।</p>
 <div class="field"><label>নাম</label><input id="pName" type="text" placeholder="আপনার নাম"></div>
-<div class="field"><label>ঠিকানা</label><input id="pAddress" type="text" placeholder="যেমন: গ্রাম/মহল্লা, থানা, জেলা"></div>
+<div class="field"><label>ঠিকানা (বর্তমান)</label><input id="pAddress" type="text" placeholder="যেমন: গ্রাম/মহল্লা, থানা, জেলা"></div>
+<div class="field"><label>স্থায়ী ঠিকানা</label><input id="pPermAddress" type="text" placeholder="যেমন: গ্রাম/মহল্লা, থানা, জেলা"></div>
 <div class="field"><label>মোবাইল নম্বর</label><input id="pPhone" type="tel" placeholder="01XXXXXXXXX"></div>
+<div class="field"><label>ইমেইল</label><input id="pEmail" type="email" placeholder="you@gmail.com"></div>
+<div class="field"><label>পিতার নাম</label><input id="pFather" type="text" placeholder="পিতার নাম"></div>
+<div class="field"><label>মাতার নাম</label><input id="pMother" type="text" placeholder="মাতার নাম"></div>
 <div class="field"><label>ছবি (আপলোড করুন, ৫০০ KB-এর মধ্যে)</label><input id="pPhotoFile" type="file" accept=".png,.jpg,.jpeg"></div>
 <div class="field"><label>অথবা ছবির লিংক</label><input id="pPhotoUrl" type="text" placeholder="https://…"></div>
 <img id="pPhotoPreview" class="profile-photo-preview" alt="প্রোফাইল ছবি" style="display:none">
@@ -33,6 +37,13 @@
 <div class="field"><label>শিক্ষা</label><select id="pEdu"><option>HSC</option><option>SSC</option><option>স্নাতক</option><option>JSC</option></select></div>
 <div class="field"><label>টাইপিং — বাংলা (শব্দ/মিনিট)</label><input id="pTypeBn" type="number" value="20"></div>
 <div class="field"><label>টাইপিং — ইংরেজি (শব্দ/মিনিট)</label><input id="pTypeEn" type="number" value="20"></div>
+<h3 style="margin-top:16px">💼 দক্ষতা ও অভিজ্ঞতা</h3>
+<div class="field"><label>দক্ষতা</label><textarea id="pSkills" rows="3" placeholder="যেমন: MS Word, MS Excel, কম্পিউটার টাইপিং"></textarea></div>
+<div class="field"><label>কর্ম অভিজ্ঞতা</label><textarea id="pExp" rows="3" placeholder="যেমন: অফিস সহকারী, ABC Ltd, ২০২৩–২০২৪"></textarea></div>
+<div class="field"><label>ভাষা</label><input id="pLang" type="text" placeholder="যেমন: বাংলা, ইংরেজি"></div>
+<h3 style="margin-top:16px">📄 আমার CV</h3>
+<p id="cvInfo" style="font-size:14px;color:var(--muted)">এখনো কোনো CV আপলোড করা হয়নি — সেটিংস থেকে CV আপলোড করলে তার তথ্য এখানে বসে যাবে।</p>
+<button class="btn outline" id="removeCvBtnProfile" style="display:none">🗑️ CV মুছুন</button>
 <h3 style="margin-top:16px">🔔 রিমাইন্ডার পছন্দ</h3>
 <div class="field"><label>আপনি কি চাকরির রিমাইন্ডার পেতে চান?</label>
 <div class="yn-toggle" id="remToggle">
@@ -44,6 +55,7 @@
 <div class="field"><label>সার্কুলারের ধরণ</label><div id="prefTypes" class="chips"></div></div>
 <div class="field"><label>যোগ্যতা / পদের ধরণ</label><div id="prefQuals" class="chips"></div></div>
 <button class="btn green" id="saveProfileBtn" style="width:100%">প্রোফাইল সেভ করুন</button>
+<button class="btn outline" id="resetProfileBtn" style="width:100%;margin-top:8px">↺ প্রোফাইল রিসেট করুন</button>
 <button class="btn outline" id="profileCloseBtn" style="width:100%;margin-top:8px">বন্ধ করুন</button>
 </div></main>
 <footer><p>তথ্য দ্বিতীয় সূত্রের — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।</p></footer>
@@ -92,6 +104,7 @@
 </div>
 
 <script src="data.js"></script>
+<script src="cv-parse.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

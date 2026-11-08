@@ -683,16 +683,28 @@ function getRemindersEnabled() {
   const yes = document.querySelector('#remToggle .yn-btn[data-yn="yes"]');
   return !yes || yes.classList.contains('active');
 }
-function initProfile() {
-  if (!requireLogin()) return;
+// খালি প্রোফাইল (রিসেটের ডিফল্ট): টাইপিং ২০/২০, শিক্ষা HSC, রিমাইন্ডার হ্যাঁ।
+function emptyProfile() {
+  return { name: '', address: '', permAddress: '', phone: '', email: '', photo: '', district: '', dob: '', edu: 'HSC', typeBn: 20, typeEn: 20, notes: '', fatherName: '', motherName: '', skills: '', experience: '', languages: '', remindersEnabled: true, reminders: { types: [], quals: [] } };
+}
+
+// প্রোফাইল ফর্মে সেভ থাকা মান বসানো (পেইজ লোড + রিসেটের পর দুই জায়গাতেই লাগে)।
+function fillProfileForm() {
   const p = read('jt_profile', {});
-  const map = { pName: 'name', pAddress: 'address', pPhone: 'phone', pPhotoUrl: 'photo', pDistrict: 'district', pDob: 'dob', pEdu: 'edu', pTypeBn: 'typeBn', pTypeEn: 'typeEn', pNotes: 'notes' };
-  Object.entries(map).forEach(([id, key]) => { const f = document.getElementById(id); if (f && p[key] !== undefined && p[key] !== '') f.value = p[key]; });
+  const map = { pName: 'name', pAddress: 'address', pPermAddress: 'permAddress', pPhone: 'phone', pEmail: 'email', pPhotoUrl: 'photo', pDistrict: 'district', pDob: 'dob', pEdu: 'edu', pTypeBn: 'typeBn', pTypeEn: 'typeEn', pNotes: 'notes', pFather: 'fatherName', pMother: 'motherName', pSkills: 'skills', pExp: 'experience', pLang: 'languages' };
+  Object.entries(map).forEach(([id, key]) => { const f = document.getElementById(id); if (f) f.value = (p[key] === undefined || p[key] === null) ? '' : p[key]; });
   renderPrefChips();
   setRemToggle(p.remindersEnabled !== false);
-  document.querySelectorAll('#remToggle .yn-btn').forEach(b => b.onclick = () => setRemToggle(b.dataset.yn === 'yes'));
   const prev = document.getElementById('pPhotoPreview');
   if (prev) { prev.src = p.photo || ''; prev.style.display = p.photo ? 'block' : 'none'; }
+  const info = document.getElementById('cvInfo');
+  if (info) info.textContent = cvStatusText() || 'এখনো কোনো CV আপলোড করা হয়নি — সেটিংস থেকে CV আপলোড করলে তার তথ্য এখানে বসে যাবে।';
+  const rm = document.getElementById('removeCvBtnProfile');
+  if (rm) rm.style.display = (p.cv && p.cv.name) ? '' : 'none';
+}
+function initProfile() {
+  if (!requireLogin()) return;
+  fillProfileForm();
   const photoFile = document.getElementById('pPhotoFile');
   if (photoFile) photoFile.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
@@ -706,52 +718,201 @@ function initProfile() {
   };
   const photoUrl = document.getElementById('pPhotoUrl');
   if (photoUrl) photoUrl.oninput = () => { const pv = document.getElementById('pPhotoPreview'); if (pv) { pv.src = photoUrl.value.trim(); pv.style.display = photoUrl.value.trim() ? 'block' : 'none'; } };
+  const rmBtn = document.getElementById('removeCvBtnProfile');
+  if (rmBtn) rmBtn.onclick = () => armConfirm(rmBtn, 'নিশ্চিত মুছবেন?', () => { removeCvFromProfile(); fillProfileForm(); toast('CV মোছা হয়েছে।'); });
   document.getElementById('saveProfileBtn').onclick = () => {
-    store('jt_profile', {
+    const old = read('jt_profile', {});
+    const np = {
       name: document.getElementById('pName').value.trim(),
       address: document.getElementById('pAddress').value.trim(),
+      permAddress: document.getElementById('pPermAddress').value.trim(),
       phone: document.getElementById('pPhone').value.trim(),
+      email: document.getElementById('pEmail').value.trim(),
       photo: document.getElementById('pPhotoUrl').value.trim(),
       district: document.getElementById('pDistrict').value,
       dob: document.getElementById('pDob').value,
       edu: document.getElementById('pEdu').value,
-      typeBn: +document.getElementById('pTypeBn').value,
-      typeEn: +document.getElementById('pTypeEn').value,
+      typeBn: (+document.getElementById('pTypeBn').value) || 20,
+      typeEn: (+document.getElementById('pTypeEn').value) || 20,
       notes: document.getElementById('pNotes').value.trim(),
+      fatherName: document.getElementById('pFather').value.trim(),
+      motherName: document.getElementById('pMother').value.trim(),
+      skills: document.getElementById('pSkills').value.trim(),
+      experience: document.getElementById('pExp').value.trim(),
+      languages: document.getElementById('pLang').value.trim(),
       remindersEnabled: getRemindersEnabled(),
       reminders: collectPrefs(),
-    });
+    };
+    if (old.cv) np.cv = old.cv; // হাতে সেভ করলে আপলোড করা CV হারাবে না
+    store('jt_profile', np);
     syncToServer(true);
     toast('✓ প্রোফাইল সেভ হয়েছে।');
     setTimeout(() => { location.href = 'index.html'; }, 900);
   };
+  const resetBtn = document.getElementById('resetProfileBtn');
+  if (resetBtn) resetBtn.onclick = () => armConfirm(resetBtn, 'নিশ্চিত রিসেট করবেন?', () => {
+    // শুধু প্রোফাইল + CV খালি হয় — লগইন/অ্যাকাউন্ট, শর্টলিস্ট ও
+    // আবেদনের অবস্থা ছোঁয়া হয় না (ওগুলো jt_profile-এ থাকে না)।
+    store('jt_profile', emptyProfile());
+    try { localStorage.removeItem('jt_cv_data'); } catch {}
+    syncToServer(true); // সার্ভারেও খালি প্রোফাইল সেভ হয় — রিসেট সব ডিভাইসে থাকে
+    fillProfileForm();
+    toast('প্রোফাইল রিসেট হয়েছে।');
+  });
   document.getElementById('profileCloseBtn').onclick = () => location.href = 'index.html';
 }
+// ---------- CV আপলোড → প্রোফাইল ----------
+// আগে: শুধু readAsText(f) থেকে জেলা খুঁজত — PDF-এ সেটা বাইনারি আবর্জনা,
+// তাই প্রায় কখনো মিলত না; আর জেলা ছাড়া কিছুই প্রোফাইলে যেত না,
+// ফাইলটাও কোথাও সেভ হতো না। এখন: PDF (pdf.js, ফলব্যাক raw stream),
+// টেক্সট ও ছবি (OCR) থেকে লেখা পড়ে cv-parse.js দিয়ে সব ফিল্ড বের করে
+// প্রোফাইলে বসায়; ফাইল + তথ্য প্রোফাইলে (cv) সেভ থাকে।
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector('script[src="' + src + '"]')) return resolve();
+    const s = document.createElement('script');
+    s.src = src; s.onload = () => resolve(); s.onerror = () => reject(new Error('script load failed'));
+    document.head.appendChild(s);
+  });
+}
+const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const TESS_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
 
-// ---------- SETTINGS (settings.html) — শুধু অ্যাপের সেটিংস ----------
-// এখানে প্রোফাইলের কিছু নেই — প্রোফাইল আলাদা পেইজ (profile.html)।
-// CV আপলোড: ফাইল থেকে জেলা খুঁজে প্রোফাইলে বসায় (প্রোফাইল পেইজের
-// জেলা ফিল্ড থাকলে); লেখার সাইজ উপরের A-/A/A+ বোতামে (bindFontSize)।
+async function extractPdfText(buf) {
+  try {
+    await loadScript(PDFJS_URL);
+    const lib = window.pdfjsLib;
+    if (lib) {
+      lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+      const pdf = await lib.getDocument({ data: buf }).promise;
+      let out = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const tc = await page.getTextContent();
+        let lastY = null;
+        for (const it of tc.items) {
+          const y = it.transform ? it.transform[5] : null;
+          if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) out += '\n';
+          out += (it.str || '') + ' ';
+          lastY = y;
+        }
+        out += '\n';
+      }
+      if (out.trim()) return out;
+    }
+  } catch {}
+  try { return await extractPdfTextRaw(buf); } catch { return ''; }
+}
+
+async function extractCvText(file) {
+  const name = (file.name || '').toLowerCase();
+  const type = (file.type || '').toLowerCase();
+  if (name.endsWith('.txt') || type.startsWith('text/')) return await file.text();
+  if (name.endsWith('.pdf') || type === 'application/pdf') return await extractPdfText(await file.arrayBuffer());
+  if (type.startsWith('image/') || /\.(png|jpe?g)$/.test(name)) {
+    // ছবির CV — OCR চেষ্টা (ইংরেজি + বাংলা)। না পারলে খালি ফেরে।
+    try {
+      await Promise.race([loadScript(TESS_URL), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 25000))]);
+      if (!window.Tesseract) return '';
+      let worker = null;
+      try { worker = await window.Tesseract.createWorker(['eng', 'ben']); }
+      catch { worker = await window.Tesseract.createWorker('eng'); }
+      const r = await Promise.race([
+        worker.recognize(file),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('ocr timeout')), 90000)),
+      ]);
+      try { await worker.terminate(); } catch {}
+      return (r && r.data && r.data.text) || '';
+    } catch { return ''; }
+  }
+  return '';
+}
+
+const CV_FIELD_LABELS = { name: 'নাম', phone: 'মোবাইল', email: 'ইমেইল', dob: 'জন্ম তারিখ', district: 'জেলা', edu: 'শিক্ষা', typeBn: 'টাইপিং (বাংলা)', typeEn: 'টাইপিং (ইংরেজি)', address: 'ঠিকানা', permAddress: 'স্থায়ী ঠিকানা', fatherName: 'পিতার নাম', motherName: 'মাতার নাম', skills: 'দক্ষতা', experience: 'কর্ম অভিজ্ঞতা', languages: 'ভাষা' };
+
+// CV-র তথ্য প্রোফাইলে বসানো (খালি ঘর + আগের CV-র ঘরই বদলায়;
+// নিজে হাতে বদলানো ঘর ছোঁয়া হয় না)। বসানো ফিল্ডের নাম ফেরে।
+function applyCvFieldsToProfile(fields, meta) {
+  const p = read('jt_profile', {});
+  const old = (p.cv && p.cv.fields) || {};
+  const merged = (typeof mergeCvFields === 'function')
+    ? mergeCvFields(p, fields, old)
+    : { profile: p, filled: [] };
+  const np = merged.profile;
+  np.cv = { name: meta.name, size: meta.size, uploadedAt: new Date().toISOString(), text: (meta.text || '').slice(0, 4000), fields };
+  store('jt_profile', np);
+  syncToServer(true);
+  return merged.filled.map(k => CV_FIELD_LABELS[k] || k);
+}
+
+// CV মোছা: স্ন্যাপশটের সাথে হুবহু মেলা ঘরগুলোই খালি হয়
+// (হাতে বদলানো ঘর থেকে যায়)।
+function removeCvFromProfile() {
+  const p = read('jt_profile', {});
+  const snap = (p.cv && p.cv.fields) || {};
+  const np = (typeof removeCvFields === 'function') ? removeCvFields(p, snap) : p;
+  if (np.cv) delete np.cv;
+  store('jt_profile', np);
+  try { localStorage.removeItem('jt_cv_data'); } catch {}
+  syncToServer(true);
+}
+
+function cvStatusText() {
+  const p = read('jt_profile', {});
+  if (!p.cv || !p.cv.name) return '';
+  const when = p.cv.uploadedAt ? new Date(p.cv.uploadedAt).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  const size = p.cv.size ? ' (' + Math.round(p.cv.size / 1024) + ' KB)' : '';
+  return '📄 ' + p.cv.name + size + (when ? ' — ' + when : '');
+}
+
+// দুই চাপে নিশ্চিত করা (প্রথম চাপে বোতামের লেখা বদলায়, ৩ সেকেন্ডে
+// দ্বিতীয় চাপ না এলে আগের অবস্থায় ফেরে) — alert/confirm নয়।
+function armConfirm(btn, armedText, fn) {
+  if (!btn) return;
+  if (btn.dataset.armed) {
+    delete btn.dataset.armed;
+    btn.textContent = btn.dataset.orig || '';
+    fn();
+  } else {
+    btn.dataset.orig = btn.textContent;
+    btn.dataset.armed = '1';
+    btn.textContent = armedText;
+    setTimeout(() => { if (btn.isConnected && btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = btn.dataset.orig || ''; } }, 3000);
+  }
+}
+
 function initSettings() {
   if (!requireLogin()) return;
   const cv = document.getElementById('cvFile');
-  if (cv) cv.onchange = e => {
+  const status = document.getElementById('cvStatus');
+  const rmBtn = document.getElementById('removeCvBtn');
+  function renderCvStatus() {
+    const p = read('jt_profile', {});
+    if (status) status.textContent = cvStatusText() || 'এখনো কোনো CV আপলোড করা হয়নি।';
+    if (rmBtn) rmBtn.style.display = (p.cv && p.cv.name) ? '' : 'none';
+  }
+  renderCvStatus();
+  if (rmBtn) rmBtn.onclick = () => armConfirm(rmBtn, 'নিশ্চিত মুছবেন?', () => { removeCvFromProfile(); renderCvStatus(); toast('CV মোছা হয়েছে।'); });
+  if (cv) cv.onchange = async e => {
     const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      let found = false;
-      try {
-        const t = String(r.result);
-        const m = t.match(/(ঢাকা|চট্টগ্রাম|খুলনা|রাজশাহী|বরিশাল|সিলেট|রংপুর|ময়মনসিংহ|কুমিল্লা|নারায়ণগঞ্জ|পটুয়াখালী)/);
-        if (m) {
-          const p = read('jt_profile', {});
-          p.district = m[1]; store('jt_profile', p); syncToServer(true);
-          found = true;
-        }
-      } catch {}
-      toast(found ? 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া গেছে।' : 'CV আপলোড হয়েছে: ' + f.name + ' — জেলা পাওয়া যায়নি, নিজে বসান।');
-    };
-    r.readAsText(f);
+    toast('CV পড়া হচ্ছে…');
+    let text = '';
+    try { text = await extractCvText(f); } catch { text = ''; }
+    const fields = (typeof parseCvText === 'function') ? parseCvText(text || '') : {};
+    const filled = applyCvFieldsToProfile(fields, { name: f.name, size: f.size, text });
+    try {
+      if (f.size <= 1500000) {
+        const r = new FileReader();
+        r.onload = () => { try { localStorage.setItem('jt_cv_data', String(r.result)); } catch {} };
+        r.readAsDataURL(f);
+      }
+    } catch {}
+    renderCvStatus();
+    if (filled.length) toast('✓ CV থেকে প্রোফাইলে বসেছে: ' + filled.join(', ') + '।');
+    else if ((text || '').trim()) toast('CV আপলোড হয়েছে, তবে কোনো তথ্য মেলানো যায়নি — প্রোফাইলে নিজে বসান।');
+    else toast('CV আপলোড হয়েছে (' + f.name + ') — লেখা পড়া যায়নি, প্রোফাইলে নিজে বসান।');
+    e.target.value = '';
   };
   const close = document.getElementById('settingsCloseBtn');
   if (close) close.onclick = () => location.href = 'index.html';
