@@ -19,7 +19,8 @@
     <string name="sort_deadline">ডেডলাইন অনুযায়ী (Deadline)</string>
     <string name="sort_posts">পদ বেশি → কম (Most Posts)</string>
     <string name="sort_name">নাম অনুযায়ী (A–Z)</string>
-    <string name="login_title">লগইন / রেজিস্টার (Login)</string>
+    <string name="login_title">লগইন (Login)</string>
+    <string name="register_title">রেজিষ্ট্রেশন (Register)</string>
     <string name="profile_title">আমার প্রোফাইল (Profile)</string>
     <string name="settings_title">সেটিংস (Settings)</string>
     <string name="detail_title">সার্কুলারের বিস্তারিত (Details)</string>

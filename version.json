@@ -2,7 +2,7 @@
   "apkFileName": "job-tracker.apk",
   "apkParts": 8,
   "apkUrl": "/job-tracker.apk.b64",
-  "changelogBn": "নতুন: Google দিয়ে লগইন, ছবির CV পড়া (OCR), সার্কুলার শেয়ার, আর পুশ নোটিফিকেশনের সেটিং — পুশ চালু হতে Firebase সেটআপ বাকি আছে।",
+  "changelogBn": "নতুন: লগইন আর রেজিষ্ট্রেশন আলাদা স্ক্রিনে (Google লগইন সরানো হয়েছে), ছবির CV পড়া (OCR), সার্কুলার শেয়ার, আর পুশ নোটিফিকেশন।",
   "engParts": 3,
   "versionCode": 9,
   "versionName": "1.1.7"
