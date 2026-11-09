@@ -100,6 +100,27 @@
 -keep class com.google.android.gms.dynamite.** { *; }
 -keep class com.google.firebase.messaging.** { *; }
 -keep class com.google.android.gms.cloudmessaging.** { *; }
+# v1.1.7 hotfix build-D2: the sign-in flow also needs the AndroidX stack.
+# The app's own code uses framework android.app.Activity (never AndroidX),
+# so R8 strips the AndroidX jars even though they are in the build inputs
+# (libs/vendor has activity/fragment/lifecycle/savedstate/core/...). Play
+# Services auth's sign-in flow needs androidx.activity.ComponentActivity
+# (superclass chain of SignInHubActivity / the ActivityResult machinery),
+# so getClient() threw NoClassDefFoundError on the phone even after the
+# GMS classes were kept. Plain -keep (NOT allowobfuscation): these classes
+# are looked up by name across the process boundary / by the framework
+# (ComponentActivity, FragmentActivity, lifecycle owners), so renaming
+# them would break the chain the same way it did for the GMS parcelables.
+-keep class androidx.activity.** { *; }
+-keep class androidx.fragment.** { *; }
+-keep class androidx.lifecycle.** { *; }
+-keep class androidx.savedstate.** { *; }
+-keep class androidx.core.** { *; }
+-keep class androidx.annotation.** { *; }
+-keep class androidx.collection.** { *; }
+-keep class androidx.customview.** { *; }
+-keep class androidx.arch.core.** { *; }
+-keep class androidx.versionedparcelable.** { *; }
 # The vendored jars reference optional / platform classes R8 cannot see
 # (annotations, coroutines internals, GMS dynamite). Warnings only.
 -dontwarn com.google.**

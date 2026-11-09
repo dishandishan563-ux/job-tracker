@@ -42,6 +42,10 @@ module.exports = async (req, res) => {
       return res.status(200).json({ created: false, email, name: acc.name || body.name || '', ok: true, token: mint(email) });
     }
     const name = String(body.name || '').trim();
+    // Registration needs a name; login (account already exists) does not —
+    // the stored name is returned instead. Without this guard a login
+    // attempt with a blank name would silently create a nameless account.
+    if (!name) return res.status(400).json({ ok: false, reason: 'name_required', error: 'নতুন অ্যাকাউন্ট খুলতে আপনার নাম দিন।' });
     await kvSet(key, { hash, name });
     return res.status(200).json({ created: true, email, name, ok: true, token: mint(email) });
   } catch (e) {

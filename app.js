@@ -651,7 +651,7 @@ async function initLoginPopup() {
     const emailRaw = document.getElementById('manualEmail').value.trim();
     const email = emailRaw.toLowerCase();
     const pass = document.getElementById('manualPass').value;
-    if (!name || !email || !pass) { toast('নাম, Gmail ও পাসওয়ার্ড — তিনটাই দিন।'); return; }
+    if (!email || !pass) { toast('Gmail ও পাসওয়ার্ড দিন।'); return; }
     const hash = await sha256(email + ':' + pass);
     const accounts = read('jt_accounts', {});
     const localAcc = accounts[emailRaw] || accounts[email];
@@ -671,8 +671,12 @@ async function initLoginPopup() {
         return;
       }
       if (data.error === 'wrong_password') { toast('ভুল পাসওয়ার্ড।'); return; }
+      if (data.reason === 'name_required') { toast(data.error || 'নতুন অ্যাকাউন্ট খুলতে নাম দিন।'); return; }
     } catch {}
-    if (!accounts[email]) accounts[email] = { name, hash };
+    if (!accounts[email]) {
+      if (!name) { toast('নতুন অ্যাকাউন্ট খুলতে নাম দিন।'); return; }
+      accounts[email] = { name, hash };
+    }
     store('jt_accounts', accounts);
     finishLogin(accounts[email].name, email);
   };
