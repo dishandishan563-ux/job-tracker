@@ -284,7 +284,7 @@ async function runTeletalkDiscovery() {
 // an auto-added circular matches a TYPE filter only, never a
 // qualification filter) get ONE Bengali push per circular. Dedupe is
 // per (user, circular) in KV (jt:push-sent), so a later sweep never
-// re-pushes the same circular. No FCM_SERVER_KEY env var = silently
+// re-pushes the same circular. No FCM_SERVICE_ACCOUNT_JSON env var = silently
 // skipped (no key is ever logged or committed). This runs ONLY when the
 // caller asks (opts.notifyNew) — daily-check and online-check do;
 // GET /api/circulars (discoverIfDue) never does, so opening the app or
@@ -304,7 +304,7 @@ function pushTextFor(c) {
 async function notifyNewCirculars(added) {
   const out = { sent: 0, skipped: 0, users: 0 };
   if (!Array.isArray(added) || !added.length) return out;
-  if (!kvAvailable() || !process.env.FCM_SERVER_KEY) return out;
+  if (!kvAvailable() || !process.env.FCM_SERVICE_ACCOUNT_JSON) return out;
   let recipients = [];
   try { recipients = await kvSMembers('jt:recipients'); } catch { return out; }
   for (const rawEmail of recipients) {

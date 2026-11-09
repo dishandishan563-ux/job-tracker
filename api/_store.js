@@ -353,39 +353,21 @@ async function saveOwnerEmail(email) {
   return true;
 }
 
-// ---------- FCM push notifications (legacy endpoint) ----------
-// Sends a push to one Android device via Firebase Cloud Messaging, using
-// the legacy endpoint with a server key. The key comes ONLY from the
-// FCM_SERVER_KEY env var (set in Vercel — never hardcoded, never
-// committed). If the key is absent, sending is skipped silently — the
-// rest of the flow (email, discovery) keeps working, and nothing
-// sensitive is ever logged. The app registers its device token as the
-// top-level "pushToken" on the user's server record (via /api/user-data);
-// profile.pushEnabled === false opts that user out (absent = enabled).
+// ---------- FCM push notifications (HTTP v1) ----------
+// The implementation lives in api/_fcm.js: the legacy endpoint
+// (https://fcm.googleapis.com/fcm/send + FCM_SERVER_KEY) is disabled for
+// this project's Firebase project, so push now goes through the FCM HTTP
+// v1 API with a service-account OAuth2 token (env var
+// FCM_SERVICE_ACCOUNT_JSON — see _fcm.js). sendPush() is re-exported
+// here so callers keep requiring it from ./_store with the same contract:
+// sendPush(token, title, body, data) -> { ok, messageId } /
+// { ok:false, skipped:true } when unconfigured / { ok:false, error }.
 // Dedupe: one KV key per (user, alert) — jt:push-sent:<userHash>:<tag> —
 // so the same circular+user is never pushed twice, even across
 // serverless instances. Tags: "new:<circularId>" for a new circular,
 // "exam:<circularId>:<hash12>" for an exam/result change.
+const { sendPush } = require('./_fcm');
 const PUSH_SENT_PREFIX = 'jt:push-sent';
-const FCM_URL = 'https://fcm.googleapis.com/fcm/send';
-
-async function sendPush(token, title, body, data) {
-  const key = process.env.FCM_SERVER_KEY;
-  if (!key || !token || typeof token !== 'string') return { ok: false, skipped: true };
-  try {
-    const r = await fetch(FCM_URL, {
-      method: 'POST',
-      headers: { Authorization: 'key ' + key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: token, notification: { title: String(title || ''), body: String(body || '') }, data: data || {} }),
-      signal: AbortSignal.timeout(8000),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) return { ok: false, error: 'fcm_' + r.status };
-    return { ok: true, messageId: (j && j.message_id) || null };
-  } catch (e) {
-    return { ok: false, error: String((e && e.message) || e) };
-  }
-}
 
 function pushSentKey(userHash, tag) {
   return `${PUSH_SENT_PREFIX}:${userHash}:${tag}`;
