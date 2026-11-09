@@ -78,6 +78,28 @@
 -keepclassmembers class * implements android.os.Parcelable {
     public static final android.os.Parcelable$Creator *;
 }
+# v1.1.7 hotfix: standalone R8 never applies the AAR consumer rules that
+# play-services-auth / Firebase ship, so without explicit keeps R8 strips
+# the whole Google Sign-In implementation (GoogleSignIn, GoogleSignInOptions,
+# GoogleSignInClient, GoogleApiAvailability, Tasks, dynamite internals —
+# all missing from the live v1.1.7 dex) and getClient() throws on the phone.
+# Plain -keep (NOT allowobfuscation): these classes cross the process
+# boundary to/from the Play Services APK as SafeParcelables, and Binder
+# unparcelling looks them up BY NAME — the GMS APK writes the unobfuscated
+# name, so a renamed copy in our dex would fail to unparcel (Status,
+# GoogleSignInAccount, GoogleSignInOptions, ...). Keeping Google's public
+# library names reveals nothing about the app's own code, which stays
+# shrunk + renamed as before. The FCM keeps are the same-class fix for
+# push — dormant now without google-services.json, but it would break the
+# same way when Firebase activates.
+-keep class com.google.android.gms.auth.api.signin.** { *; }
+-keep class com.google.android.gms.auth.api.** { *; }
+-keep class com.google.android.gms.common.** { *; }
+-keep class com.google.android.gms.common.api.** { *; }
+-keep class com.google.android.gms.tasks.** { *; }
+-keep class com.google.android.gms.dynamite.** { *; }
+-keep class com.google.firebase.messaging.** { *; }
+-keep class com.google.android.gms.cloudmessaging.** { *; }
 # The vendored jars reference optional / platform classes R8 cannot see
 # (annotations, coroutines internals, GMS dynamite). Warnings only.
 -dontwarn com.google.**

@@ -1,6 +1,6 @@
 {
   "apkFileName": "job-tracker.apk",
-  "apkParts": 7,
+  "apkParts": 8,
   "apkUrl": "/job-tracker.apk.b64",
   "changelogBn": "নতুন: Google দিয়ে লগইন, ছবির CV পড়া (OCR), সার্কুলার শেয়ার, আর পুশ নোটিফিকেশনের সেটিং — পুশ চালু হতে Firebase সেটআপ বাকি আছে।",
   "engParts": 3,
