@@ -3,6 +3,7 @@ package com.jobtrackerbd.app
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -38,6 +39,9 @@ class LoginActivity : Activity() {
     private lateinit var passEt: EditText
     private lateinit var statusTv: TextView
     private var googleClient: GoogleSignInClient? = null
+    // DIAGNOSTIC (build-D1): the setup error text, shown on the screen
+    // so the phone tells us what actually failed.
+    private var googleSetupError: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,11 +76,20 @@ class LoginActivity : Activity() {
                 // init) — that must leave Google login off, not kill the
                 // whole login screen.
                 googleClient = null
+                // DIAGNOSTIC (build-D1): show the REAL error right away so
+                // the phone tells us what actually failed.
+                val detail = e.message?.trim()?.replace("\n", " ")?.take(100)
+                googleSetupError = "Google লগইন হয়নি (" + e.javaClass.simpleName + ")" +
+                    if (detail.isNullOrBlank()) "" else "\n" + detail
+                statusTv.text = googleSetupError
             }
             findViewById<Button>(R.id.googleBtn).setOnClickListener {
                 val client = googleClient
                 if (client == null) {
-                    statusTv.text = "Google লগইন এই ফোনে চালু হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
+                    // DIAGNOSTIC (build-D1): show the stored setup error
+                    // instead of the generic line.
+                    statusTv.text = googleSetupError
+                        ?: "Google লগইন এই ফোনে চালু হয়নি — ম্যানুয়াল লগইন ব্যবহার করুন।"
                     return@setOnClickListener
                 }
                 statusTv.text = "Google অ্যাকাউন্ট বাছুন…"
@@ -120,6 +133,27 @@ class LoginActivity : Activity() {
                         setFpStatus(r.error)
                     }
                 }
+            }
+            // DIAGNOSTIC (build-D1): tiny build tag at the bottom of the
+            // form card, so we can always tell which build is installed.
+            // Diagnostic only — it must never break the login screen.
+            try {
+                val card = findViewById<TextView>(R.id.forgotLink).parent as? LinearLayout
+                val density = resources.displayMetrics.density
+                val tag = TextView(this)
+                tag.text = "build-D1"
+                tag.textSize = 11f
+                tag.setTextColor(0xFF888888.toInt())
+                tag.gravity = Gravity.CENTER
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.topMargin = (10 * density).toInt()
+                tag.layoutParams = lp
+                card?.addView(tag)
+            } catch (t: Throwable) {
+                // Ignore — the tag is diagnostic only.
             }
             Ui.applyTextScale(findViewById(android.R.id.content))
         } catch (t: Throwable) {
