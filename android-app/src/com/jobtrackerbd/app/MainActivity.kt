@@ -66,6 +66,37 @@ class MainActivity : Activity() {
     private var sortMode: Int = 0 // 0 deadline, 1 posts desc, 2 name A-Z
     private var shortlistOnly: Boolean = false
 
+    // TEMPORARY DIAGNOSTIC (crash-locator build): shows the first launch
+    // error on screen once, so a screenshot names the failing step.
+    // Remove together with the PushHelper.lastError / Api.lastError code.
+    private var diagShown = false
+    private var createFailed = false
+    private var pendingDiag: String? = null
+
+    private fun diagText(step: String, t: Throwable): String {
+        val msg = (t.message ?: "").take(100)
+        return "$step (${t.javaClass.simpleName}) — $msg"
+    }
+
+    private fun showDiagDialog(text: String) {
+        if (diagShown) return
+        diagShown = true
+        try {
+            runOnUiThread {
+                try {
+                    AlertDialog.Builder(this)
+                        .setTitle("⚠️ সমস্যা ধরা পড়েছে")
+                        .setMessage(text.take(200))
+                        .setPositiveButton("ঠিক আছে", null)
+                        .show()
+                } catch (t: Throwable) {
+                    Ui.toast(this, text.take(100))
+                }
+            }
+        } catch (ignored: Throwable) {
+        }
+    }
+
     private val tickHandler = Handler(Looper.getMainLooper())
     private val tickRunnable = object : Runnable {
         override fun run() {
@@ -83,6 +114,17 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        try {
+            onCreateInner(savedInstanceState)
+        } catch (t: Throwable) {
+            // TEMPORARY DIAGNOSTIC: show the real error instead of crashing.
+            createFailed = true
+            pendingDiag = diagText("Home:", t)
+            try { showDiagDialog(pendingDiag!!) } catch (ignored: Throwable) { }
+        }
+    }
+
+    private fun onCreateInner(savedInstanceState: Bundle?) {
         Store.init(this)
         setContentView(R.layout.activity_main)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
@@ -165,6 +207,19 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        try {
+            onResumeInner()
+        } catch (t: Throwable) {
+            // TEMPORARY DIAGNOSTIC: show the real error instead of crashing.
+            try { showDiagDialog(diagText("Home:", t)) } catch (ignored: Throwable) { }
+        }
+    }
+
+    private fun onResumeInner() {
+        if (createFailed) {
+            pendingDiag?.let { showDiagDialog(it); pendingDiag = null }
+            return
+        }
         // Profile/shortlist may have changed on another screen — re-render.
         // Also re-apply the text-size setting (it may have changed in Settings).
         Ui.applyTextScale(findViewById(android.R.id.content))
@@ -180,12 +235,22 @@ class MainActivity : Activity() {
         // user logged in again. Offline the cache is kept as-is.
         if (Store.isLoggedIn) {
             Api.refreshUserData {
-                adapter.notifyDataSetChanged()
-                updateHero()
+                try {
+                    adapter.notifyDataSetChanged()
+                    updateHero()
+                } catch (t: Throwable) {
+                    showDiagDialog(diagText("Data load:", t))
+                }
+                // TEMPORARY DIAGNOSTIC: a data-load error is recorded
+                // asynchronously — show it when the callback arrives.
+                Api.lastError?.let { showDiagDialog(it); Api.clearLastError() }
             }
             // FCM token sync (no-op while FCM is dormant — see PushHelper).
             PushHelper.syncToken(this)
             PushHelper.flushPendingToken(this)
+            // TEMPORARY DIAGNOSTIC: show a recorded Push/Firebase error
+            // once, so a screenshot names the failing step.
+            PushHelper.lastError?.let { showDiagDialog(it); PushHelper.clearLastError() }
         }
     }
 

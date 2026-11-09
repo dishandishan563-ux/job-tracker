@@ -31,6 +31,16 @@ object Api {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    /**
+     * TEMPORARY DIAGNOSTIC (crash-locator build): the last data-load
+     * error, if any — MainActivity shows it once on home. Remove
+     * together with the display code.
+     */
+    var lastError: String? = null
+        private set
+
+    fun clearLastError() { lastError = null }
+
     data class Result(
         val ok: Boolean,
         val json: JSONObject? = null,
@@ -191,18 +201,25 @@ object Api {
             JSONObject().apply { put("action", "load") },
             token
         ) { r ->
-            if (r.httpCode == 401) {
-                Store.logout()
+            try {
+                if (r.httpCode == 401) {
+                    Store.logout()
+                    cb?.invoke(null)
+                    return@post
+                }
+                val data = if (r.json?.optBoolean("ok") == true && r.json.optBoolean("exists")) {
+                    UserData.fromJson(r.json.optJSONObject("data"))
+                } else {
+                    null
+                }
+                if (data != null) Store.cachedData = data
+                cb?.invoke(data)
+            } catch (t: Throwable) {
+                // TEMPORARY DIAGNOSTIC: never crash on a bad data-load —
+                // keep the cache and let home show the real error.
+                lastError = "Data load: (${t.javaClass.simpleName}) — ${(t.message ?: "").take(100)}"
                 cb?.invoke(null)
-                return@post
             }
-            val data = if (r.json?.optBoolean("ok") == true && r.json.optBoolean("exists")) {
-                UserData.fromJson(r.json.optJSONObject("data"))
-            } else {
-                null
-            }
-            if (data != null) Store.cachedData = data
-            cb?.invoke(data)
         }
     }
 
