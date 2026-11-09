@@ -100,6 +100,25 @@
 -keep class com.google.android.gms.dynamite.** { *; }
 -keep class com.google.firebase.messaging.** { *; }
 -keep class com.google.android.gms.cloudmessaging.** { *; }
+# v1.1.9: GMS/Firebase R classes — PROVEN crash fix. The diagnostic
+# build proved FirebaseApp.initializeApp() throws NoClassDefFoundError
+# "Failed resolution of: Lcom/google/android/gms/common/R$string;" on the
+# phone. Cause: aapt2 link only generates R.java for the app's own
+# package, so com.google.android.gms.common.R$string never existed in
+# the build inputs at all — no -keep rule could keep a class that was
+# never there (the -keep for com.google.android.gms.common.** above was
+# already present and did nothing for it). The build script now passes
+# --extra-packages for the two GMS packages to aapt2 link, so their
+# R.java files are generated with the correct resource IDs; these rules
+# then make sure R8 keeps the generated R classes (plain -keep, NOT
+# allowobfuscation: the GMS/Firebase code looks the classes up BY NAME
+# at runtime, so renaming them would fail the same way). The two
+# packages are the only R classes the vendored jars reference at all
+# (verified by scanning every jar's constant pool).
+-keep class com.google.android.gms.common.R$* { *; }
+-keep class com.google.android.gms.base.R$* { *; }
+-keep class com.google.android.gms.**R$* { *; }
+-keep class com.google.firebase.**R$* { *; }
 # v1.1.7 hotfix build-D2: the sign-in flow also needs the AndroidX stack.
 # The app's own code uses framework android.app.Activity (never AndroidX),
 # so R8 strips the AndroidX jars even though they are in the build inputs

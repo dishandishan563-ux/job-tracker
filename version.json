@@ -2,8 +2,8 @@
   "apkFileName": "job-tracker.apk",
   "apkParts": 8,
   "apkUrl": "/job-tracker.apk.b64",
-  "changelogBn": "নতুন: লগইন আর রেজিষ্ট্রেশন আলাদা স্ক্রিনে (Google লগইন সরানো হয়েছে), ছবির CV পড়া (OCR), সার্কুলার শেয়ার, আর পুশ নোটিফিকেশন।",
+  "changelogBn": "ঠিক করা হয়েছে: লগইনের পর অ্যাপ বন্ধ হয়ে যাওয়া; লগইন আর রেজিষ্ট্রেশন আলাদা স্ক্রিনে, ছবির CV পড়া (OCR), সার্কুলার শেয়ার, আর পুশ নোটিফিকেশন।",
   "engParts": 3,
-  "versionCode": 10,
-  "versionName": "1.1.8"
+  "versionCode": 11,
+  "versionName": "1.1.9"
 }

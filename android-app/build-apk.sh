@@ -192,6 +192,8 @@ cp -r "$PDFBOX_ASSETS/com" "$STAGE_ASSETS/"
 "$AAPT2" link -o "$WORK/app-unsigned.apk" -I "$PLATFORM_JAR" \
   --manifest "$APP/AndroidManifest.xml" \
   --java "$WORK/gen" \
+  --extra-packages com.google.android.gms.common \
+  --extra-packages com.google.android.gms.base \
   -A "$STAGE_ASSETS" \
   --auto-add-overlay \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" \

@@ -2,6 +2,7 @@ package com.jobtrackerbd.app
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -12,8 +13,8 @@ import kotlin.concurrent.thread
 /** Minimal HTTP client for the existing Job Tracker Vercel APIs. No new endpoints. */
 object Api {
     const val BASE = "https://job-tracker-official-68.vercel.app"
-    const val APP_VERSION_NAME = "1.1.8"
-    const val APP_VERSION_CODE = 10
+    const val APP_VERSION_NAME = "1.1.9"
+    const val APP_VERSION_CODE = 11
 
     /**
      * Google OAuth Web client ID for project gen-lang-client-0746409411
@@ -30,16 +31,6 @@ object Api {
         "298466691834-c0f8h98ijbugklo6f37he9l9qaid2haf.apps.googleusercontent.com"
 
     private val mainHandler = Handler(Looper.getMainLooper())
-
-    /**
-     * TEMPORARY DIAGNOSTIC (crash-locator build): the last data-load
-     * error, if any — MainActivity shows it once on home. Remove
-     * together with the display code.
-     */
-    var lastError: String? = null
-        private set
-
-    fun clearLastError() { lastError = null }
 
     data class Result(
         val ok: Boolean,
@@ -215,9 +206,8 @@ object Api {
                 if (data != null) Store.cachedData = data
                 cb?.invoke(data)
             } catch (t: Throwable) {
-                // TEMPORARY DIAGNOSTIC: never crash on a bad data-load —
-                // keep the cache and let home show the real error.
-                lastError = "Data load: (${t.javaClass.simpleName}) — ${(t.message ?: "").take(100)}"
+                // Never crash on a bad data-load — keep the cache.
+                Log.w("Api", "refreshUserData failed: ${t.message}")
                 cb?.invoke(null)
             }
         }

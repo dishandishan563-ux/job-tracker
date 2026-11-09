@@ -35,20 +35,6 @@ object PushHelper {
     private var initAttempted = false
     private var initOk = false
 
-    /**
-     * TEMPORARY DIAGNOSTIC (crash-locator build): the last Push/Firebase
-     * error, if any — MainActivity shows it once on home so a screenshot
-     * names the failing step. Remove together with the display code.
-     */
-    var lastError: String? = null
-        private set
-
-    fun clearLastError() { lastError = null }
-
-    private fun recordError(step: String, t: Throwable) {
-        lastError = "$step (${t.javaClass.simpleName}) — ${(t.message ?: "").take(100)}"
-    }
-
     /** True only when the google-services values exist in the app
      * (generated from google-services.json by build-apk.sh, or by the
      * google-services Gradle plugin if the project ever moves to Gradle).
@@ -83,7 +69,6 @@ object PushHelper {
             Log.i(TAG, "FirebaseApp initialised.")
             true
         } catch (e: Throwable) {
-            recordError("Push init:", e)
             Log.w(TAG, "FirebaseApp init failed, FCM stays dormant: ${e.message}")
             false
         }
@@ -107,12 +92,10 @@ object PushHelper {
                     val token = task.result ?: return@addOnCompleteListener
                     saveToken(context, token)
                 } catch (e: Throwable) {
-                    recordError("Push token:", e)
                     Log.w(TAG, "FCM token save failed: ${e.message}")
                 }
             }
         } catch (e: Throwable) {
-            recordError("Push sync:", e)
             Log.w(TAG, "syncToken failed, FCM stays dormant: ${e.message}")
         }
     }
@@ -144,7 +127,6 @@ object PushHelper {
             Store.pendingPushToken = ""
             saveToken(context, pending)
         } catch (e: Throwable) {
-            recordError("Push flush:", e)
             Log.w(TAG, "flushPendingToken failed: ${e.message}")
         }
     }
