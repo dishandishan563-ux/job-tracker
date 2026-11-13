@@ -6,6 +6,9 @@
 // 2) Checks the circulars (KV list, seeded from data/circulars.json) for
 //    deadlines 3 days / 1 day away, admit/exam and result updates, and
 //    emails every registered recipient from the official sender Gmail.
+//    ONE digest email per recipient per run: all deadline reminders and
+//    exam/result alerts for that user go in a single mail (before this,
+//    every circular sent its own mail — 4-5+ mails in one morning).
 // 3) Exam / result alerts: for circulars a user saved/shortlisted or
 //    marked applied, the circular's exam/result link is checked for a
 //    newly published exam date or result. NOTE on the schema: no circular
@@ -54,6 +57,63 @@ async function checkPortals(circulars) {
 
 function bn(n) { return String(n).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[+d]); }
 
+// ---------- একটাই ডাইজেস্ট মেইল ----------
+// HTML এস্কেপ — সংস্থার নাম / লিংকে < > & থাকলেও মেইল ভাঙবে না।
+function escHtml(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function fmtDate(c) { try { return new Date(c.deadline).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }); } catch { return String(c.deadline || ''); } }
+
+function deadlineWhen(daysLeft) { return daysLeft === 1 ? 'আগামীকাল শেষ!' : 'আর ৩ দিন বাকি।'; }
+
+function buildDigestText(d) {
+  const lines = ['নমস্কার / আসসালামু আলাইকুম,', '', `আজকের আপডেট — মোট ${bn(d.deadline.length + d.exam.length)}টি:`, ''];
+  if (d.deadline.length) {
+    lines.push('⏰ শেষ হতে চলেছে:');
+    for (const { c, daysLeft } of d.deadline) {
+      const totalTxt = c.totalPosts == null ? 'উল্লেখ নেই' : bn(c.totalPosts) + 'টি';
+      const hscTxt = c.hscPosts == null ? 'উল্লেখ নেই' : bn(c.hscPosts) + 'টি';
+      lines.push(`• ${c.org} — মোট ${totalTxt} পদ, HSC পদ ${hscTxt}।`);
+      lines.push(`  শেষ তারিখ: ${fmtDate(c)}। ${deadlineWhen(daysLeft)}`);
+      if (c.applyUrl) lines.push(`  আবেদন: ${c.applyUrl}`);
+    }
+    lines.push('');
+  }
+  if (d.exam.length) {
+    lines.push('📋 পরীক্ষা/ফলাফল আপডেট:');
+    for (const { c } of d.exam) {
+      lines.push(`• ${c.org} — আপনার সেভ করা / আবেদন করা সার্কুলারের পোর্টালে পরীক্ষা বা ফলাফল সংক্রান্ত তথ্য বদলেছে বলে মনে হচ্ছে।`);
+      lines.push(`  তারিখ এখানে দেওয়া হয়নি — অফিসিয়াল পোর্টালে যাচাই করুন: ${c.applyUrl}`);
+    }
+    lines.push('');
+  }
+  lines.push('দ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।');
+  lines.push('— Job Tracker (jobtrackerbd@gmail.com)');
+  return lines.join('\n');
+}
+
+function buildDigestHtml(d) {
+  const total = d.deadline.length + d.exam.length;
+  let h = `<p>নমস্কার / আসসালামু আলাইকুম,</p><p>আজকের আপডেট — মোট ${bn(total)}টি:</p>`;
+  if (d.deadline.length) {
+    h += '<h3>⏰ শেষ হতে চলেছে</h3><ul>';
+    for (const { c, daysLeft } of d.deadline) {
+      const totalTxt = c.totalPosts == null ? 'উল্লেখ নেই' : bn(c.totalPosts) + 'টি';
+      const hscTxt = c.hscPosts == null ? 'উল্লেখ নেই' : bn(c.hscPosts) + 'টি';
+      h += `<li><b>${escHtml(c.org)}</b> — মোট ${totalTxt} পদ, HSC পদ ${hscTxt}।<br>শেষ তারিখ: ${escHtml(fmtDate(c))}। ${deadlineWhen(daysLeft)}<br>${c.applyUrl ? `আবেদন: <a href="${escHtml(c.applyUrl)}">${escHtml(c.applyUrl)}</a>` : ''}</li>`;
+    }
+    h += '</ul>';
+  }
+  if (d.exam.length) {
+    h += '<h3>📋 পরীক্ষা/ফলাফল আপডেট</h3><ul>';
+    for (const { c } of d.exam) {
+      h += `<li><b>${escHtml(c.org)}</b> — আপনার সেভ করা / আবেদন করা সার্কুলারের পোর্টালে পরীক্ষা বা ফলাফল সংক্রান্ত তথ্য বদলেছে বলে মনে হচ্ছে।<br>তারিখ এখানে দেওয়া হয়নি — অফিসিয়াল পোর্টালে যাচাই করুন: ${c.applyUrl ? `<a href="${escHtml(c.applyUrl)}">${escHtml(c.applyUrl)}</a>` : 'পোর্টাল'}</li>`;
+    }
+    h += '</ul>';
+  }
+  h += '<p>দ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।<br>— Job Tracker (jobtrackerbd@gmail.com)</p>';
+  return h;
+}
+
 // ---------- Exam / result alerts (saved + applied circulars only) ----------
 // Conservative by design: fetch fails / unparseable page / no exam keyword
 // in the new text = no alert, ever. The stored state is a hash of the
@@ -83,7 +143,7 @@ function checkUrlsFor(c) {
 }
 
 async function checkExamUpdates(recipients, circulars, prefsByEmail, enabledByEmail, sent) {
-  const out = { checked: 0, alerts: 0, errors: [] };
+  const out = { checked: 0, alerts: 0, errors: [], itemsByEmail: new Map() }; // itemsByEmail: to -> [{c, hash12}] — মেইল পাঠানো হয় না, ডাইজেস্টে জমা হয়
   if (!kvAvailable() || !recipients.length) return out;
   const byId = new Map(circulars.map(c => [c.id, c]));
   // Per user: what they saved / applied, plus their push token.
@@ -149,7 +209,8 @@ async function checkExamUpdates(recipients, circulars, prefsByEmail, enabledByEm
   }
   if (!changed.size) return out;
   // Alert every watcher of a changed circular (category-filtered).
-  const today = new Date().toISOString().slice(0, 10);
+  // মেইল এখানে পাঠানো হয় না — অ্যালার্টগুলো ডাইজেস্টে জমা হয়, মূল
+  // হ্যান্ডলার একটাই মেইলে সব পাঠায়। পুশ আগের মতোই প্রতি আইটেমে যায়।
   for (const [to, info] of watchByEmail) {
     for (const c of info.watched) {
       const ch = changed.get(c.id);
@@ -158,10 +219,9 @@ async function checkExamUpdates(recipients, circulars, prefsByEmail, enabledByEm
       const hash12 = ch.hash.slice(0, 12);
       const emailKey = `${to}|${c.id}|exam|${hash12}`;
       if (!sent[emailKey]) {
-        const subject = `Job Tracker — ${c.org}: পরীক্ষা/ফলাফল আপডেট`;
-        const text = `নমস্কার / আসসালামু আলাইকুম,\n\n${c.org} — আপনার সেভ করা / আবেদন করা সার্কুলারের পোর্টালে পরীক্ষা বা ফলাফল সংক্রান্ত তথ্য বদলেছে বলে মনে হচ্ছে।\nতারিখ এখানে দেওয়া হয়নি — অফিসিয়াল পোর্টালে যাচাই করুন: ${c.applyUrl}\n\nদ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।\n— Job Tracker (jobtrackerbd@gmail.com)`;
-        try { await sendMail({ subject, text, to }); sent[emailKey] = today; out.alerts++; await logSentEmail(to, subject, 'daily-exam'); }
-        catch (e) { out.errors.push(`${to}: ${e.message}`); }
+        if (!out.itemsByEmail.has(to)) out.itemsByEmail.set(to, []);
+        out.itemsByEmail.get(to).push({ c, hash12 });
+        out.alerts++;
       }
       if (info.pushToken && info.pushEnabled) {
         const userHash = keyFor('jt:user', to).split(':').pop();
@@ -216,7 +276,11 @@ module.exports = async (req, res) => {
     try { prefsByEmail.set(to, await getUserPrefs(to)); } catch { prefsByEmail.set(to, null); }
     try { enabledByEmail.set(to, await remindersEnabled(to)); } catch { enabledByEmail.set(to, true); }
   }
-  let sentCount = 0; const errors = [];
+  // ডাইজেস্ট: সকালের সব মেইল একটায় — প্রতিটি প্রাপকের জন্য ডেডলাইন
+  // রিমাইন্ডার + পরীক্ষা/ফলাফল অ্যালার্ট জমা হয়, তারপর একটাই মেইল যায়।
+  // (আগে প্রতিটি সার্কুলারের জন্য আলাদা মেইল যেত — ৪/৫টা একসাথে আসত।)
+  const errors = [];
+  const digestByEmail = new Map(); // to -> { deadline: [{c, daysLeft, key}], exam: [{c, hash12, key}] }
   for (const c of circulars) {
     const deadline = new Date(c.deadline);
     const daysLeft = Math.ceil((deadline - now) / 86400000);
@@ -226,21 +290,38 @@ module.exports = async (req, res) => {
       if (!circularMatchesPrefs(c, prefsByEmail.get(to))) continue;
       const key = `${to}|${c.id}|deadline-${daysLeft}|${today}`;
       if (sent[key]) continue; // dedupe: never send the same email twice
-      const subject = `Job Tracker — ${c.org}: ${daysLeft === 1 ? 'আগামীকাল শেষ' : 'আর ৩ দিন বাকি'}`;
-      const totalTxt = c.totalPosts == null ? 'উল্লেখ নেই' : bn(c.totalPosts) + 'টি';
-      const hscTxt = c.hscPosts == null ? 'উল্লেখ নেই' : bn(c.hscPosts) + 'টি';
-      const text = `নমস্কার / আসসালামু আলাইকুম,\n\n${c.org} — মোট ${totalTxt} পদ, HSC পদ ${hscTxt}।\nশেষ তারিখ: ${new Date(c.deadline).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}। ${daysLeft === 1 ? 'আগামীকাল শেষ!' : 'আর ৩ দিন বাকি।'}\nআবেদন: ${c.applyUrl}\n\nদ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।\n— Job Tracker (jobtrackerbd@gmail.com)`;
-      try { await sendMail({ subject, text, to }); sent[key] = today; sentCount++; await logSentEmail(to, subject, 'daily'); }
-      catch (e) { errors.push(`${to}: ${e.message}`); }
+      if (!digestByEmail.has(to)) digestByEmail.set(to, { deadline: [], exam: [] });
+      digestByEmail.get(to).deadline.push({ c, daysLeft, key });
     }
   }
   // পরীক্ষা/ফলাফল অ্যালার্ট — সেভ করা বা আবেদন করা সার্কুলারের পোর্টাল
   // বদলেছে কি না দেখা হয়; ব্যর্থ হলে রিমাইন্ডার বাঁচে, অ্যালার্ট শুধু বাদ যায়।
+  // (মেইল এখানে যায় না — অ্যালার্টগুলো ডাইজেস্টে জমা হয়; পুশ আগের মতোই যায়।)
   let exam = { checked: 0, alerts: 0, errors: [] };
   try { exam = await checkExamUpdates(recipients, circulars, prefsByEmail, enabledByEmail, sent); } catch (e) { exam.errors.push(String((e && e.message) || e)); }
   errors.push(...(exam.errors || []));
+  if (exam.itemsByEmail) {
+    for (const [to, items] of exam.itemsByEmail) {
+      if (!digestByEmail.has(to)) digestByEmail.set(to, { deadline: [], exam: [] });
+      for (const it of items) digestByEmail.get(to).exam.push({ c: it.c, hash12: it.hash12, key: `${to}|${it.c.id}|exam|${it.hash12}` });
+    }
+  }
+  // একটাই মেইল প্রতি প্রাপক — সফল হলে তবেই সব আইটেমের dedupe চিহ্ন বসে।
+  let sentCount = 0; let itemCount = 0;
+  for (const [to, d] of digestByEmail) {
+    const total = d.deadline.length + d.exam.length;
+    if (!total) continue;
+    const subject = `Job Tracker — আজকের আপডেট (${bn(total)}টি)`;
+    try {
+      await sendMail({ subject, text: buildDigestText(d), html: buildDigestHtml(d), to });
+      for (const it of d.deadline) sent[it.key] = today;
+      for (const it of d.exam) sent[it.key] = today;
+      sentCount++; itemCount += total;
+      await logSentEmail(to, subject, 'daily');
+    } catch (e) { errors.push(`${to}: ${e.message}`); }
+  }
   saveSent(sent);
-  return res.status(200).json({ errors, ok: true, sent: sentCount, exam, discovered, portals: portalSummary });
+  return res.status(200).json({ errors, ok: true, sent: sentCount, items: itemCount, exam: { checked: exam.checked, alerts: exam.alerts, errors: exam.errors }, discovered, portals: portalSummary });
 };
 
 // Mock-test hooks (no new file): the handler stays the default export.
