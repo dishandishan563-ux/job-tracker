@@ -1,5 +1,8 @@
 package com.jobtrackerbd.app
 
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -13,8 +16,48 @@ import kotlin.concurrent.thread
 /** Minimal HTTP client for the existing Job Tracker Vercel APIs. No new endpoints. */
 object Api {
     const val BASE = "https://job-tracker-official-68.vercel.app"
-    const val APP_VERSION_NAME = "1.1.9"
-    const val APP_VERSION_CODE = 11
+    // Fallback only — the real version always comes from the manifest
+    // (installedVersionName/Code below). v1.2.0 bug: VERSION/version.json
+    // were bumped but these consts were not, so Settings kept showing
+    // 1.1.9 and the update banner never went away. Never compare against
+    // these consts again.
+    const val APP_VERSION_NAME = "1.2.1"
+    const val APP_VERSION_CODE = 13
+
+    /** True installed version from the manifest (aapt2 sets it from
+     *  android-app/VERSION at build time). Falls back to the consts
+     *  above only if PackageManager fails. */
+    fun installedVersionName(ctx: Context): String {
+        return try {
+            val pi = packageInfo(ctx)
+            pi?.versionName ?: APP_VERSION_NAME
+        } catch (e: Exception) {
+            APP_VERSION_NAME
+        }
+    }
+
+    fun installedVersionCode(ctx: Context): Int {
+        return try {
+            val pi = packageInfo(ctx) ?: return APP_VERSION_CODE
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) pi.longVersionCode.toInt()
+            else @Suppress("DEPRECATION") pi.versionCode
+        } catch (e: Exception) {
+            APP_VERSION_CODE
+        }
+    }
+
+    private fun packageInfo(ctx: Context) = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ctx.packageManager.getPackageInfo(
+                ctx.packageName, PackageManager.PackageInfoFlags.of(0)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+        }
+    } catch (e: Exception) {
+        null
+    }
 
     /**
      * Google OAuth Web client ID for project gen-lang-client-0746409411

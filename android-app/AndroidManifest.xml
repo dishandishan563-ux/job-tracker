@@ -6,6 +6,12 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- v1.2.1: foreground service for the update download (keeps
+         downloading after the app is left) + its dataSync type
+         (required for targetSdk 34). Both are normal permissions —
+         no runtime prompt. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Push notifications (v1.1.7): Android 13+ runtime permission, asked
          only when the user switches push on in Settings. No other new
          permission: WAKE_LOCK / c2dm RECEIVE from the Firebase AARs are
@@ -109,6 +115,17 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- v1.2.1: update download foreground service + install receiver.
+             The service is kept by the existing "-keep * extends Service"
+             R8 rule (see proguard-rules.pro); same for the receiver. -->
+        <service
+            android:name=".UpdateDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+        <receiver
+            android:name=".InstallReceiver"
+            android:exported="false" />
         <service
             android:name="com.google.firebase.components.ComponentDiscoveryService"
             android:exported="false">

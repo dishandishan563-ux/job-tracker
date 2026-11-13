@@ -208,13 +208,13 @@ class SettingsActivity : Activity() {
 
             // ---------- app version + update ----------
             findViewById<TextView>(R.id.versionText).text =
-                "Job Tracker v${Api.APP_VERSION_NAME} (নেটিভ অ্যাপ)"
+                "Job Tracker v${Api.installedVersionName(this)} (নেটিভ অ্যাপ)"
             findViewById<Button>(R.id.checkUpdateBtn).setOnClickListener {
                 updateStatus.text = "আপডেট চেক হচ্ছে…"
                 UpdateChecker.check(this, onNewVersion = { name, _ ->
                     updateStatus.text = "🔔 নতুন আপডেট এসেছে (v$name) — ডাউনলোড করতে হোমের ব্যানারের বোতাম চাপুন।"
                 }, onUpToDate = {
-                    updateStatus.text = "✓ সর্বশেষ সংস্করণ ব্যবহার করছেন (v${Api.APP_VERSION_NAME})।"
+                    updateStatus.text = "✓ সর্বশেষ সংস্করণ ব্যবহার করছেন (v${Api.installedVersionName(this)})।"
                 })
             }
 

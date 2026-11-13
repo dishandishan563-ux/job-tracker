@@ -15,44 +15,62 @@
         android:titleTextAppearance="@style/ToolbarTitle"
         android:title="@string/app_name" />
 
+    <!-- v1.2.1: horizontal progress bar under the text row — the service
+         reports the download % here while the app is open. -->
     <LinearLayout
         android:id="@+id/updateBanner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:background="@drawable/banner_bg"
         android:layout_margin="8dp"
         android:padding="10dp"
         android:visibility="gone">
-        <TextView
-            android:id="@+id/updateText"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/warn_text"
-            android:textSize="14sp" />
-        <Button
-            android:id="@+id/updateBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="0dp"
-            android:minWidth="0dp"
-            android:background="@drawable/btn_primary"
-            android:elevation="2dp"
-            android:textColor="#ffffff"
-            android:text="আপডেট করুন (Update)"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-        <Button
-            android:id="@+id/updateDismiss"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:minHeight="0dp"
-            android:minWidth="0dp"
-            android:background="@drawable/btn_ghost"
-            android:textColor="@color/text_dark"
-            android:text="✕"
-            android:textSize="13sp" />
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/updateText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/warn_text"
+                android:textSize="14sp" />
+            <Button
+                android:id="@+id/updateBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:background="@drawable/btn_primary"
+                android:elevation="2dp"
+                android:textColor="#ffffff"
+                android:text="আপডেট করুন (Update)"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+            <Button
+                android:id="@+id/updateDismiss"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="@color/text_dark"
+                android:text="✕"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <ProgressBar
+            android:id="@+id/updateProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:max="100"
+            android:progress="0"
+            android:progressTint="@color/green"
+            android:progressBackgroundTint="@color/divider"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
     </LinearLayout>
 
     <!-- Compact hero: NO big heading line (removed — the user asked for it

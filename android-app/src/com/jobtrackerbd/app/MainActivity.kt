@@ -1,9 +1,15 @@
 package com.jobtrackerbd.app
 
+import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -42,6 +48,8 @@ class MainActivity : Activity() {
     private lateinit var emptyView: TextView
     private lateinit var updateBanner: View
     private lateinit var updateText: TextView
+    private lateinit var updateProgress: ProgressBar
+    private var updateReceiver: BroadcastReceiver? = null
 
     private var all: List<Circular> = emptyList()
     private var contact: JSONObject? = null
@@ -98,6 +106,42 @@ class MainActivity : Activity() {
         emptyView = findViewById(R.id.emptyView)
         updateBanner = findViewById(R.id.updateBanner)
         updateText = findViewById(R.id.updateText)
+        updateProgress = findViewById(R.id.updateProgress)
+
+        // v1.2.1: download progress / done / failed arrive from the
+        // foreground service as broadcasts (the download keeps running
+        // even after the app is left).
+        updateReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                when (intent.action) {
+                    UpdateDownloadService.ACTION_PROGRESS -> {
+                        val pct = intent.getIntExtra(UpdateDownloadService.EXTRA_PERCENT, 0)
+                        updateProgress.visibility = View.VISIBLE
+                        updateProgress.progress = pct
+                        updateText.text = "⬇️ ডাউনলোড হচ্ছে… $pct%"
+                        updateBanner.visibility = View.VISIBLE
+                    }
+                    UpdateDownloadService.ACTION_DONE -> {
+                        updateProgress.visibility = View.GONE
+                        updateText.text = "✓ ডাউনলোড হয়েছে — ইনস্টল চাপুন।"
+                        updateBanner.visibility = View.VISIBLE
+                    }
+                    UpdateDownloadService.ACTION_FAILED -> {
+                        updateProgress.visibility = View.GONE
+                        val msg = intent.getStringExtra(UpdateDownloadService.EXTRA_MESSAGE)
+                            ?: "ডাউনলোড হয়নি — ইন্টারনেট দেখে আবার চাপুন।"
+                        updateText.text = msg
+                        updateBanner.visibility = View.VISIBLE
+                        Ui.toast(this@MainActivity, msg)
+                    }
+                }
+            }
+        }
+        registerReceiver(updateReceiver, IntentFilter().apply {
+            addAction(UpdateDownloadService.ACTION_PROGRESS)
+            addAction(UpdateDownloadService.ACTION_DONE)
+            addAction(UpdateDownloadService.ACTION_FAILED)
+        })
 
         // Made-by footer must be added BEFORE the adapter is set.
         madeByFooter = buildMadeByFooter()
@@ -112,6 +156,23 @@ class MainActivity : Activity() {
 
         findViewById<Button>(R.id.refreshBtn).setOnClickListener { runOnlineCheck() }
         findViewById<Button>(R.id.updateBtn).setOnClickListener {
+            // v1.2.1: if the APK is already downloaded (finished while the
+            // app was closed), install it straight away — no re-download.
+            val existing = UpdateChecker.downloadedApkFile(this)
+            if (existing != null) {
+                UpdateChecker.installApk(this, existing)
+                return@setOnClickListener
+            }
+            // The install notification needs the notification permission
+            // (Android 13+). The download starts either way — without it
+            // the banner shows the result when the user comes back.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001
+                )
+            }
             UpdateChecker.downloadAndInstall(this) { msg -> Ui.toast(this, msg) }
         }
         findViewById<Button>(R.id.updateDismiss).setOnClickListener {
@@ -166,6 +227,9 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        // v1.2.1: the update service auto-opens the installer only while
+        // home is resumed; otherwise it posts the install notification.
+        UpdateDownloadService.appForeground = true
         // Profile/shortlist may have changed on another screen — re-render.
         // Also re-apply the text-size setting (it may have changed in Settings).
         Ui.applyTextScale(findViewById(android.R.id.content))
@@ -195,9 +259,20 @@ class MainActivity : Activity() {
         }
     }
 
+    override fun onPause() {
+        UpdateDownloadService.appForeground = false
+        super.onPause()
+    }
+
     override fun onDestroy() {
         tickHandler.removeCallbacks(tickRunnable)
         updateHandler.removeCallbacks(updateRunnable)
+        UpdateDownloadService.appForeground = false
+        try {
+            updateReceiver?.let { unregisterReceiver(it) }
+        } catch (e: Exception) {
+            // Receiver was never registered (or already gone) — ignore.
+        }
         super.onDestroy()
     }
 
@@ -206,7 +281,13 @@ class MainActivity : Activity() {
     private fun checkUpdate() {
         UpdateChecker.check(this, onNewVersion = { name, code ->
             pendingUpdateCode = code
-            updateText.text = "🔔 নতুন আপডেট এসেছে (v$name) — আপডেট করুন (Update)"
+            // v1.2.1: the update may already be downloaded (finished while
+            // the app was closed) — offer the install, not a re-download.
+            if (UpdateChecker.downloadedApkFile(this) != null) {
+                updateText.text = "✓ ডাউনলোড হয়েছে — ইনস্টল চাপুন।"
+            } else {
+                updateText.text = "🔔 নতুন আপডেট এসেছে (v$name) — আপডেট করুন (Update)"
+            }
             updateBanner.visibility = View.VISIBLE
         })
     }
@@ -480,7 +561,7 @@ class MainActivity : Activity() {
         root.addView(name)
         if (withVersion) {
             root.addView(TextView(this).apply {
-                text = "সংস্করণ v${Api.APP_VERSION_NAME}"
+                text = "সংস্করণ v${Api.installedVersionName(this@MainActivity)}"
                 textSize = 13f
                 setTextColor(Color.parseColor("#5f6368"))
                 gravity = Gravity.CENTER
