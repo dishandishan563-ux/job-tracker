@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Primary button, pressed: darker green gradient, 14dp rounded. -->
+<!-- Primary button, pressed (v1.2.0): darkest green gradient, 14dp rounded. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <gradient
         android:angle="270"
-        android:startColor="#16a34a"
-        android:endColor="#15803d"
+        android:startColor="@color/green_dark"
+        android:endColor="@color/green_deep"
         android:type="linear" />
     <corners android:radius="14dp" />
 </shape>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Short green underline bar under section titles (details screen):
-     a 28dp-wide, 3dp-tall brand-green accent. -->
+<!-- Short gold underline bar under section titles (details screen, v1.2.0):
+     a 28dp-wide, 3dp-tall gold accent. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/green" />
+    <solid android:color="@color/gold" />
     <corners android:radius="2dp" />
 </shape>

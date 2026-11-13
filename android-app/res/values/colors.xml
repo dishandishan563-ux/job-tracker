@@ -24,4 +24,11 @@
     <color name="danger">#b91c1c</color>
     <color name="chip_bg">#e8f5e9</color>
     <color name="chip_active">#14532d</color>
+    <!-- Premium accents (v1.2.0): deep emerald for headers, gold for
+         highlights — gold is used sparingly (toolbar line, status pills,
+         section bars, photo/monogram rings) so it reads luxury, not gaudy. -->
+    <color name="green_deep">#0a2e22</color>
+    <color name="gold">#c9a227</color>
+    <color name="gold_dark">#9a7b1a</color>
+    <color name="gold_soft">#fbf6e3</color>
 </resources>

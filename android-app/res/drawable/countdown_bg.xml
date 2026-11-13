@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Soft green pill behind badges and the countdown: green text on a
-     light-green tint reads as a status badge instead of plain text.
-     Used by the countdown, 🆕 badge, CV-match badge and status badge. -->
+<!-- Soft gold pill behind badges and the countdown (v1.2.0): dark-green
+     text on a gold tint reads as a premium status badge instead of
+     plain text. Used by the countdown, 🆕 badge, CV-match badge and
+     status badge. Gold = highlights, green = brand/actions. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/green_light" />
+    <solid android:color="@color/gold_soft" />
     <corners android:radius="8dp" />
 </shape>

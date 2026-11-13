@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Made-by "JT" monogram: solid green circle (white "JT" text on top).
-     Used when the admin has not set a photo yet — never a fake photo. -->
+<!-- Made-by "JT" monogram (v1.2.0): solid green circle with a thin gold
+     ring (white "JT" text on top). Used when the admin has not set a
+     photo yet — never a fake photo. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
     <solid android:color="#14532d" />
+    <stroke android:width="2dp" android:color="@color/gold" />
 </shape>
