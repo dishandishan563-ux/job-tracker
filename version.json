@@ -2,8 +2,8 @@
   "apkFileName": "job-tracker.apk",
   "apkParts": 8,
   "apkUrl": "/job-tracker.apk.b64",
-  "changelogBn": "নতুন প্রিমিয়াম ডিজাইন: গভীর সবুজ আর সোনালি ছোঁয়া — নতুন টুলবার, হিরো, কার্ড, বোতাম, চিপ আর ব্যাজ।",
+  "changelogBn": "ঠিক করা হয়েছে: Settings-এ ভুল ভার্সন দেখানো আর আপডেট না হওয়া। নতুন: ডাউনলোডের প্রগ্রেস বার, অ্যাপ বন্ধ থাকলেও ব্যাকগ্রাউন্ড ডাউনলোড আর ইনস্টল নোটিফিকেশন।",
   "engParts": 3,
-  "versionCode": 12,
-  "versionName": "1.2.0"
+  "versionCode": 13,
+  "versionName": "1.2.1"
 }
