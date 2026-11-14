@@ -2,8 +2,8 @@
   "apkFileName": "job-tracker.apk",
   "apkParts": 8,
   "apkUrl": "/job-tracker.apk.b64",
-  "changelogBn": "লাইট মিনিমাল ডিজাইন — সাদা পরিষ্কার ফ্ল্যাট লুক, কোনো বাড়তি সাজসজ্জা নেই।",
+  "changelogBn": "সব যোগ্যতার পদের হিসাব — কার্ডে ও মেইলে HSC-র পাশাপাশি SSC, স্নাতক, JSC-সহ সব যোগ্যতার পদসংখ্যা দেখাবে।",
   "engParts": 3,
-  "versionCode": 15,
-  "versionName": "1.2.3"
+  "versionCode": 16,
+  "versionName": "1.2.4"
 }
