@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Filter chip text: white when selected, dark when not. -->
+<!-- Filter chip text: white when selected, near-white when not (dark chips). -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_checked="true" android:color="#ffffff" />
-    <item android:color="#1a1a1a" />
+    <item android:color="#f2f3f5" />
 </selector>

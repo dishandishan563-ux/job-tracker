@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:colorPrimary">@color/green_dark</item>
-        <item name="android:colorPrimaryDark">@color/green_dark</item>
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/green</item>
+        <item name="android:colorPrimaryDark">@color/bg</item>
         <item name="android:colorAccent">@color/green</item>
         <item name="android:windowBackground">@color/bg</item>
     </style>
-    <!-- Design system (premium pass): one green brand, one title size,
-         one body size, one caption size, rounded 12dp cards everywhere. -->
+    <!-- Design system (dark minimal, v1.2.2): flat dark cards with a 1px
+         border — no elevation, no gradients, one muted accent. -->
     <style name="Card" parent="">
         <item name="android:background">@drawable/card_bg</item>
-        <item name="android:elevation">2dp</item>
+        <item name="android:elevation">0dp</item>
     </style>
     <style name="ToolbarTitle">
         <item name="android:textSize">17sp</item>

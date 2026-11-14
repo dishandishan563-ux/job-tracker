@@ -332,7 +332,7 @@ class MainActivity : Activity() {
         if (root.childCount > 1) root.removeViewAt(1)
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.WHITE)
+            setBackgroundColor(Color.parseColor("#1a1d21"))
             elevation = dp(12).toFloat()
             layoutParams = FrameLayout.LayoutParams(drawerWidth(), ViewGroup.LayoutParams.MATCH_PARENT)
                 .apply { gravity = Gravity.END }
@@ -351,7 +351,7 @@ class MainActivity : Activity() {
         val logoBadge = TextView(this).apply {
             text = "JT"
             textSize = 15f
-            setTextColor(Color.parseColor("#14532d"))
+            setTextColor(Color.parseColor("#f2f3f5"))
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
             background = getDrawable(R.drawable.drawer_logo_bg)
@@ -390,7 +390,7 @@ class MainActivity : Activity() {
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
                     .apply { setMargins(dp(16), dp(6), dp(16), dp(6)) }
-                setBackgroundColor(Color.parseColor("#E5E7EB"))
+                setBackgroundColor(Color.parseColor("#2a2e33"))
             })
         }
 
@@ -425,7 +425,7 @@ class MainActivity : Activity() {
             val labelView = TextView(this).apply {
                 this.text = text
                 textSize = 16f
-                setTextColor(Color.parseColor("#1a1a1a"))
+                setTextColor(Color.parseColor("#f2f3f5"))
                 maxLines = 2
                 ellipsize = null
                 layoutParams = LinearLayout.LayoutParams(
@@ -519,7 +519,7 @@ class MainActivity : Activity() {
         val title = TextView(this).apply {
             text = getString(R.string.made_by_title)
             textSize = 15f
-            setTextColor(Color.parseColor("#1a1a1a"))
+            setTextColor(Color.parseColor("#f2f3f5"))
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
         }
@@ -552,7 +552,7 @@ class MainActivity : Activity() {
         root.addView(photoWrap)
         val name = TextView(this).apply {
             textSize = 17f
-            setTextColor(Color.parseColor("#1a1a1a"))
+            setTextColor(Color.parseColor("#f2f3f5"))
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
             setPadding(0, dp(8), 0, 0)
@@ -563,7 +563,7 @@ class MainActivity : Activity() {
             root.addView(TextView(this).apply {
                 text = "সংস্করণ v${Api.installedVersionName(this@MainActivity)}"
                 textSize = 13f
-                setTextColor(Color.parseColor("#5f6368"))
+                setTextColor(Color.parseColor("#9aa0a6"))
                 gravity = Gravity.CENTER
                 setPadding(0, dp(2), 0, 0)
             })
@@ -602,7 +602,7 @@ class MainActivity : Activity() {
                 background = getDrawable(
                     if (primary) R.drawable.btn_primary else R.drawable.btn_secondary)
                 setTextColor(
-                    if (primary) Color.WHITE else Color.parseColor("#14532d"))
+                    if (primary) Color.WHITE else Color.parseColor("#9db8d6"))
                 setOnClickListener { Ui.openUrl(this@MainActivity, url) }
             }
             v.links.addView(b)

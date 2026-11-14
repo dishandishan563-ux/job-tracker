@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Home hero (v1.2.0): deeper emerald diagonal gradient with rounded
-     bottom corners, so the hero reads as a floating panel instead of a
-     flat block cut off by the search box. -->
+<!-- Home hero (dark minimal): flat dark surface, rounded bottom corners. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <gradient
-        android:angle="315"
-        android:startColor="@color/green_deep"
-        android:centerColor="@color/green_dark"
-        android:endColor="@color/green_mid"
-        android:type="linear" />
+    <solid android:color="#131518" />
     <corners
         android:topLeftRadius="0dp"
         android:topRightRadius="0dp"

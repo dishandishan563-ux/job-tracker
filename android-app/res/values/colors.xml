@@ -1,34 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="green_dark">#14532d</color>
-    <color name="green">#16a34a</color>
-    <color name="green_bright">#22c55e</color>
-    <color name="green_mid">#15803d</color>
-    <color name="green_soft">#f0fdf4</color>
-    <color name="green_light">#dcfce7</color>
-    <color name="green_pill">#d1fae5</color>
-    <color name="ink">#111827</color>
-    <color name="text_muted">#6b7280</color>
-    <color name="divider">#e5e7eb</color>
-    <color name="input_border">#d8dde3</color>
-    <color name="icon_grey">#9ca3af</color>
-    <color name="amber_bg">#fffbeb</color>
-    <color name="amber_border">#fde68a</color>
-    <color name="amber_text">#92400e</color>
-    <color name="bg">#f4f6f3</color>
-    <color name="card">#ffffff</color>
-    <color name="text_dark">#1a1a1a</color>
-    <color name="text_grey">#5f6368</color>
-    <color name="warn_bg">#fff7cc</color>
-    <color name="warn_text">#7c2d12</color>
-    <color name="danger">#b91c1c</color>
-    <color name="chip_bg">#e8f5e9</color>
-    <color name="chip_active">#14532d</color>
-    <!-- Premium accents (v1.2.0): deep emerald for headers, gold for
-         highlights — gold is used sparingly (toolbar line, status pills,
-         section bars, photo/monogram rings) so it reads luxury, not gaudy. -->
-    <color name="green_deep">#0a2e22</color>
-    <color name="gold">#c9a227</color>
-    <color name="gold_dark">#9a7b1a</color>
-    <color name="gold_soft">#fbf6e3</color>
+    <!-- Dark minimal palette (v1.2.2): near-black background, charcoal
+         cards, 1px borders, ONE muted slate-blue accent (#6e8cb0).
+         No gradients, no gold. The old "green_*" names are kept so every
+         layout / drawable / Kotlin reference keeps working — their values
+         now map to the dark minimal system instead of green. -->
+    <!-- Accent: muted slate blue. green_dark is used as text in layouts
+         and as the active-state colour, so it must read on dark cards. -->
+    <color name="green_dark">#6e8cb0</color>
+    <color name="green">#6e8cb0</color>
+    <color name="green_bright">#9db8d6</color>
+    <color name="green_mid">#5d7ea6</color>
+    <color name="green_soft">#1c2733</color>
+    <color name="green_light">#22303d</color>
+    <color name="green_pill">#1c2733</color>
+    <color name="ink">#f2f3f5</color>
+    <color name="text_muted">#9aa0a6</color>
+    <color name="divider">#2a2e33</color>
+    <color name="input_border">#2a2e33</color>
+    <color name="icon_grey">#8a9096</color>
+    <color name="amber_bg">#262019</color>
+    <color name="amber_border">#3d3222</color>
+    <color name="amber_text">#d9a441</color>
+    <color name="bg">#0f1113</color>
+    <color name="card">#1a1d21</color>
+    <color name="text_dark">#f2f3f5</color>
+    <color name="text_grey">#9aa0a6</color>
+    <color name="warn_bg">#262019</color>
+    <color name="warn_text">#d9a441</color>
+    <color name="danger">#c96a5a</color>
+    <color name="chip_bg">#22262b</color>
+    <color name="chip_active">#6e8cb0</color>
+    <!-- Former header/gradient base: now the flat dark surface. -->
+    <color name="green_deep">#131518</color>
 </resources>

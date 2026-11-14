@@ -1,141 +1,123 @@
-:root{--green:#0b7a3e;--green2:#0e9f52;--dark:#0b3d24;--red:#c62828;--amber:#b45309;--bg:#f2f7f3;--card:#fff;--muted:#5b6b60;--line:#dfe9e1}
+:root{--green:#6e8cb0;--green2:#5d7ea6;--dark:#0f1113;--red:#c96a5a;--amber:#d9a441;--bg:#0f1113;--card:#1a1d21;--muted:#9aa0a6;--line:#2a2e33;--border:#2a2e33;--text:#f2f3f5}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans Bengali','Hind Siliguri',system-ui,sans-serif;background:var(--bg);color:#12261a;line-height:1.6}
+body{font-family:'Noto Sans Bengali','Hind Siliguri',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
 .num{font-family:'Noto Sans Bengali','Hind Siliguri',sans-serif;white-space:nowrap;font-variant-numeric:tabular-nums}
-header{background:linear-gradient(135deg,var(--dark),var(--green) 55%,var(--green2));background-size:200% 200%;animation:heroGlow 9s ease-in-out infinite alternate;color:#fff;padding:28px 16px 20px;position:relative;overflow:hidden}
-header::after{content:"";position:absolute;inset:0;background:radial-gradient(600px 200px at 80% -40px,rgba(255,255,255,.25),transparent);animation:shine 6s ease-in-out infinite alternate}
-@keyframes shine{from{opacity:.4}to{opacity:1}}
-.hero{max-width:1020px;margin:0 auto;position:relative;z-index:1}
-.hero h1{font-size:clamp(28px,6vw,44px);line-height:1.25;animation:fadeUp .6s ease both}
-.hero p{opacity:.92;margin-top:8px}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
-@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
-@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
-@keyframes heroGlow{from{background-position:0% 50%}to{background-position:100% 50%}}
+header{background:var(--dark);color:#fff;padding:28px 16px 20px;border-bottom:1px solid var(--line)}
+.hero{max-width:1020px;margin:0 auto}
+.hero h1{font-size:clamp(28px,6vw,44px);line-height:1.25}
+.hero p{opacity:.85;margin-top:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
-.topbar{max-width:1020px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 0 0;position:relative;z-index:1}
-/* ---------- প্রিমিয়াম বোতাম — একই স্টাইল সাইটের সব জায়গায় ---------- */
-/* প্রাইমারি (সবুজ ভরা) বনাম সেকেন্ডারি (আউটলাইন) — স্পষ্ট স্তর, নরম ছায়া,
-   গোল কোণা, ৪৪px ছোঁয়ার উচ্চতা; ফ্ল্যাট ধূসর ব্লক আর নেই। */
-.btn{border:0;border-radius:999px;padding:12px 22px;min-height:44px;font:inherit;font-weight:700;cursor:pointer;background:#fff;color:var(--dark);box-shadow:0 2px 8px rgba(11,61,36,.10);transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s,background .18s,filter .18s}
-.btn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(11,61,36,.20)}
-.btn:active{transform:translateY(0) scale(.97);box-shadow:0 2px 8px rgba(11,61,36,.12)}
-.btn.ghost{background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.65);backdrop-filter:blur(4px);box-shadow:none}
-.btn.ghost:hover{background:rgba(255,255,255,.28);box-shadow:0 8px 18px rgba(0,0,0,.18)}
-.btn.green{background:linear-gradient(135deg,var(--green2),var(--green));color:#fff;box-shadow:0 4px 14px rgba(11,122,62,.35)}
-.btn.green:hover{filter:brightness(1.07);box-shadow:0 10px 24px rgba(11,122,62,.40)}
-.btn.outline{background:#fff;color:var(--green);border:1.5px solid var(--green);box-shadow:0 2px 8px rgba(11,61,36,.08)}
-.btn.outline:hover{background:#eef7f0;box-shadow:0 8px 18px rgba(11,61,36,.14)}
+.topbar{max-width:1020px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 0 0}
+/* ---------- বোতাম — ফ্ল্যাট, এক অ্যাকসেন্ট ---------- */
+.btn{border:1px solid var(--line);border-radius:999px;padding:12px 22px;min-height:44px;font:inherit;font-weight:700;cursor:pointer;background:#22262b;color:var(--text)}
+.btn:hover{background:#262b31}
+.btn:active{background:#1a1d21}
+.btn.ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.4)}
+.btn.ghost:hover{background:rgba(255,255,255,.08)}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.green:hover{background:var(--green2)}
+.btn.outline{background:transparent;color:#9db8d6;border:1.5px solid var(--green)}
+.btn.outline:hover{background:#1c2733}
 .btn.active{background:var(--green);color:#fff;border-color:var(--green)}
 .btn.small{padding:8px 14px;min-height:36px;font-size:14px}
-.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+.btn:disabled{opacity:.55;cursor:not-allowed}
 main{max-width:1020px;margin:0 auto;padding:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(11,61,36,.06);animation:fadeUp .4s ease both;transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s,border-color .25s}
-.notice{border-left:5px solid var(--red);background:#fff5f5;animation:slideDown .45s cubic-bezier(.22,1,.36,1) both}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.notice{border-left:5px solid var(--red);background:#241a18}
 .notice h3{color:var(--red)}
 .filters{display:flex;flex-direction:column;gap:10px}
-.filters input[type=search],.filters select,.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;font:inherit;background:#fff}
-/* ফাইল বাছাই (CV/ছবি) — নেটিভ ধূসর বোতামের বদলে প্রিমিয়াম সবুজ পিল বোতাম। */
+.filters input[type=search],.filters select,.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;font:inherit;background:#131518;color:var(--text)}
 .field input[type=file]{padding:10px;border-style:dashed;cursor:pointer}
-.field input[type=file]::file-selector-button{border:0;border-radius:999px;padding:9px 18px;margin-right:12px;font:inherit;font-weight:700;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--green2),var(--green));box-shadow:0 3px 10px rgba(11,122,62,.35)}
-.field input[type=file]:hover::file-selector-button{filter:brightness(1.07)}
+.field input[type=file]::file-selector-button{border:0;border-radius:999px;padding:9px 18px;margin-right:12px;font:inherit;font-weight:700;cursor:pointer;color:#fff;background:var(--green)}
 .chips{display:flex;gap:8px;flex-wrap:wrap;overflow-x:auto;padding-bottom:4px}
-.chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer;white-space:nowrap;transition:transform .18s,background .18s,color .18s,box-shadow .18s}
-.chip:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(11,61,36,.14)}
-.chip:active{transform:scale(.95)}
-.chip.active{background:var(--green);color:#fff;border-color:var(--green);box-shadow:0 3px 10px rgba(11,122,62,.35)}
+.chip{border:1.5px solid var(--line);background:#1a1d21;color:var(--text);border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer;white-space:nowrap}
+.chip:hover{background:#22262b}
+.chip.active{background:var(--green);color:#fff;border-color:var(--green)}
 /* হ্যাঁ/না টগল (প্রোফাইলে রিমাইন্ডার) — চিপের মতো, না বাছলে লাল */
 .yn-toggle{display:flex;gap:8px;flex-wrap:wrap}
-.yn-btn.active[data-yn="no"]{background:#b91c1c;border-color:#b91c1c;color:#fff}
-.job{border-top:4px solid var(--green);animation:cardIn .55s cubic-bezier(.22,1,.36,1) both}
-.job:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(11,61,36,.16);border-color:#bfe3cb}
-.job.closed{border-top-color:#9aa5a0;opacity:.85}
+.yn-btn.active[data-yn="no"]{background:#c96a5a;border-color:#c96a5a;color:#fff}
+.job{border-top:3px solid var(--green)}
+.job:hover{border-color:#3a4048}
+.job.closed{border-top-color:#4a5058;opacity:.85}
 .job h2{font-size:20px;line-height:1.4}
-.meta{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;color:#1d3a28}
-.meta b{color:var(--green)}
+.meta{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;color:#c8cdd2}
+.meta b{color:#9db8d6}
 .pill{display:inline-block;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:600}
-.pill.red{background:#fde8e8;color:var(--red)}
-.pill.green{background:#e3f5e9;color:var(--green)}
-.pill.grey{background:#eef1ee;color:var(--muted)}
-.pill.gold{background:#fff3c4;color:#7a5b00}
+.pill.red{background:#2a1a17;color:#e08a7a}
+.pill.green{background:#1c2733;color:#9db8d6}
+.pill.grey{background:#22262b;color:var(--muted)}
+.pill.gold{background:#22262b;color:var(--muted)}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .locked{opacity:.6}
 .details{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
 .details table{width:100%;border-collapse:collapse;font-size:15px}
 .details td,.details th{border-bottom:1px solid var(--line);padding:7px 4px;text-align:left;vertical-align:top}
-.badge{display:inline-block;background:#e3f5e9;color:var(--green);border-radius:8px;padding:2px 8px;font-size:13px;font-weight:700}
-.warn{background:#fff8e1;border:1px solid #ffe082;border-radius:12px;padding:10px 12px;font-size:14px;margin-top:10px}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.badge{display:inline-block;background:#1c2733;color:#9db8d6;border-radius:8px;padding:2px 8px;font-size:13px;font-weight:700}
+.warn{background:#262019;border:1px solid #3d3222;border-radius:12px;padding:10px 12px;font-size:14px;margin-top:10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
 .modal.open{display:flex}
-.modal .box{background:#fff;border-radius:18px;max-width:440px;width:100%;padding:22px;animation:fadeUp .25s ease both;max-height:90vh;overflow-y:auto}
+.modal .box{background:#1a1d21;border:1px solid var(--line);border-radius:18px;max-width:440px;width:100%;padding:22px;max-height:90vh;overflow-y:auto}
 .modal h3{margin-bottom:8px}
 /* স্লাইড মেনু (ড্রয়ার) — ডান দিক থেকে স্লাইড করে আসে */
-.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s;z-index:60}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s;z-index:60}
 .drawer-overlay.open{opacity:1;pointer-events:auto}
-.drawer{position:fixed;top:0;right:0;height:100%;width:min(320px,80vw);background:#fff;z-index:61;transform:translateX(105%);transition:transform .3s cubic-bezier(.22,1,.36,1);padding:18px;display:flex;flex-direction:column;gap:8px;box-shadow:-8px 0 30px rgba(0,0,0,.25);overflow-y:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(320px,80vw);background:#131518;border-left:1px solid var(--line);z-index:61;transform:translateX(105%);transition:transform .3s cubic-bezier(.22,1,.36,1);padding:18px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
 .drawer.open{transform:none}
 .drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.drawer-item{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:14px 16px;font:inherit;font-size:15px;line-height:1.4;min-height:48px;white-space:normal;overflow:visible;text-overflow:clip;font-weight:600;color:#12261a;cursor:pointer;text-decoration:none}
-.drawer-item:hover{background:#eef7f0;border-color:var(--green2)}
+.drawer-item{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#1a1d21;border-radius:12px;padding:14px 16px;font:inherit;font-size:15px;line-height:1.4;min-height:48px;white-space:normal;overflow:visible;text-overflow:clip;font-weight:600;color:var(--text);cursor:pointer;text-decoration:none}
+.drawer-item:hover{background:#22262b;border-color:#3a4048}
 .menu-btn{font-size:17px;line-height:1;padding:12px 18px;min-height:44px}
 .field{margin:10px 0}
 .field label{display:block;font-weight:600;margin-bottom:4px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer;transition:transform .18s,background .18s,color .18s}
-.tabs button:hover{transform:translateY(-2px)}
-.tabs button:active{transform:scale(.95)}
-.tabs button.active{background:var(--dark);color:#fff}
+.tabs button{border:1px solid var(--line);background:#1a1d21;color:var(--text);border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer}
+.tabs button:hover{background:#22262b}
+.tabs button.active{background:var(--green);color:#fff;border-color:var(--green)}
 footer{max-width:1020px;margin:0 auto;padding:8px 16px 32px;color:var(--muted);font-size:14px}
-.admin-row{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.admin-row{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#1a1d21}
 .admin-row .info{flex:1;min-width:0}
 .admin-row h4{font-size:16px;line-height:1.4}
 .admin-row p{font-size:14px;color:var(--muted);margin:2px 0 0}
 .admin-row .btn{flex-shrink:0}
 .countdown{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.countdown div{background:rgba(255,255,255,.16);border-radius:12px;padding:8px 14px;text-align:center;min-width:70px;animation:popIn .4s cubic-bezier(.22,1,.36,1) both}
-.countdown div:nth-child(2){animation-delay:.06s}.countdown div:nth-child(3){animation-delay:.12s}.countdown div:nth-child(4){animation-delay:.18s}
-.hero h1{font-size:clamp(28px,6vw,44px);line-height:1.25;animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both}
-.hero p,.hero .topbar{animation:fadeUp .6s .08s cubic-bezier(.22,1,.36,1) both}
-.filters input[type=search]:focus,.filters select:focus,.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px rgba(14,159,82,.18)}
-.skeleton{border-radius:16px;padding:16px;margin-bottom:14px;background:#fff;border:1px solid var(--line)}
-.skeleton .bar{height:16px;border-radius:8px;margin:10px 0;background:linear-gradient(90deg,#e8f0e9 25%,#f7fbf8 50%,#e8f0e9 75%);background-size:200% 100%;animation:shimmer 1.2s linear infinite}
+.countdown div{background:#22262b;border-radius:12px;padding:8px 14px;text-align:center;min-width:70px}
+.hero h1{font-size:clamp(28px,6vw,44px);line-height:1.25}
+.filters input[type=search]:focus,.filters select:focus,.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px rgba(110,140,176,.25)}
+.skeleton{border-radius:12px;padding:16px;margin-bottom:14px;background:#1a1d21;border:1px solid var(--line)}
+.skeleton .bar{height:16px;border-radius:8px;margin:10px 0;background:#22262b}
 .spin{animation:spin .8s linear infinite;display:inline-block}
 body.fs-small{zoom:.88}
 body.fs-large{zoom:1.15}
 body.fs-xl{zoom:1.3}
-.fontsize-ctl{display:inline-flex;gap:2px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
-.fontsize-ctl button{border:0;background:transparent;color:#fff;font:inherit;font-weight:700;padding:6px 12px;min-height:32px;border-radius:999px;cursor:pointer;transition:transform .15s,background .15s,color .15s,box-shadow .15s}
-.fontsize-ctl button:hover{transform:scale(1.08)}
-.fontsize-ctl button:active{transform:scale(.92)}
-.fontsize-ctl button.active{background:#fff;color:var(--dark);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.fontsize-ctl{display:inline-flex;gap:2px;background:#22262b;border:1px solid var(--line);border-radius:999px;padding:3px}
+.fontsize-ctl button{border:0;background:transparent;color:var(--text);font:inherit;font-weight:700;padding:6px 12px;min-height:32px;border-radius:999px;cursor:pointer}
+.fontsize-ctl button:hover{background:#262b31}
+.fontsize-ctl button.active{background:var(--green);color:#fff}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 .countdown b{font-size:22px;display:block}
 @media (max-width:600px){.meta{gap:8px}.btn{padding:9px 14px}}
 .made-by{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.made-by-photo{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--green)}
+.made-by-photo{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--green)}
 .made-by-name{font-size:19px;font-weight:700}
 .made-by-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 
 /* ---------- প্রোফাইল গাইড (লগইনের পর) — সাইডবারের দিকে তির ---------- */
-.profile-guide{position:fixed;top:64px;right:12px;z-index:70;max-width:320px;background:#fff;border:2px solid var(--green);border-radius:16px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-wrap:wrap;gap:8px;align-items:center;animation:fadeUp .3s ease both}
-.profile-guide .guide-arrow{font-size:28px;animation:guideNudge 1s ease-in-out infinite}
-@keyframes guideNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}
+.profile-guide{position:fixed;top:64px;right:12px;z-index:70;max-width:320px;background:#1a1d21;border:2px solid var(--green);border-radius:16px;padding:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.profile-guide .guide-arrow{font-size:28px}
 .profile-guide .guide-text{flex:1;min-width:180px;font-size:14px;line-height:1.5}
 /* ---------- প্রোফাইল ছবি (ড্রয়ার / হোম চিপ / সেটিংস প্রিভিউ) ---------- */
 .drawer-profile{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:4px}
 .drawer-photo{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--green);flex-shrink:0}
-.drawer-photo-fallback{width:48px;height:48px;border-radius:50%;background:#eef7f0;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
-.chip-photo{width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;border:2px solid #fff}
+.drawer-photo-fallback{width:48px;height:48px;border-radius:50%;background:#22262b;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.chip-photo{width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;border:2px solid #2a2e33}
 .profile-photo-preview{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--green);margin:4px 0 8px}
 /* ---------- প্রতিটি কার্ডের লাইভ কাউন্টডাউন ---------- */
-.live-cd{display:inline-block;margin-top:4px;font-size:13px;font-weight:600;color:var(--green)}
+.live-cd{display:inline-block;margin-top:4px;font-size:13px;font-weight:600;color:#9db8d6}
 
 /* ---------- ইনলাইন টোস্ট (alert-এর বদলে) ---------- */
-#jtToast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#14532d;color:#fff;padding:10px 18px;border-radius:999px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:9999;max-width:92vw;text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+#jtToast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#22262b;color:#f2f3f5;border:1px solid var(--line);padding:10px 18px;border-radius:999px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:9999;max-width:92vw;text-align:center}
 #jtToast.show{opacity:1;transform:translate(-50%,0)}
 
 /* ---------- অ্যাপ আপডেট ব্যানার (পেইজের উপরে, ছোট) ---------- */
-#jtUpdateBanner{position:sticky;top:0;z-index:9000;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;background:#fef9c3;color:#713f12;padding:14px 16px;font-size:16px;font-weight:700;text-align:center;border-bottom:3px solid #eab308;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+#jtUpdateBanner{position:sticky;top:0;z-index:9000;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;background:#262019;color:#d9a441;padding:14px 16px;font-size:16px;font-weight:700;text-align:center;border-bottom:1px solid #3d3222}
 #jtUpdateBanner .btn{padding:8px 18px;font-size:15px}

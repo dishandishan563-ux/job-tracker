@@ -348,7 +348,7 @@
                 android:layout_height="40dp"
                 android:minHeight="0dp"
                 android:background="@drawable/btn_ghost"
-                android:textColor="#b91c1c"
+                android:textColor="@color/danger"
                 android:text="🗑️ CV মুছুন (Remove CV)"
                 android:textSize="14sp"
                 android:layout_marginTop="8dp"
@@ -377,7 +377,7 @@
                 android:layout_height="40dp"
                 android:minHeight="0dp"
                 android:background="@drawable/btn_ghost"
-                android:textColor="#b91c1c"
+                android:textColor="@color/danger"
                 android:text="↺ প্রোফাইল রিসেট করুন (Reset Profile)"
                 android:textSize="14sp"
                 android:layout_marginTop="8dp" />

@@ -95,7 +95,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="#d1fae5"
+                android:textColor="#9aa0a6"
                 android:textSize="12sp" />
             <Button
                 android:id="@+id/refreshBtn"
@@ -118,7 +118,7 @@
             android:id="@+id/heroCountdown"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#fef9c3"
+            android:textColor="#d9a441"
             android:textSize="11sp"
             android:textStyle="bold"
             android:maxLines="2"

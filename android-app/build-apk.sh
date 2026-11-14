@@ -111,7 +111,7 @@ import sys, os
 from PIL import Image, ImageDraw, ImageFont
 out = sys.argv[1]
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-GREEN = (20, 83, 45, 255)
+GREEN = (15, 17, 19, 255)
 WHITE = (255, 255, 255, 255)
 for name, size in [("mipmap-mdpi", 48), ("mipmap-hdpi", 72), ("mipmap-xhdpi", 96),
                    ("mipmap-xxhdpi", 144), ("mipmap-xxxhdpi", 192)]:
@@ -297,6 +297,6 @@ split -b 1900000 -d -a 2 --numeric-suffixes=1 \
 JOIN_SHA="$(cat "$ROOT"/job-tracker.apk.b64.part* | sha256sum | cut -d' ' -f1)"
 B64_SHA="$(sha256sum "$ROOT/job-tracker.apk.b64" | cut -d' ' -f1)"
 [ "$JOIN_SHA" = "$B64_SHA" ] || { echo "ERROR: APK part join mismatch" >&2; exit 1; }
-echo "APK parts: 7 files, joined sha256 matches job-tracker.apk.b64"
+echo "APK parts: joined sha256 matches job-tracker.apk.b64"
 ls -l "$ROOT"/job-tracker.apk.b64.part*
 echo "== DONE: Job Tracker (native) v$VERSION_NAME =="

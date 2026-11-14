@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Drawer item, pressed: green ripple inside a rounded mask, so a tap
-     never leaves a gray wash. -->
+<!-- Drawer item, pressed (dark minimal): subtle dark ripple in a rounded mask. -->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
-    android:color="#C8E6C9">
+    android:color="#333d47">
     <item android:id="@android:id/mask">
         <shape android:shape="rectangle">
             <solid android:color="#ffffff" />

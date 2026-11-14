@@ -25,7 +25,7 @@
             android:orientation="vertical"
             android:padding="16dp"
             android:paddingBottom="32dp">
-            <!-- Brand header: green gradient card with the JT badge and
+            <!-- Brand header: flat dark card with the JT badge and
                  app name — the login screen greets with the brand instead
                  of starting straight into bare fields. No new text. -->
             <LinearLayout

@@ -1,20 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Toolbar (v1.2.0): deep emerald gradient with a thin gold baseline —
-     the gold line is the luxury cue; the toolbar reads rich, not flat. -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="270"
-                android:startColor="@color/green_deep"
-                android:endColor="@color/green_dark"
-                android:type="linear" />
-        </shape>
-    </item>
-    <item android:gravity="bottom">
-        <shape android:shape="rectangle">
-            <solid android:color="@color/gold" />
-            <size android:height="2dp" />
-        </shape>
-    </item>
-</layer-list>
+<!-- Toolbar (dark minimal): flat dark surface, no gradient, no gold line. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#131518" />
+</shape>
