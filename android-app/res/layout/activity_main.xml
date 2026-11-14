@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="?android:attr/actionBarSize"
         android:background="@drawable/toolbar_bg"
-        android:titleTextColor="#ffffff"
+        android:titleTextColor="#1a1d21"
         android:titleTextAppearance="@style/ToolbarTitle"
         android:title="@string/app_name" />
 
@@ -95,7 +95,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="#9aa0a6"
+                android:textColor="#5f6368"
                 android:textSize="12sp" />
             <Button
                 android:id="@+id/refreshBtn"
@@ -104,7 +104,7 @@
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:background="@drawable/drawer_close_bg"
-                android:textColor="#ffffff"
+                android:textColor="#1a1d21"
                 android:text="⟳"
                 android:textSize="16sp"
                 android:contentDescription="এখনই নতুন সার্কুলার খুঁজুন (Refresh)"
@@ -118,7 +118,7 @@
             android:id="@+id/heroCountdown"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#d9a441"
+            android:textColor="#b45309"
             android:textSize="11sp"
             android:textStyle="bold"
             android:maxLines="2"

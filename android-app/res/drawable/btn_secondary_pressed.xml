@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Secondary button, pressed (dark minimal): accent tint, accent outline. -->
+<!-- Secondary button, pressed (light minimal): accent tint, accent outline. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#1c2733" />
+    <solid android:color="#e8eef5" />
     <stroke android:width="1.5dp" android:color="@color/green" />
-    <corners android:radius="14dp" />
+    <corners android:radius="12dp" />
 </shape>

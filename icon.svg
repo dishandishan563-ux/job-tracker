@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0f1113"/>
-  <rect x="56" y="56" width="400" height="400" rx="72" fill="#1a1d21"/>
-  <text x="256" y="330" font-family="Arial, Helvetica, sans-serif" font-size="185" font-weight="bold" text-anchor="middle" fill="#f2f3f5">JT</text>
-  <g fill="#6e8cb0">
+  <rect width="512" height="512" fill="#ffffff"/>
+  <rect x="56" y="56" width="400" height="400" rx="72" fill="#f5f5f5"/>
+  <text x="256" y="330" font-family="Arial, Helvetica, sans-serif" font-size="185" font-weight="bold" text-anchor="middle" fill="#1a1d21">JT</text>
+  <g fill="#4a6fa5">
     <rect x="196" y="352" width="120" height="58" rx="8"/>
     <path d="M232 352 v-14 a24 16 0 0 1 48 0 v14 h-12 v-14 a12 8 0 0 0 -24 0 v14 z"/>
     <path d="M286 372 l10 10 20 -22" stroke="#ffffff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>

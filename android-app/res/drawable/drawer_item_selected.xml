@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Drawer item, selected (dark minimal): accent-tinted rounded pill. -->
+<!-- Drawer item, selected (light minimal): accent-tinted rounded pill. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#1c2733" />
-    <corners android:radius="10dp" />
+    <solid android:color="#e8eef5" />
+    <corners android:radius="12dp" />
 </shape>

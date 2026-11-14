@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:colorPrimary">@color/green</item>
         <item name="android:colorPrimaryDark">@color/bg</item>
         <item name="android:colorAccent">@color/green</item>
         <item name="android:windowBackground">@color/bg</item>
     </style>
-    <!-- Design system (dark minimal, v1.2.2): flat dark cards with a 1px
-         border — no elevation, no gradients, one muted accent. -->
+    <!-- Design system (light minimal, v1.2.3): flat white cards, soft
+         2dp shadow, 1px light border — no gradients, one muted accent. -->
     <style name="Card" parent="">
         <item name="android:background">@drawable/card_bg</item>
-        <item name="android:elevation">0dp</item>
+        <item name="android:elevation">2dp</item>
     </style>
     <style name="ToolbarTitle">
-        <item name="android:textSize">17sp</item>
+        <item name="android:textSize">18sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">0.02</item>
+        <item name="android:letterSpacing">0.01</item>
     </style>
     <style name="SectionTitle">
-        <item name="android:textSize">15sp</item>
+        <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/text_dark</item>
     </style>
     <style name="BodyText">
         <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
         <item name="android:textColor">@color/text_dark</item>
     </style>
     <style name="CaptionText">

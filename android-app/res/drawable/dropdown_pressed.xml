@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Dropdown button, pressed (dark minimal): slightly lighter charcoal. -->
+<!-- Dropdown button, pressed (light minimal): slightly darker light grey. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#22262b" />
-    <stroke android:width="1dp" android:color="#2a2e33" />
-    <corners android:radius="14dp" />
+    <solid android:color="#f0f0f0" />
+    <stroke android:width="1dp" android:color="#e5e7eb" />
+    <corners android:radius="12dp" />
 </shape>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Short accent bar under section titles (dark minimal): flat slate-blue. -->
+<!-- Short accent bar under section titles (light minimal): flat slate-blue. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="@color/green" />

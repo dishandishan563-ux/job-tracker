@@ -111,19 +111,19 @@ import sys, os
 from PIL import Image, ImageDraw, ImageFont
 out = sys.argv[1]
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-GREEN = (15, 17, 19, 255)
-WHITE = (255, 255, 255, 255)
+BG = (255, 255, 255, 255)
+DARK = (26, 29, 33, 255)
 for name, size in [("mipmap-mdpi", 48), ("mipmap-hdpi", 72), ("mipmap-xhdpi", 96),
                    ("mipmap-xxhdpi", 144), ("mipmap-xxxhdpi", 192)]:
     os.makedirs(f"{out}/{name}", exist_ok=True)
     im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    d.rounded_rectangle([0, 0, size - 1, size - 1], radius=size // 5, fill=GREEN)
+    d.rounded_rectangle([0, 0, size - 1, size - 1], radius=size // 5, fill=BG)
     f = ImageFont.truetype(FONT, int(size * 0.42))
     bbox = d.textbbox((0, 0), "JT", font=f)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
     d.text(((size - tw) / 2 - bbox[0], (size - th) / 2 - bbox[1] - size * 0.02),
-           "JT", font=f, fill=WHITE)
+           "JT", font=f, fill=DARK)
     im.save(f"{out}/{name}/ic_launcher.png")
     im.save(f"{out}/{name}/ic_launcher_round.png")
     print("icon", name, size)
