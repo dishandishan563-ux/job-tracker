@@ -2,8 +2,8 @@
   "apkFileName": "job-tracker.apk",
   "apkParts": 8,
   "apkUrl": "/job-tracker.apk.b64",
-  "changelogBn": "ঠিক করা হয়েছে: Settings-এ ভুল ভার্সন দেখানো আর আপডেট না হওয়া। নতুন: ডাউনলোডের প্রগ্রেস বার, অ্যাপ বন্ধ থাকলেও ব্যাকগ্রাউন্ড ডাউনলোড আর ইনস্টল নোটিফিকেশন।",
+  "changelogBn": "ডার্ক মিনিমাল ডিজাইন — সাদাসিধে ফ্ল্যাট লুক, কোনো বাড়তি সাজসজ্জা নেই।",
   "engParts": 3,
-  "versionCode": 13,
-  "versionName": "1.2.1"
+  "versionCode": 14,
+  "versionName": "1.2.2"
 }
