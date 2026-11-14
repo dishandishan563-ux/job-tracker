@@ -2,8 +2,8 @@
   "apkFileName": "job-tracker.apk",
   "apkParts": 8,
   "apkUrl": "/job-tracker.apk.b64",
-  "changelogBn": "ডার্ক মিনিমাল ডিজাইন — সাদাসিধে ফ্ল্যাট লুক, কোনো বাড়তি সাজসজ্জা নেই।",
+  "changelogBn": "লাইট মিনিমাল ডিজাইন — সাদা পরিষ্কার ফ্ল্যাট লুক, কোনো বাড়তি সাজসজ্জা নেই।",
   "engParts": 3,
-  "versionCode": 14,
-  "versionName": "1.2.2"
+  "versionCode": 15,
+  "versionName": "1.2.3"
 }
