@@ -21,8 +21,8 @@ object Api {
     // were bumped but these consts were not, so Settings kept showing
     // 1.1.9 and the update banner never went away. Never compare against
     // these consts again.
-    const val APP_VERSION_NAME = "1.2.3"
-    const val APP_VERSION_CODE = 15
+    const val APP_VERSION_NAME = "1.2.4"
+    const val APP_VERSION_CODE = 16
 
     /** True installed version from the manifest (aapt2 sets it from
      *  android-app/VERSION at build time). Falls back to the consts

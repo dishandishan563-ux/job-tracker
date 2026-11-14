@@ -19,6 +19,40 @@ function saveSent(s) { try { fs.writeFileSync(SENT_FILE, JSON.stringify(s)); } c
 
 function bn(n) { return String(n).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[+d]); }
 
+// যোগ্যতা অনুযায়ী পদের হিসাব — posts[] থেকে qualification ভিত্তিতে যোগফল।
+// "HSC (বিজ্ঞান)"-এর মতো রূপ HSC-তেই ধরা হয় (বন্ধনীর ভেতরের অংশ বাদ,
+// বড়/ছোট হাতের পার্থক্য ধরা হয় না)। ক্রম: HSC, SSC, স্নাতক, JSC, ডিপ্লোমা,
+// স্নাতকোত্তর, তারপর বাকিগুলো প্রথম দেখার ক্রমে। শুধু সংখ্যা > ০ দেখায়।
+const QUAL_ORDER = ['HSC', 'SSC', 'স্নাতক', 'JSC', 'ডিপ্লোমা', 'স্নাতকোত্তর'];
+function qualCounts(c) {
+  const sums = new Map();
+  const posts = Array.isArray(c.posts) ? c.posts : [];
+  for (const p of posts) {
+    const base = String(p.qualification || '').split('(')[0].trim();
+    if (!base) continue;
+    const canon = QUAL_ORDER.find(q => q.toUpperCase() === base.toUpperCase()) || base;
+    const n = +p.count || 0;
+    if (n <= 0) continue;
+    sums.set(canon, (sums.get(canon) || 0) + n);
+  }
+  const out = [...sums.entries()].map(([qual, count]) => ({ qual, count }));
+  out.sort((a, b) => {
+    const ia = QUAL_ORDER.indexOf(a.qual), ib = QUAL_ORDER.indexOf(b.qual);
+    if (ia >= 0 && ib >= 0) return ia - ib;
+    if (ia >= 0) return -1;
+    if (ib >= 0) return 1;
+    return 0; // stable sort — বাকিগুলো প্রথম দেখার ক্রমেই থাকে
+  });
+  return out;
+}
+// এক সার্কুলারের পদের লাইন — যোগ্যতা অনুযায়ী হিসাব, না থাকলে HSC-র পুরনো হিসাব।
+function postLine(c, totalTxt) {
+  const qc = qualCounts(c);
+  if (qc.length) return `মোট ${totalTxt} পদ (${qc.map(q => `${q.qual} ${bn(q.count)}টি`).join(', ')})`;
+  if (c.hscPosts != null) return `মোট ${totalTxt} পদ, HSC পদ ${bn(c.hscPosts)}টি`;
+  return `মোট ${totalTxt} পদ`;
+}
+
 // ---------- একটাই ডাইজেস্ট মেইল (daily-check.js-এর মতো) ----------
 function escHtml(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
@@ -30,8 +64,7 @@ function buildReminderText(items) {
   const lines = ['নমস্কার / আসসালামু আলাইকুম,', '', `আজকের রিমাইন্ডার — মোট ${bn(items.length)}টি:`, ''];
   for (const { c, daysLeft } of items) {
     const totalTxt = c.totalPosts == null ? 'উল্লেখ নেই' : bn(c.totalPosts) + 'টি';
-    const hscTxt = c.hscPosts == null ? 'উল্লেখ নেই' : bn(c.hscPosts) + 'টি';
-    lines.push(`• ${c.org} — মোট ${totalTxt} পদ, HSC পদ ${hscTxt}।`);
+    lines.push(`• ${c.org} — ${postLine(c, totalTxt)}।`);
     lines.push(`  শেষ তারিখ: ${fmtDate(c)}। ${reminderWhen(daysLeft)}।`);
     if (c.applyUrl) lines.push(`  আবেদন: ${c.applyUrl}`);
   }
@@ -44,8 +77,7 @@ function buildReminderHtml(items) {
   let h = `<p>নমস্কার / আসসালামু আলাইকুম,</p><p>আজকের রিমাইন্ডার — মোট ${bn(items.length)}টি:</p><ul>`;
   for (const { c, daysLeft } of items) {
     const totalTxt = c.totalPosts == null ? 'উল্লেখ নেই' : bn(c.totalPosts) + 'টি';
-    const hscTxt = c.hscPosts == null ? 'উল্লেখ নেই' : bn(c.hscPosts) + 'টি';
-    h += `<li><b>${escHtml(c.org)}</b> — মোট ${totalTxt} পদ, HSC পদ ${hscTxt}।<br>শেষ তারিখ: ${escHtml(fmtDate(c))}। ${reminderWhen(daysLeft)}।<br>${c.applyUrl ? `আবেদন: <a href="${escHtml(c.applyUrl)}">${escHtml(c.applyUrl)}</a>` : ''}</li>`;
+    h += `<li><b>${escHtml(c.org)}</b> — ${postLine(c, totalTxt)}।<br>শেষ তারিখ: ${escHtml(fmtDate(c))}। ${reminderWhen(daysLeft)}।<br>${c.applyUrl ? `আবেদন: <a href="${escHtml(c.applyUrl)}">${escHtml(c.applyUrl)}</a>` : ''}</li>`;
   }
   h += '</ul><p>দ্বিতীয় সূত্রের তথ্য — আবেদনের আগে অফিসিয়াল সার্কুলার যাচাই করুন।<br>— Job Tracker (jobtrackerbd@gmail.com)</p>';
   return h;

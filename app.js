@@ -6,6 +6,39 @@
 const BN = '০১২৩৪৫৬৭৮৯';
 function bn(n) { return String(n).replace(/\d/g, d => BN[+d]); }
 function bnNum(n) { return String(n).replace(/\d/g, d => BN[+d]); }
+// যোগ্যতা অনুযায়ী পদের হিসাব — posts[] থেকে qualification ভিত্তিতে যোগফল।
+// "HSC (বিজ্ঞান)"-এর মতো রূপ HSC-তেই ধরা হয় (বন্ধনীর ভেতরের অংশ বাদ,
+// বড়/ছোট হাতের পার্থক্য ধরা হয় না)। ক্রম: HSC, SSC, স্নাতক, JSC, ডিপ্লোমা,
+// স্নাতকোত্তর, তারপর বাকিগুলো প্রথম দেখার ক্রমে। শুধু সংখ্যা > ০ দেখায়।
+const QUAL_ORDER = ['HSC', 'SSC', 'স্নাতক', 'JSC', 'ডিপ্লোমা', 'স্নাতকোত্তর'];
+function qualCounts(c) {
+  const sums = new Map();
+  const posts = Array.isArray(c.posts) ? c.posts : [];
+  for (const p of posts) {
+    const base = String(p.qualification || '').split('(')[0].trim();
+    if (!base) continue;
+    const canon = QUAL_ORDER.find(q => q.toUpperCase() === base.toUpperCase()) || base;
+    const n = +p.count || 0;
+    if (n <= 0) continue;
+    sums.set(canon, (sums.get(canon) || 0) + n);
+  }
+  const out = [...sums.entries()].map(([qual, count]) => ({ qual, count }));
+  out.sort((a, b) => {
+    const ia = QUAL_ORDER.indexOf(a.qual), ib = QUAL_ORDER.indexOf(b.qual);
+    if (ia >= 0 && ib >= 0) return ia - ib;
+    if (ia >= 0) return -1;
+    if (ib >= 0) return 1;
+    return 0; // stable sort — বাকিগুলো প্রথম দেখার ক্রমেই থাকে
+  });
+  return out;
+}
+// কার্ডের মেটায় যোগ্যতা অনুযায়ী পদের স্প্যান — posts না থাকলে HSC-র পুরনো হিসাব।
+function qualSpans(c) {
+  const qc = qualCounts(c);
+  if (qc.length) return qc.map(q => `<span>${q.qual} পদ: <b class="num">${bn(q.count)}</b>টি</span>`).join('');
+  if (c.hscPosts != null) return `<span>HSC পদ: <b class="num">${bn(c.hscPosts)}</b>টি</span>`;
+  return '<span>HSC পদ: উল্লেখ নেই</span>';
+}
 function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -517,7 +550,7 @@ async function initHome() {
       const card = el(`<article class="card job ${dl < 0 ? 'closed' : ''}">
         <span class="pill grey">${c.source === 'secondary' ? 'দ্বিতীয় সূত্র' : 'অফিসিয়াল'}</span> ${isNew(c) ? '<span class="badge">🆕 নতুন</span>' : ''} ${matchBadge(c)}
         <h2>${c.org}</h2>
-        <div class="meta"><span>HSC পদ: ${c.hscPosts == null ? 'উল্লেখ নেই' : '<b class="num">' + bn(c.hscPosts) + '</b>টি'}</span><span>মোট পদ: ${c.totalPosts == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.totalPosts) + '</span>টি'}</span><span>ফি: ${c.fee ? '<span class="num">' + bn(c.fee) + '</span> টাকা' : 'উল্লেখ নেই'}</span><span>গ্রেড: ${c.grade == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.grade) + '</span>'}</span></div>
+        <div class="meta">${qualSpans(c)}<span>মোট পদ: ${c.totalPosts == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.totalPosts) + '</span>টি'}</span><span>ফি: ${c.fee ? '<span class="num">' + bn(c.fee) + '</span> টাকা' : 'উল্লেখ নেই'}</span><span>গ্রেড: ${c.grade == null ? 'উল্লেখ নেই' : '<span class="num">' + bn(c.grade) + '</span>'}</span></div>
         <p><span class="pill ${dl < 0 ? 'grey' : dl <= 3 ? 'red' : 'green'}">${dl < 0 ? 'মেয়াদ শেষ' : dl === 0 ? 'আজই শেষ' : 'আর ' + bn(dl) + ' দিন'}</span> শেষ: <span class="num">${fmtDate(c.deadline)}</span><br><span class="live-cd" data-dl="${c.deadline}"></span></p>
         <div class="actions">
           <button class="btn outline small" data-act="shortlist">☆ শর্টলিস্ট</button>

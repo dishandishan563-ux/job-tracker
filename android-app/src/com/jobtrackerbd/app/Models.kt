@@ -147,6 +147,28 @@ data class Circular(
         }
     }
 
+    /** যোগ্যতা অনুযায়ী পদের হিসাব — posts[] থেকে qualification ভিত্তিতে যোগফল।
+     * "HSC (বিজ্ঞান)"-এর মতো রূপ HSC-তেই ধরা হয় (বন্ধনীর ভেতরের অংশ বাদ,
+     * বড়/ছোট হাতের পার্থক্য ধরা হয় না)। ক্রম: HSC, SSC, স্নাতক, JSC, ডিপ্লোমা,
+     * স্নাতকোত্তর, তারপর বাকিগুলো প্রথম দেখার ক্রমে। শুধু সংখ্যা > ০ দেখায়। */
+    fun qualCounts(): List<Pair<String, Int>> {
+        val order = listOf("HSC", "SSC", "স্নাতক", "JSC", "ডিপ্লোমা", "স্নাতকোত্তর")
+        val sums = linkedMapOf<String, Int>()
+        for (p in posts) {
+            val base = p.qualification.substringBefore('(').trim()
+            if (base.isEmpty()) continue
+            val canon = order.firstOrNull { it.equals(base, ignoreCase = true) } ?: base
+            val n = p.count
+            if (n <= 0) continue
+            sums[canon] = (sums[canon] ?: 0) + n
+        }
+        // Stable sort: ক্যাননিকাল ক্রম আগে, বাকিগুলো প্রথম দেখার ক্রমেই থাকে।
+        return sums.entries.sortedWith(compareBy {
+            val i = order.indexOf(it.key)
+            if (i < 0) Int.MAX_VALUE else i
+        }).map { it.key to it.value }
+    }
+
     /** CV-match badge, same rule as the website: education + typing fit. */
     fun matchesProfile(p: Profile?): Boolean {
         if (p == null) return false

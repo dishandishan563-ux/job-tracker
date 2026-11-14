@@ -76,7 +76,13 @@ class CircularAdapter(
         h.typeLine.text = typeTxt
         val postsTxt = buildString {
             if (c.totalPosts > 0) append("মোট ${Util.bn(c.totalPosts)}টি পদ")
-            if (c.hscPosts > 0) {
+            val breakdown = c.qualCounts()
+            if (breakdown.isNotEmpty()) {
+                for ((q, n) in breakdown) {
+                    if (isNotEmpty()) append(" • ")
+                    append("$q ${Util.bn(n)}টি")
+                }
+            } else if (c.hscPosts > 0) {
                 if (isNotEmpty()) append(" • ")
                 append("HSC ${Util.bn(c.hscPosts)}টি")
             }
