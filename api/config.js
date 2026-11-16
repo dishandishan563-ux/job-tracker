@@ -65,7 +65,7 @@ const seedCirculars = require('../data/circulars.json');
 // Seed ids whose live entry is REPLACED (not skipped) by sync-seed — the
 // seed file is the curated source of truth for these. Add an id here only
 // when the seed entry was corrected and the live copy is known wrong.
-const REPLACE_IDS = ['dmp'];
+const REPLACE_IDS = ['dmp', 'taxgazipur', 'taxnar', 'patuakhali', 'nsd', 'cpa', 'dgms'];
 
 function normWhatsApp(v) {
   v = String(v || '').trim();
