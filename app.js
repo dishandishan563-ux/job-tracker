@@ -497,8 +497,7 @@ async function initHome() {
   const prof = getProfile();
   const chipName = (prof.name || (user && user.name) || '');
   const chipPhoto = prof.photo || '';
-  document.getElementById('userChip').innerHTML = user ? `${chipPhoto ? `<img class="chip-photo" src="${chipPhoto}" alt="" onerror="this.style.display='none'">` : ''}<span class="pill" style="background:rgba(255,255,255,.2);color:#fff">${chipName} • ${user.email}</span> <button class="btn ghost small" id="logoutBtn">লগআউট</button>` : '';
-  const lb = document.getElementById('logoutBtn'); if (lb) lb.onclick = () => { localStorage.removeItem('jt_user'); localStorage.removeItem('jt_session'); location.reload(); };
+  document.getElementById('userChip').innerHTML = user ? `${chipPhoto ? `<img class="chip-photo" src="${chipPhoto}" alt="" onerror="this.style.display='none'">` : ''}<span class="pill" style="background:rgba(255,255,255,.2);color:#fff">${chipName}</span>` : '';
   document.getElementById('loginNote').textContent = user ? '' : 'লগইন না করলে আবেদন বা ভেতরের কিছু করা যাবে না — শুধু তালিকা দেখা ও খোঁজা যাবে।';
   const open = circulars.filter(c => daysLeft(c.deadline) >= 0);
   document.getElementById('heroStats').innerHTML = `সবার জন্য উন্মুক্ত • চলমান <span class="num">${bn(open.length)}</span>টি • মোট <span class="num">${bn(circulars.length)}</span>টি`;
@@ -848,6 +847,11 @@ function fillProfileForm() {
 function initProfile() {
   if (!requireLogin()) return;
   fillProfileForm();
+  // লগইন করা অ্যাকাউন্টের ইমেইল + লগআউট — শুধু প্রোফাইলেই থাকে, হোমে নয়।
+  const _u = getUser();
+  const _ae = document.getElementById('accountEmail'); if (_ae) _ae.textContent = (_u && _u.email) || '';
+  const _al = document.getElementById('accountLine'); if (_al) _al.style.display = (_u && _u.email) ? '' : 'none';
+  const _pl = document.getElementById('profileLogoutBtn'); if (_pl) _pl.onclick = () => { localStorage.removeItem('jt_user'); localStorage.removeItem('jt_session'); location.href = 'index.html'; };
   const photoFile = document.getElementById('pPhotoFile');
   if (photoFile) photoFile.onchange = e => {
     const f = e.target.files[0]; if (!f) return;
@@ -1386,15 +1390,12 @@ function renderDrawerUser() {
     const photo = prof.photo || '';
     box.innerHTML = `<div class="drawer-profile">
       ${photo ? `<img class="drawer-photo" src="${photo}" alt="" onerror="this.style.display='none'">` : '<span class="drawer-photo-fallback">👤</span>'}
-      <div><b>${name}</b><br><span style="font-size:13px;color:var(--muted)">${user.email}</span>${prof.address ? `<br><span style="font-size:13px;color:var(--muted)">${prof.address}</span>` : ''}</div>
-    </div>
-    <button class="drawer-item" id="drawerLogoutBtn">🚪 লগআউট</button>`;
+      <div><b>${name}</b>${prof.address ? `<br><span style="font-size:13px;color:var(--muted)">${prof.address}</span>` : ''}</div>
+    </div>`;
   } else {
     // লগইন বাটন নেই — লগইন শুধু পপআপে আসে, আবেদন/বিস্তারিত/শর্টলিস্ট চাপলে।
     box.innerHTML = `<p style="font-size:13px;color:var(--muted);margin:4px 2px">লগইন করতে যেকোনো সার্কুলারের <b>আবেদন করুন</b> / <b>বিস্তারিত</b> চাপুন — লগইন পপআপ সরাসরি আসবে।</p>`;
   }
-  const lo = document.getElementById('drawerLogoutBtn');
-  if (lo) lo.onclick = () => { localStorage.removeItem('jt_user'); localStorage.removeItem('jt_session'); location.reload(); };
 }
 function bindDrawer() {
   const burger = document.getElementById('menuBtn'); if (burger) burger.onclick = openDrawer;
